@@ -51,6 +51,7 @@ PASSEDLOG=${LOGDIR}/PASSED_LOG_${TODAY}
 REPORTED=${LOGDIR}/REPORTED_${TODAY}
 SNAPSHOTLOG=${LOGDIR}/SNAPSHOT_LOG_${TODAY}
 RELEASE_ASAP=${LOGDIR}/../release_asap		# make a special release asap
+RELEASE_ALWAYS=${LOGDIR}/../release_always	# always release
 RELEASE_NOT=${LOGDIR}/../release_not		# Do not release
 RELEASED=${LOGDIR}/RELEASED_${TODAY}
 CMD="bin/runtest $DEBUGMODE ${H4VER}"
@@ -152,15 +153,17 @@ rm $LOGDIRLOCK
 if [ $HOSTNAME != gondolin ]; then
 # do a snapshot release if
 #   test-passed && 
-#   release-not-is-not-present &&
-#   ( today-is-saturday || release-asap-is-requested )
+#   release_not-is-not-present &&
+#   ( today-is-Saturday || release_asap-is-present || release_always-is-present)
 if [ $errcode -eq 0 -a \
     ! -f $RELEASE_NOT -a \
-    \( `date +%w` -eq 6 -o -f $RELEASE_ASAP \) ]; then
+    \( `date +%w` -eq 6 -o -f $RELEASE_ASAP -o -f $RELEASE_ALWAYS\) ]; then
     # do a snapshot.
     H4DIR=$HOME/HDF4/current/hdf4
     if [ -f $RELEASE_ASAP ]; then
 	RELEASE_MESG="Special snapshot release launched for HDF4${H4VERSTR}."
+    elif [ -f $RELEASE_ALWAYS ]; then
+	RELEASE_MESG="Snapshot release launched for HDF4${H4VERSTR}."
     else
 	RELEASE_MESG="Weekly snapshot release launched for HDF4${H4VERSTR}."
     fi
