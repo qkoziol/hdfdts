@@ -3,6 +3,7 @@
 # Usauge: DailyHDFTests [-r<version>]
 # Example: DailyHDFTests	# test the CVS current version
 #	   DailyHDFTests -r1.2	# test version 1.2
+#	   DailyHDFTests -r1.4	# test version 1.4
 
 # general setup
 PROGRAMNAME=`basename $0`
@@ -87,10 +88,18 @@ if [ -n "$DEBUGMODE" ]; then
     echo "launching runsnap ..."
 fi
 
-if [ $HOSTNAME != gondolin ]; then
-(cd $HOME/HDF5/current/hdf5; $CMD -all) > $LOGFILE 2>&1
+# setup from which version of source to launch test
+if [ -z "$H5VERSTR" ]; then
+    H5SRC_VER=current
 else
-(cd $HOME/HDF5/current/hdf5; $CMD ) > $LOGFILE 2>&1
+    H5SRC_VER=v$H5VERSTR
+fi
+
+echo going $H5SRC_VER to run CMD=$CMD
+if [ $HOSTNAME != gondolin ]; then
+    (cd $HOME/HDF5/${H5SRC_VER}/hdf5; $CMD -all) > $LOGFILE 2>&1
+else
+    (cd $HOME/HDF5/${H5SRC_VER}/hdf5; $CMD ) > $LOGFILE 2>&1
 fi
 
 # Check result
