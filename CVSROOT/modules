@@ -53,3 +53,5 @@ mfhdf     mfhdf
 #ftp
 ftp      ftp
 
+#SDF both HDF and netcdf
+sdf      hdf mfhdf
