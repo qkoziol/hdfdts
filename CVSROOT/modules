@@ -25,17 +25,17 @@
 # spread out over the entire source repository.
 #
 
-# Convenient aliases
-world		-a .
-
-# CVSROOT support; run mkmodules whenever anything changes.
-CVSROOT		-i mkmodules CVSROOT
-modules		-i mkmodules CVSROOT modules
-loginfo		-i mkmodules CVSROOT loginfo
-commitinfo	-i mkmodules CVSROOT commitinfo
-rcsinfo		-i mkmodules CVSROOT rcsinfo
-editinfo	-i mkmodules CVSROOT editinfo
-
+#ROBB# # Convenient aliases
+#ROBB# world		-a .
+#ROBB# 
+#ROBB# # CVSROOT support; run mkmodules whenever anything changes.
+#ROBB# CVSROOT		-i mkmodules CVSROOT
+#ROBB# modules		-i mkmodules CVSROOT modules
+#ROBB# loginfo		-i mkmodules CVSROOT loginfo
+#ROBB# commitinfo	-i mkmodules CVSROOT commitinfo
+#ROBB# rcsinfo		-i mkmodules CVSROOT rcsinfo
+#ROBB# editinfo	-i mkmodules CVSROOT editinfo
+#ROBB# 
 #ROBB# # Add other modules here...
 #ROBB# # HDF rcs versions
 #ROBB# #top level
