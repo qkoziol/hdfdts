@@ -1,0 +1,209 @@
+#! /bin/sh -x
+# Submit daily tests of HDF4 base software
+# Usauge: DailyHDFTests [-r<version>]
+# Example: DailyHDFTests	# test the CVS current version
+#	   DailyHDFTests -r1.2	# test version 1.2
+#	   DailyHDFTests -r1.4	# test version 1.4
+
+# general setup
+PROGRAMNAME=`basename $0`
+DEBUGMODE=""		# change to -debug for debug mode
+
+# Setup
+HOSTNAME=`hostname | cut -f1 -d.`       # no domain part
+TODAY=`date +%y%m%d`
+H4VER=			# default to current CVS version
+H4VERSTR=		# default to current CVS version
+errcode=0		# error code so far
+
+# Parse command options
+while [ $# -gt 0 ]; do
+    case "$1" in
+	-r*)
+	    H4VER="$1"
+	    H4VERSTR=_`echo $H4VER | sed -e s/-r// -e s/\\\./_/g`
+	    ;;
+	-debug*)
+	    DEBUGMODE="$1"
+	    ;;
+	*)
+	    echo "Unknown option ($1)"
+	    exit 1
+	    ;;
+    esac
+    shift
+done
+
+# If in debug mode, email output to myself; else to the "group".
+if [ -n "$DEBUGMODE" ]; then
+    echo "******** DEBUGMODE is $DEBUGMODE ************"
+    TOWHOM=acheng
+else
+    TOWHOM=hdf-cvs@ncsa.uiuc.edu
+fi
+
+# Setup test directories
+LOGDIR=$HOME/snapshots-hdf4${H4VERSTR}/log
+LOGDIRLOCK=${LOGDIR}/.lock-${HOSTNAME}
+LOGFILE=${LOGDIR}/${PROGRAMNAME}-${HOSTNAME}_${TODAY}
+FAILEDLOG=${LOGDIR}/FAILED_LOG_${TODAY}
+PASSEDLOG=${LOGDIR}/PASSED_LOG_${TODAY}
+REPORTED=${LOGDIR}/REPORTED_${TODAY}
+SNAPSHOTLOG=${LOGDIR}/SNAPSHOT_LOG_${TODAY}
+RELEASE_ASAP=${LOGDIR}/../release_asap		# make a special release asap
+RELEASE_NOT=${LOGDIR}/../release_not		# Do not release
+RELEASED=${LOGDIR}/RELEASED_${TODAY}
+CMD="bin/runtest $DEBUGMODE ${H4VER}"
+
+# Setup Mailing command and Report title
+if [ $HOSTNAME = gondolin ]; then
+    MAIL=Mail
+    TEST_TITLE="$HOSTNAME HDF4${H4VERSTR}_Daily_Tests"
+else
+    MAIL=mail
+    TEST_TITLE="HDF4${H4VERSTR}_Daily_Tests"
+fi
+
+# set up auto-cleanup
+trap "rm -f $LOGDIRLOCK" 0
+trap "rm -f $LOGDIRLOCK" 1 2 3 4 5 6 7 8 9 10 12 13 14 15
+
+if [ $HOSTNAME != gondolin ]; then
+# Clean up LOGDIR by moving all files that are not "of today"
+# to OLD.
+# Clean up files older than 21 days in OLD.
+(   
+    cd $LOGDIR
+    oldfiles=`find * -type d -prune -o -type f ! -name '*'$TODAY -print`
+    test -n "$oldfiles" && mv $oldfiles OLD/.
+    find OLD -mtime +21 -exec rm '{}' \;
+)
+fi
+
+if [ -f $LOGFILE ]; then
+    if [ -n "$DEBUGMODE" ]; then
+	echo "$LOGFILE exists.  No more daily tests today"
+    fi
+    exit 1
+fi
+
+# set up the lock file
+# if one already exists, just show it and continues
+if [ -f $LOGDIRLOCK ]; then
+    echo "LOGDIRLOCK($LOGDIRLOCK) exists. Content is:"
+    cat $LOGDIRLOCK
+fi
+date > $LOGDIRLOCK
+echo PID@HOSTNAME=$$@$HOSTNAME >> $LOGDIRLOCK
+
+#
+if [ -n "$DEBUGMODE" ]; then
+    echo "launching runsnap ..."
+fi
+
+# setup from which version of source to launch test
+if [ -z "$H4VERSTR" ]; then
+    H4SRC_VER=current
+else
+    H4SRC_VER=v$H4VERSTR
+fi
+
+if [ $HOSTNAME != gondolin ]; then
+    (cd $HOME/HDF4/${H4SRC_VER}/hdf4; $CMD -all) > $LOGFILE 2>&1
+else
+    (cd $HOME/HDF4/${H4SRC_VER}/hdf4; $CMD -nocvs) > $LOGFILE 2>&1
+fi
+
+# Verify test script did complete by checking the last lines
+(tail -4 $LOGFILE | grep -s "^*** finished .* in $HOSTNAME ***" > /dev/null 2>&1) ||
+    (echo "****snaptest launcher FAILED to complete in $HOSTNAME****" >> $FAILEDLOG)
+
+# Check result
+if [ -f $FAILEDLOG ]; then
+    errcode=1
+    REPORT_TITLE="${TEST_TITLE}_FAILED!!!"
+else
+    REPORT_TITLE="${TEST_TITLE}"
+fi
+    
+# report result
+# save FAILED or SUCCEESS in REPORTED and remove them
+(echo "============================="
+ echo "   Tests Summary"
+ echo "============================="
+ if [ -f $FAILEDLOG ]; then
+    cat $FAILEDLOG | tee -a $REPORTED
+    rm $FAILEDLOG
+ fi
+ if [ -f $PASSEDLOG ]; then
+    cat $PASSEDLOG | tee -a $REPORTED
+    rm $PASSEDLOG
+ fi
+ echo ""
+ echo "============================="
+ echo "   Tests Details"
+ echo "============================="
+ cat $LOGFILE) |
+$MAIL -s "$REPORT_TITLE" $TOWHOM
+
+# remove lock
+rm $LOGDIRLOCK
+
+if [ $HOSTNAME != gondolin ]; then
+# do a snapshot release if
+#   test-passed && 
+#   release-not-is-not-present &&
+#   ( today-is-saturday || release-asap-is-requested )
+if [ $errcode -eq 0 -a \
+    ! -f $RELEASE_NOT -a \
+    \( `date +%w` -eq 6 -o -f $RELEASE_ASAP \) ]; then
+    # do a snapshot.  Default to version 1.3
+    H4DIR=$HOME/HDF4/v${H4VERSTR:-_1_5}/hdf4
+    if [ -f $RELEASE_ASAP ]; then
+	RELEASE_MESG="Special snapshot release launched for HDF4${H4VERSTR}."
+    else
+	RELEASE_MESG="Weekly snapshot release launched for HDF4${H4VERSTR}."
+    fi
+
+    # Before doing the release, check if there are some daily tests in progress.
+    # If so, wait for them to finish (up to 30 minutes).  Then proceed.
+    wait_max=30
+    lockfiles=`ls $LOGDIR/.lock-* 2>/dev/null`
+    while [ -n "$lockfiles" -a $wait_max -gt 0 ] ; do
+	echo $lockfiles exist.  Wait a minute.
+	sleep 60
+	wait_max=`expr $wait_max - 1`
+	lockfiles=`ls $LOGDIR/.lock-* 2>/dev/null`
+    done
+    (
+	cd $H4DIR
+	bin/snapshot
+    ) >> $SNAPSHOTLOG 2>&1
+    errcode=$?
+
+    # if snapshot went okay, remove release-asap-request
+    if [ $errcode -eq 0 ]; then
+	if [ -f $RELEASE_ASAP ]; then
+	    mv $RELEASE_ASAP $RELEASED
+	else
+	    touch $RELEASED
+	fi
+	RELEASE_Result="Released"
+    else
+	RELEASE_Result="FAILED"
+    fi
+
+    # report snapshot result
+    (
+     echo $RELEASE_MESG
+     echo "$RELEASE_Result with exit Error Code = ${errcode}."
+     echo "Complete output is stored in"
+     echo "    $SNAPSHOTLOG"
+    ) |
+    mail -s "HDF4${H4VERSTR}_snapshot:$RELEASE_Result" $TOWHOM
+fi
+fi
+
+
+# final exit
+exit $errcode
