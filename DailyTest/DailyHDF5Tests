@@ -47,7 +47,8 @@ LOGDIR=$HOME/snapshots-hdf5${H5VERSTR}/log
 LOGDIRLOCK=${LOGDIR}/.lock-${HOSTNAME}
 LOGFILE=${LOGDIR}/${PROGRAMNAME}-${HOSTNAME}_${TODAY}
 FAILEDLOG=${LOGDIR}/FAILED_LOG_${TODAY}
-FAILEDLOG_REPORTED=${LOGDIR}/FAILED_LOG_REPORTED_${TODAY}
+PASSEDLOG=${LOGDIR}/PASSED_LOG_${TODAY}
+REPORTED=${LOGDIR}/REPORTED_${TODAY}
 SNAPSHOTLOG=${LOGDIR}/SNAPSHOT_LOG_${TODAY}
 RELEASE_ASAP=${LOGDIR}/../release_asap		# make a special release asap
 RELEASE_NOT=${LOGDIR}/../release_not		# Do not release
@@ -120,38 +121,31 @@ fi
 # Check result
 if [ -f $FAILEDLOG ]; then
     errcode=1
+    REPORT_TITLE="${TEST_TITLE}_FAILED!!!"
+else
+    REPORT_TITLE="${TEST_TITLE}"
 fi
     
 # report result
-if [ $errcode -eq 0 ]; then
-    (echo "No failures reported"
-     echo ""
-     echo "============================="
-     echo "   All Tests Results"
-     echo "============================="
-     cat $LOGFILE) |
-    $MAIL -s "$TEST_TITLE" $TOWHOM
-else
-    # some hosts have failed the tests
-    ( cat $FAILEDLOG
-     echo ""
-     echo "============================="
-     echo "   All Tests Results"
-     echo "============================="
-     cat $LOGFILE) |
-    $MAIL -s "${TEST_TITLE}_FAILED!!!" $TOWHOM
-    # Save FAILEDLOG in FAILEDLOG_REPORTED.
-    # Remove FAILEDLOG for possible new daily tests.
-    cat $FAILEDLOG >> $FAILEDLOG_REPORTED
-    rm $FAILEDLOG
-fi
+# save FAILED or SUCCEESS in REPORTED and remove them
+(echo "============================="
+ echo "   Tests Summary"
+ echo "============================="
+ test -f $FAILEDLOG && (cat $FAILEDLOG | tee -a $REPORTED) && rm $FAILEDLOG
+ test -f $PASSEDLOG && (cat $PASSEDLOG | tee -a $REPORTED) && rm $PASSEDLOG
+ echo ""
+ echo "============================="
+ echo "   Tests Details"
+ echo "============================="
+ cat $LOGFILE) |
+$MAIL -s "$REPORT_TITLE" $TOWHOM
 
 # remove lock
 rm $LOGDIRLOCK
 
 if [ $HOSTNAME != gondolin ]; then
 # do a snapshot release if
-#   test-succeeded && 
+#   test-passed && 
 #   release-not-is-not-present &&
 #   ( today-is-saturday || release-asap-is-requested )
 if [ $errcode -eq 0 -a \
