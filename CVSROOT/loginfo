@@ -59,5 +59,8 @@
 # Travel form
 ^travel		$CVSROOT/CVSROOT/log.pl %s -f $CVSROOT/CVSROOT/commitlog.travel -m mcgrath@ncsa.uiuc.edu
 
+# Flexible PHDF5 stuff
+^fph5		$CVSROOT/CVSROOT/log.pl %s -f $CVSROOT/CVSROOT/commitlog.fph5 -m wendling@ncsa.uiuc.edu acheng@ncsa.uiuc.edu
+
 # default goes to the CVS mailing list
 DEFAULT                 $CVSROOT/CVSROOT/log.pl %s -f $CVSROOT/CVSROOT/commitlog  -m hdf-cvs@ncsa.uiuc.edu
