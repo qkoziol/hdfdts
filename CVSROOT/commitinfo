@@ -18,4 +18,5 @@
 # in addition to the first matching regex or DEFAULT.
 #
 #^cvs			checkforcvsid
-#DEFAULT			checkforid
+#DEFAULT         $CVSROOT/CVSROOT/commit_prep.pl
+
