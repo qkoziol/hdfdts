@@ -44,7 +44,7 @@ hdf       hdf
 src       hdf/src
 #utils
 util      hdf/util
-hdf24to8  util Makefile MAKEUTIL.COM HELINK.OPT README.UTILS SETUPUTILS.COM \
+hdf24to8  &util Makefile MAKEUTIL.COM HELINK.OPT README.UTILS SETUPUTILS.COM \
           hdf24to8.c
 #tests
 test      hdf/test
