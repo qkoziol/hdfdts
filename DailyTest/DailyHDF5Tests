@@ -70,10 +70,12 @@ trap "rm -f $LOGDIRLOCK" 1 2 3 4 5 6 7 8 9 10 12 13 14 15
 if [ $HOSTNAME != gondolin ]; then
 # Clean up LOGDIR by moving all files that are not "of today"
 # to OLD.
+# Clean up files older than 21 days in OLD.
 (   
     cd $LOGDIR
     oldfiles=`find * -type d -prune -o -type f ! -name '*'$TODAY -print`
     test -n "$oldfiles" && mv $oldfiles OLD/.
+    find OLD -mtime +21 -exec rm '{}' \;
 )
 fi
 
