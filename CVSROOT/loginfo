@@ -64,7 +64,7 @@
 ^travel		$CVSROOT/CVSROOT/log.pl %s -f $CVSROOT/CVSROOT/commitlog.travel -m mcgrath@ncsa.uiuc.edu
 
 # Parallel HDF stuff
-^phdf		$CVSROOT/CVSROOT/log.pl %s -f $CVSROOT/CVSROOT/commitlog.phdf -m "wendling@ncsa.uiuc.edu acheng@ncsa.uiuc.edu"
+^phdf		$CVSROOT/CVSROOT/log.pl %s -f $CVSROOT/CVSROOT/commitlog.phdf -m "koziol@ncsa.uiuc.edu acheng@ncsa.uiuc.edu"
 
 # default goes to the CVS mailing list
 DEFAULT                 $CVSROOT/CVSROOT/log.pl %s -f $CVSROOT/CVSROOT/commitlog  -m hdf-cvs@ncsa.uiuc.edu
