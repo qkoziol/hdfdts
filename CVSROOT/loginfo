@@ -44,7 +44,7 @@
 ^dev                 $CVSROOT/CVSROOT/log.pl %s -f $CVSROOT/CVSROOT/commitlog  -m hdf-cvs@sdgmail.ncsa.uiuc.edu
 
 # HDF 5.0
-^hdf5                 $CVSROOT/CVSROOT/log.pl %s -f $CVSROOT/CVSROOT/commitlog  -m koziol@ncsa.uiuc.edu,matzke@llnl.gov,epourmal@ncsa.uiuc.edu
+^hdf5                 $CVSROOT/CVSROOT/log.pl %s -f $CVSROOT/CVSROOT/commitlog  -m hdf5cvs@ncsa.uiuc.edu
 
 # java-hdf stuff
 ^java-hdf               $CVSROOT/CVSROOT/log.pl %s -f $CVSROOT/CVSROOT/commitlog -m xlu@ncsa.uiuc.edu
