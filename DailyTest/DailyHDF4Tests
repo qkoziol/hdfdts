@@ -54,6 +54,7 @@ LOGDIRLOCK=${LOGDIR}/.lock-${HOSTNAME}
 LOGFILE=${LOGDIR}/${PROGRAMNAME}-${HOSTNAME}_${TODAY}
 FAILEDLOG=${LOGDIR}/FAILED_LOG_${TODAY}
 PASSEDLOG=${LOGDIR}/PASSED_LOG_${TODAY}
+SKIPPEDLOG=${LOGDIR}/SKIPPED_LOG_${TODAY}
 REPORTED=${LOGDIR}/REPORTED_${TODAY}
 SNAPSHOTLOG=${LOGDIR}/SNAPSHOT_LOG_${TODAY}
 RELEASE_ASAP=${LOGDIR}/../release_asap		# make a special release asap
@@ -147,9 +148,22 @@ fi
     sort $FAILEDLOG | tee -a $REPORTED
     rm $FAILEDLOG
  fi
+ if [ -f $SKIPPEDLOG ]; then
+    sort $SKIPPEDLOG | tee -a $REPORTED
+    echo ""
+    rm $SKIPPEDLOG
+ fi
  if [ -f $PASSEDLOG ]; then
     sort $PASSEDLOG | tee -a $REPORTED
     rm $PASSEDLOG
+ fi
+ echo ""
+ echo "============================="
+ echo "   Tests Time Summary"
+ echo "============================="
+ if [ -f $TIMELOG ]; then
+    cat $TIMELOG | tee -a $REPORTED
+    rm $TIMELOG
  fi
  echo ""
  echo "============================="
