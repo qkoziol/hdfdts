@@ -33,6 +33,9 @@ while [ $# -gt 0 ]; do
 	report)
 	    CMD=report
 	    ;;
+	launch)
+	    CMD=launch
+	    ;;
 	*)
 	    echo "Unknown option ($1)"
 	    exit 1
@@ -47,11 +50,11 @@ done
 # If in debug mode, email output to myself; else to the "group".
 if [ -n "$DEBUGMODE" ]; then
     echo "******** DEBUGMODE is $DEBUGMODE ************"
-    TOWHOM_PASSED=acheng
-    TOWHOM_FAILED=acheng
+    TOWHOM_PASSED=acheng@ncsa.uiuc.edu
+    TOWHOM_FAILED=acheng@ncsa.uiuc.edu
 else
-    TOWHOM_PASSED=acheng
-    TOWHOM_FAILED=acheng
+    TOWHOM_PASSED=acheng@ncsa.uiuc.edu
+    TOWHOM_FAILED=acheng@ncsa.uiuc.edu
 fi
 
 # Setup test directories
@@ -133,20 +136,17 @@ case "$CMD" in
 	    rm $TIMELOG
 	 fi
 	 echo ""
-	# echo "============================="
-	# echo "   Tests Details"
-	# echo "============================="
-	# if [ $errcode -eq 0 ]; then
-	#    echo "See $LOGFILE"
-	# else
-	#    cat $LOGFILE
-	#    echo ""
-	#    echo "============================="
-	#    echo "   Watchers List"
-	#    echo "============================="
-	#    cat $WATCHERFILE
-	# fi
 	) | $MAIL -s "$REPORT_TITLE" $TOWHOM
+	;;
+    launch)
+	LAUNCH_CMD=JOBS/Dailytest
+	RemoteHosts="lambda theta"
+	# launch myself
+	$LAUNCH_CMD
+	# launch remote hosts
+	for h in $RemoteHosts; do
+	    ssh $h $LAUNCH_CMD < /dev/null
+	done
 	;;
     *)
 	echo "Unknown Command ($CMD)"
