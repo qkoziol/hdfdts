@@ -87,6 +87,7 @@ $mailcmd = "| $mail_prog -s 'CVS update: $srepos'";
 @days = (Sunday,Monday,Tuesday,Wednesday,Thursday,Friday,Saturday);
 
 ($sec,$min,$hour,$mday,$mon,$year,$wday,$yday,$isdst) = localtime;
+$year = 1900 + $year;
 
 # get login name
 #
@@ -104,12 +105,12 @@ if ($users) {
 # 
 print OUT "\n";
 print OUT "**************************************\n";
-print OUT "Date:\t$days[$wday] $mos[$mon] $mday, 19$year @ $hour:" . sprintf("%02d", $min) . "\n";
+print OUT "Date:\t$days[$wday] $mos[$mon] $mday, $year @ $hour:" . sprintf("%02d", $min) . "\n";
 print OUT "Author:\t$login\n\n";
 
 if (MAIL) {
 	print MAIL "\n";
-	print MAIL "Date:\t$days[$wday] $mos[$mon] $mday, 19$year @ $hour:" . sprintf("%02d", $min) . "\n";
+	print MAIL "Date:\t$days[$wday] $mos[$mon] $mday, $year @ $hour:" . sprintf("%02d", $min) . "\n";
 	print MAIL "Author:\t$login\n\n";
 }
 
