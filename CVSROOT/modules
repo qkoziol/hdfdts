@@ -55,3 +55,6 @@ ftp      ftp
 
 #DIST both HDF and netcdf
 dist     dist 
+
+#for Scientific data browser
+sdb      sdb
