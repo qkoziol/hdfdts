@@ -147,6 +147,11 @@ fi
  cat $LOGFILE) |
 $MAIL -s "$REPORT_TITLE" $TOWHOM
 
+# see if any real tests occurred
+if grep -s "^NO TEST:" $REPORTED > /dev/null; then
+    tests_done="none"
+fi
+
 # remove lock
 rm $LOGDIRLOCK
 
@@ -155,7 +160,7 @@ if [ $HOSTNAME != gondolin ]; then
 #   test-passed && 
 #   release_not-is-not-present &&
 #   ( today-is-Saturday || release_asap-is-present || release_always-is-present)
-if [ $errcode -eq 0 -a \
+if [ $errcode -eq 0 -a x-$tests_done != x-none -a \
     ! -f $RELEASE_NOT -a \
     \( `date +%w` -eq 6 -o -f $RELEASE_ASAP -o -f $RELEASE_ALWAYS \) ]; then
     # do a snapshot.
