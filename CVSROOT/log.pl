@@ -68,7 +68,7 @@ while (@ARGV) {
 
 $srepos = shift @files;
 if($host_os eq 'HP-UX') {
-   $mail_prog = "/usr/local/bin/elm/elm"
+   $mail_prog = "mailx"
 }
 elsif($host_os eq 'SunOS') {
    $mail_prog = "/usr/ucb/Mail"
