@@ -25,5 +25,5 @@
 #
 #ALL     $CVSROOT/CVSROOT/mfpipe.pl %s georgev@ncsa.uiuc.edu
 # Default log to common file
-DEFAULT			$CVSROOT/CVSROOT/log.pl %s $CVSROOT/CVSROOT/commitlog
+DEFAULT			$CVSROOT/CVSROOT/log.pl %s -f $CVSROOT/CVSROOT/commitlog
 
