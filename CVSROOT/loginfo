@@ -39,9 +39,9 @@
 ^jhv-native               $CVSROOT/CVSROOT/log.pl %s -f $CVSROOT/CVSROOT/commitlog  -m xlu@ncsa.uiuc.edu
 
 # HDF 4.0 library related modules
-^project                 $CVSROOT/CVSROOT/log.pl %s -f $CVSROOT/CVSROOT/commitlog  -m hdf-cvs@sdgmail.ncsa.uiuc.edu
-^dist                 $CVSROOT/CVSROOT/log.pl %s -f $CVSROOT/CVSROOT/commitlog  -m hdf-cvs@sdgmail.ncsa.uiuc.edu
-^dev                 $CVSROOT/CVSROOT/log.pl %s -f $CVSROOT/CVSROOT/commitlog  -m hdf-cvs@sdgmail.ncsa.uiuc.edu
+^project                 $CVSROOT/CVSROOT/log.pl %s -f $CVSROOT/CVSROOT/commitlog  -m hdf-cvs@ncsa.uiuc.edu
+^dist                 $CVSROOT/CVSROOT/log.pl %s -f $CVSROOT/CVSROOT/commitlog  -m hdf-cvs@ncsa.uiuc.edu
+^dev                 $CVSROOT/CVSROOT/log.pl %s -f $CVSROOT/CVSROOT/commitlog  -m hdf-cvs@ncsa.uiuc.edu
 
 # HDF 5.0
 ^hdf5                 $CVSROOT/CVSROOT/log.pl %s -f $CVSROOT/CVSROOT/commitlog  -m hdf5cvs@ncsa.uiuc.edu
@@ -54,4 +54,4 @@
 
 
 # default goes to the CVS mailing list
-DEFAULT                 $CVSROOT/CVSROOT/log.pl %s -f $CVSROOT/CVSROOT/commitlog  -m hdf-cvs@sdgmail.ncsa.uiuc.edu
+DEFAULT                 $CVSROOT/CVSROOT/log.pl %s -f $CVSROOT/CVSROOT/commitlog  -m hdf-cvs@ncsa.uiuc.edu
