@@ -39,6 +39,7 @@ editinfo	-i mkmodules CVSROOT editinfo
 # Add other modules here...
 # HDF rcs versions
 #top level
+hdf5	hdf5
 hdf       hdf
 
 # library source
