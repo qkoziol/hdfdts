@@ -44,37 +44,12 @@ hdf       hdf
 src       hdf/src
 #utils
 util      hdf/util
-hdf24to8  hdf/util Makefile MAKEUTIL.COM HELINK.OPT README.UTILS \
-          SETUPUTILS.COM hdf24to8.c
-hdfcomp   hdf/util Makefile MAKEUTIL.COM HELINK.OPT README.UTILS \
-          SETUPUTILS.COM hdfcomp.c
-hdfls     hdf/util Makefile MAKEUTIL.COM HELINK.OPT README.UTILS \
-          SETUPUTILS.COM hdfls.c
-hdfpack   hdf/util Makefile MAKEUTIL.COM HELINK.OPT README.UTILS \
-          SETUPUTILS.COM hdfpack.c
-hdfrseq   hdf/util Makefile MAKEUTIL.COM HELINK.OPT README.UTILS \
-          SETUPUTILS.COM hdfrseq.c
-hdftopal  hdf/util Makefile MAKEUTIL.COM HELINK.OPT README.UTILS \
-          SETUPUTILS.COM hdftopal.c
-hdftor8   hdf/util Makefile MAKEUTIL.COM HELINK.OPT README.UTILS \
-          SETUPUTILS.COM hdftor8.c
-paltohdf  hdf/util Makefile MAKEUTIL.COM HELINK.OPT README.UTILS \
-          SETUPUTILS.COM paltohdf.c
-r8tohdf   hdf/util Makefile MAKEUTIL.COM HELINK.OPT README.UTILS \
-          SETUPUTILS.COM r8tohdf.c
-ristosds  hdf/util Makefile MAKEUTIL.COM HELINK.OPT README.UTILS \
-          SETUPUTILS.COM ristosds.c
-vcompat   hdf/util Makefile MAKEUTIL.COM HELINK.OPT README.UTILS \
-          SETUPUTILS.COM vcompat.c
-vmake     hdf/util Makefile MAKEUTIL.COM HELINK.OPT README.UTILS \
-          SETUPUTILS.COM vmake.c
-vshow     hdf/util Makefile MAKEUTIL.COM HELINK.OPT README.UTILS \
-          SETUPUTILS.COM vshow.c
-hdfed     hdf/util Makefile MAKEUTIL.COM HELINK.OPT README.UTILS \
-          SETUPUTILS.COM he_main.c he_cntrl.c he_disp.c he_file.o
 #tests
 test      hdf/test
 
 #multifile  library
 mfhdf     mfhdf
+
+#ftp
+ftp      ftp
 
