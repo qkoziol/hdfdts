@@ -44,7 +44,7 @@ SNAPSHOTLOG=${LOGDIR}/SNAPSHOT_LOG_${TODAY}
 RELEASE_ASAP=${LOGDIR}/../release_asap		# make a special release asap
 RELEASE_NOT=${LOGDIR}/../release_not		# Do not release
 RELEASED=${LOGDIR}/RELEASED_${TODAY}
-CMD="$HOME/bin-sys/runsnap ${H5VER}"
+CMD="bin/runtest ${H5VER}"
 
 # set up auto-cleanup
 trap "rm -f $LOGDIRLOCK" 0
@@ -69,7 +69,7 @@ if [ -n "$DEBUGMODE" ]; then
     echo "launching runsnap ..."
 fi
 
-$CMD -all > $LOGFILE 2>&1
+(cd $HOME/HDF5/current/hdf5; $CMD -all) > $LOGFILE 2>&1
 
 # Check result
 if [ -f $FAILEDLOG ]; then
