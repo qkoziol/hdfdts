@@ -1,0 +1,37 @@
+#! /bin/sh
+# Submit daily tests of HDF5 base software
+
+# general setup
+PROGRAMNAME=`basename $0`
+DEBUGMODE=""
+
+# Email any messages to whom
+TOWHOM=${DEBUGMODE:+acheng}
+TOWHOM=${TOWHOM:-hdf5cvs@ncsa.uiuc.edu}
+
+# Setup
+HOSTNAME=`hostname | sed -e s/.ncsa.uiuc.edu//`
+H5DIR=$HOME/HDF5/v3/hdf5
+TODAY=`date +%y%m%d`
+LOGDIR=$HOME/hdf5-snapshots/log
+LOGDIRLOCK=${LOGDIR}/.lock
+LOGFILE=${LOGDIR}/${PROGRAMNAME}_${TODAY}
+
+# set up auto-cleanup
+trap "rm -f $LOGDIRLOCK" 0
+
+if [ -f $LOGFILE ]; then
+    if [ -n "$DEBUGMODE" ]; then
+	echo "$LOGFILE exists.  No more daily tests today"
+    fi
+    exit 1
+fi
+
+#
+if [ -n "$DEBUGMODE" ]; then
+    echo "launching runsnap ..."
+fi
+
+$HOME/bin-sys/runsnap -all > $LOGFILE 2>&1
+mail -s "HDF5_Daily_Tests" $TOWHOM < $LOGFILE
+exit 0
