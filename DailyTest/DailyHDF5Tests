@@ -131,8 +131,14 @@ fi
 (echo "============================="
  echo "   Tests Summary"
  echo "============================="
- test -f $FAILEDLOG && (cat $FAILEDLOG | tee -a $REPORTED) && rm $FAILEDLOG
- test -f $PASSEDLOG && (cat $PASSEDLOG | tee -a $REPORTED) && rm $PASSEDLOG
+ if [ -f $FAILEDLOG ]; then
+    cat $FAILEDLOG | tee -a $REPORTED
+    rm $FAILEDLOG
+ fi
+ if [ -f $PASSEDLOG ]; then
+    cat $PASSEDLOG | tee -a $REPORTED
+    rm $PASSEDLOG
+ fi
  echo ""
  echo "============================="
  echo "   Tests Details"
