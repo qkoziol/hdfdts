@@ -1,4 +1,4 @@
-#! /bin/sh -x
+#! /bin/sh
 # Submit daily tests of HDF4 base software
 # Usauge: DailyHDFTests [-r<version>]
 # Example: DailyHDFTests	# test the CVS current version
