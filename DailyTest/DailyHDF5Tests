@@ -41,6 +41,8 @@ LOGDIRLOCK=${LOGDIR}/.lock
 LOGFILE=${LOGDIR}/${PROGRAMNAME}_${TODAY}
 FAILEDLOG=${LOGDIR}/FAILED_LOG_${TODAY}
 SNAPSHOTLOG=${LOGDIR}/SNAPSHOT_LOG_${TODAY}
+RELEASE_ASAP=${LOGDIR}/../release_asap		# make a special release asap
+RELEASED=${LOGDIR}/RELEASED_${TODAY}
 CMD="$HOME/bin-sys/runsnap ${H5VER}"
 
 # set up auto-cleanup
@@ -94,19 +96,33 @@ else
 fi
 
 # do a snapshot release if
-# test-succeeded && today-is-saturday
-if [ $errcode -eq 0 -a `date +%w` -eq 6 ]; then
+# test-succeeded && ( today-is-saturday || release-asap-requested )
+if [ $errcode -eq 0 -a \( `date +%w` -eq 6 -o -f $RELEASE_ASAP \) ]; then
     # do a snapshot.  Default to version 1.3
     H5DIR=$HOME/HDF5/v${H5VERSTR:-_1_3}/hdf5
+    if [ -f $RELEASE_ASAP ]; then
+	RELEASE_MESG="Special snapshot release launched for HDF5${H5VERSTR}."
+    else
+	RELEASE_MESG="Weekly snapshot release launched for HDF5${H5VERSTR}."
+    fi
     (
 	cd $H5DIR
 	bin/snapshot
     ) >> $SNAPSHOTLOG 2>&1
     errcode=$?
 
+    # if snapshot went okay, remove release-asap-request
+    if [ $errcode -eq 0 ]; then
+	if [ -f $RELEASE_ASAP ]; then
+	    mv $RELEASE_ASAP $RELEASED
+	else
+	    touch $RELEASED
+	fi
+    fi
+
     # report snapshot result
     (
-     echo "Weekly Snapshot launched for HDF5${H5VERSTR}."
+     echo $RELEASE_MESG
      echo "Exit Error Code = ${errcode}."
      echo "Complete output is stored in"
      echo "    $SNAPSHOTLOG"
