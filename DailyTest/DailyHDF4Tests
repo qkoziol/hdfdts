@@ -14,6 +14,7 @@ HOSTNAME=`hostname | cut -f1 -d.`       # no domain part
 TODAY=`date +%y%m%d`
 H4VER=			# default to current CVS version
 H4VERSTR=		# default to current CVS version
+TITLE="HDF4 Tests on $TODAY"
 errcode=0		# error code so far
 
 # Parse command options
@@ -34,12 +35,17 @@ while [ $# -gt 0 ]; do
     shift
 done
 
+# Mail addresses for reports
+# TOWHOM_PASSED--normal report
+# TOWHOM_FAILED--Failure Report
 # If in debug mode, email output to myself; else to the "group".
 if [ -n "$DEBUGMODE" ]; then
     echo "******** DEBUGMODE is $DEBUGMODE ************"
-    TOWHOM=acheng
+    TOWHOM_PASSED=acheng
+    TOWHOM_FAILED=acheng
 else
-    TOWHOM=hdf-cvs@ncsa.uiuc.edu
+    TOWHOM_PASSED=hdf-cvs@ncsa.uiuc.edu
+    TOWHOM_FAILED=hdflib@ncsa.uiuc.edu
 fi
 
 # Setup test directories
@@ -54,6 +60,7 @@ RELEASE_ASAP=${LOGDIR}/../release_asap		# make a special release asap
 RELEASE_ALWAYS=${LOGDIR}/../release_always	# always release
 RELEASE_NOT=${LOGDIR}/../release_not		# Do not release
 RELEASED=${LOGDIR}/RELEASED_${TODAY}
+WATCHERFILE=${LOGDIR}/../watchers		# List of platform watchers
 CMD="bin/runtest $DEBUGMODE ${H4VER}"
 
 # Setup Mailing command and Report title
@@ -123,13 +130,17 @@ fi
 if [ -f $FAILEDLOG ]; then
     errcode=1
     REPORT_TITLE="${TEST_TITLE}_FAILED!!!"
+    TOWHOM=$TOWHOM_FAILED
 else
     REPORT_TITLE="${TEST_TITLE}"
+    TOWHOM=$TOWHOM_PASSED
 fi
     
 # report result
 # save FAILED or SUCCEESS in REPORTED and remove them
-(echo "============================="
+(
+ echo "*** $TITLE ***"
+ echo "============================="
  echo "   Tests Summary"
  echo "============================="
  if [ -f $FAILEDLOG ]; then
@@ -144,8 +155,17 @@ fi
  echo "============================="
  echo "   Tests Details"
  echo "============================="
- cat $LOGFILE) |
-$MAIL -s "$REPORT_TITLE" $TOWHOM
+ if [ $errcode -eq 0 ]; then
+    echo "See $LOGFILE"
+ else
+    cat $LOGFILE
+    echo ""
+    echo "============================="
+    echo "   Watchers List"
+    echo "============================="
+    cat $WATCHERFILE
+ fi
+) | $MAIL -s "$REPORT_TITLE" $TOWHOM
 
 # see if any real tests occurred
 if grep -s "^NO TEST:" $REPORTED > /dev/null; then
@@ -197,8 +217,10 @@ if [ $errcode -eq 0 -a x-$tests_done != x-none -a \
 	    touch $RELEASED
 	fi
 	RELEASE_Result="Released"
+	TOWHOM=$TOWHOM_PASSED
     else
 	RELEASE_Result="FAILED"
+	TOWHOM=$TOWHOM_FAILED
     fi
 
     # report snapshot result
