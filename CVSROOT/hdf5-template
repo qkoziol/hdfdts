@@ -20,5 +20,6 @@ CVS: sol (fortran); eirene (fortran, C++); modi4 (parallel, fortran).]
 Misc. update:
 CVS:  Update MANIFEST if you add or remove any file.
 CVS:  (Run bin/chkmanifest to verify.)
+CVS:  Update H5MPprivate.h if you add or remove any API.
 CVS:  Update release_docs/RELEASE for bug fixes, new features, etc.
 CVS:  Update applicable document files too.
