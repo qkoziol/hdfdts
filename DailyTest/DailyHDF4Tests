@@ -157,7 +157,7 @@ if [ $HOSTNAME != gondolin ]; then
 #   ( today-is-Saturday || release_asap-is-present || release_always-is-present)
 if [ $errcode -eq 0 -a \
     ! -f $RELEASE_NOT -a \
-    \( `date +%w` -eq 6 -o -f $RELEASE_ASAP -o -f $RELEASE_ALWAYS\) ]; then
+    \( `date +%w` -eq 6 -o -f $RELEASE_ASAP -o -f $RELEASE_ALWAYS \) ]; then
     # do a snapshot.
     H4DIR=$HOME/HDF4/current/hdf4
     if [ -f $RELEASE_ASAP ]; then
