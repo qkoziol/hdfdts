@@ -14,10 +14,10 @@ TOWHOM=${TOWHOM:-hdf5cvs@ncsa.uiuc.edu}
 HOSTNAME=`hostname | sed -e s/.ncsa.uiuc.edu//`
 H5DIR=$HOME/HDF5/v3/hdf5
 TODAY=`date +%y%m%d`
-LOGDIR=$HOME/hdf5-snapshots/log
+LOGDIR=$HOME/snapshots-hdf5/log
 LOGDIRLOCK=${LOGDIR}/.lock
 LOGFILE=${LOGDIR}/${PROGRAMNAME}_${TODAY}
-FAILEDLOG=$HOME/hdf5-snapshots/log/FAILED_LOG_${TODAY}
+FAILEDLOG=$HOME/snapshots-hdf5/log/FAILED_LOG_${TODAY}
 
 # set up auto-cleanup
 trap "rm -f $LOGDIRLOCK" 0
