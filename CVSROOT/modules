@@ -55,6 +55,14 @@ ftp      ftp
 
 #DIST both HDF and netcdf
 dist     dist 
+dev      dist
+
+#for docs
+docs   docs
+bugs   docs/bugs
 
 #for Scientific data browser
 sdb      sdb
+
+#for the whole project
+project  project
