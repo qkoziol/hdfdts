@@ -4,6 +4,7 @@
 # general setup
 PROGRAMNAME=`basename $0`
 DEBUGMODE=""
+test -n "$DEBUGMODE" && echo "******** DEBUGMODE is $DEBUGMODE ************"
 
 # Email any messages to whom
 TOWHOM=${DEBUGMODE:+acheng}
@@ -16,6 +17,7 @@ TODAY=`date +%y%m%d`
 LOGDIR=$HOME/hdf5-snapshots/log
 LOGDIRLOCK=${LOGDIR}/.lock
 LOGFILE=${LOGDIR}/${PROGRAMNAME}_${TODAY}
+FAILEDLOG=$HOME/hdf5-snapshots/log/FAILED_LOG_${TODAY}
 
 # set up auto-cleanup
 trap "rm -f $LOGDIRLOCK" 0
@@ -41,5 +43,23 @@ if [ -n "$DEBUGMODE" ]; then
 fi
 
 $HOME/bin-sys/runsnap -all > $LOGFILE 2>&1
-mail -s "HDF5_Daily_Tests" $TOWHOM < $LOGFILE
+
+# Check result
+if [ -f $FAILEDLOG ];
+then
+    # some hosts have failed the tests
+    ( cat $FAILEDLOG
+     echo ""
+     echo "============================="
+     echo "   All Tests Results"
+     echo "============================="
+     cat $LOGFILE) |
+    mail -s "HDF5_Daily_Tests_FAILED!!!" $TOWHOM
+else
+    (echo "============================="
+     echo "   All Tests Results"
+     echo "============================="
+     cat $LOGFILE) |
+    mail -s "HDF5_Daily_Tests" $TOWHOM
+fi
 exit 0
