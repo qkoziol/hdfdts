@@ -101,6 +101,10 @@ else
     (cd $HOME/HDF5/${H5SRC_VER}/hdf5; $CMD -nocvs) > $LOGFILE 2>&1
 fi
 
+# Verify test script did complete by checking the last lines
+(tail -4 $LOGFILE | grep -s "^*** finished .* in $HOSTNAME ***" > /dev/null 2>&1) ||
+    (echo "****snaptest launcher FAILED to complete in $HOSTNAME****" >> $FAILEDLOG)
+
 # Check result
 if [ -f $FAILEDLOG ]; then
     errcode=1
@@ -158,16 +162,19 @@ if [ $errcode -eq 0 -a \
 	else
 	    touch $RELEASED
 	fi
+	RELEASE_Result="Released"
+    else
+	RELEASE_Result="FAILED"
     fi
 
     # report snapshot result
     (
      echo $RELEASE_MESG
-     echo "Exit Error Code = ${errcode}."
+     echo "$RELEASE_Result with exit Error Code = ${errcode}."
      echo "Complete output is stored in"
      echo "    $SNAPSHOTLOG"
     ) |
-    mail -s "HDF5${H5VERSTR}_snapshot" $TOWHOM
+    mail -s "HDF5${H5VERSTR}_snapshot:$RELEASE_Result" $TOWHOM
 fi
 fi
 
