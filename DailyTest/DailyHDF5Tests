@@ -56,6 +56,7 @@ FAILEDLOG=${LOGDIR}/FAILED_LOG_${TODAY}
 PASSEDLOG=${LOGDIR}/PASSED_LOG_${TODAY}
 SKIPPEDLOG=${LOGDIR}/SKIPPED_LOG_${TODAY}
 TIMELOG=${LOGDIR}/TIME_LOG_${TODAY}
+TIMEKEEPERLOG=${LOGDIR}/TIMEKEEPER_LOG_${TODAY}
 REPORTED=${LOGDIR}/REPORTED_${TODAY}
 SNAPSHOTLOG=${LOGDIR}/SNAPSHOT_LOG_${TODAY}
 RELEASE_ASAP=${LOGDIR}/../release_asap		# make a special release asap
@@ -167,6 +168,14 @@ fi
     rm $TIMELOG
  fi
  echo ""
+ echo ""
+ echo "============================="
+ echo "   Timekeeper log"
+ echo "============================="
+ if [ -f $TIMEKEEPERLOG ]; then
+    cat $TIMEKEEPERLOG | tee -a $REPORTED
+    rm $TIMEKEEPERLOG
+ fi
  echo "============================="
  echo "   Tests Details"
  echo "============================="
