@@ -1,17 +1,23 @@
+CVS: Enter Log.  Lines beginning with `CVS:' are removed automatically.
 Purpose:
-    [is this a bug fix? feature? ...]
+CVS: [is this a bug fix? feature? ...]
+
 Description:
-    [describe the bug, or describe the new feature, etc]
+CVS: [describe the bug, or describe the new feature, etc]
+
 Solution:
-    [details about the changes, algorithm, etc...]
-    [Please as detail as you can since your own explanation is
-    better than others guessing it from the code.]
+CVS: [details about the changes, algorithm, etc...]
+CVS: [Please as detail as you can since your own explanation is
+CVS: better than others guessing it from the code.]
+
 Platforms tested:
-    [machines you have tested the changed version.  This is absolute
-    important.  Test it out on at least two or three different platforms
-    such as Big-endian-32bit (SUN/IRIX), little-endian-32(LINUX) and
-    64-bit (IRIX64/UNICOS/DEC-ALPHA) would be good.]
-CVS: ----------------------------------------------------------------------
-CVS: REMEMBER to update file RELEASE for bug fixes, new features, etc.
-CVS: Update MANIFEST if you have added or removed some files.
-CVS: ----------------------------------------------------------------------
+CVS: [machines you have tested the changed version.  This is absolute
+CVS: important.  Test it out on at least two or three different platforms
+CVS: such as Big-endian-32bit (SUN/IRIX), little-endian-32(LINUX) and
+CVS: 64-bit (IRIX64/UNICOS/DEC-ALPHA) would be good.]
+
+Misc. update:
+CVS:  Update MANIFEST if you add or remove any file.
+CVS:  (Run bin/chkmanifest to verify.)
+CVS:  Update release_docs/RELEASE for bug fixes, new features, etc.
+CVS:  Update applicable document files too.
