@@ -17,16 +17,17 @@
 # If the name ALL appears as a regular expression it is always used
 # in addition to the first matching regex or DEFAULT.
 #
-# HDF stuff...
-# Will add these when commit_prep.pl works
-#^hdf/v3.3/src/RCS    $CVSROOT/CVSROOT/log_accum.pl
-#^hdf/v3.3/util/RCS    $CVSROOT/CVSROOT/log_accum.pl
-#^hdf/v3.3/test/RCS    $CVSROOT/CVSROOT/log_accum.pl
+# HDF and related stuff...
 #
-#ALL     $CVSROOT/CVSROOT/mfpipe.pl %s georgev@ncsa.uiuc.edu
 # Default log to common file
+#
+# File cache
 ^fmpool			$CVSROOT/CVSROOT/log.pl %s -f $CVSROOT/CVSROOT/commitlog
+
+# SDB (CGI)
 ^sdb			$CVSROOT/CVSROOT/log.pl %s -f $CVSROOT/CVSROOT/commitlog
+
+# FTP hierachy
 ^ftp			$CVSROOT/CVSROOT/log.pl %s -f $CVSROOT/CVSROOT/commitlog -m bljones@ncsa.uiuc.edu
 
 # for hdf-fits      
@@ -37,5 +38,6 @@
 ^jhv-docs               $CVSROOT/CVSROOT/log.pl %s -f $CVSROOT/CVSROOT/commitlog-m xlu@ncsa.uiuc.edu
 ^jhv-native               $CVSROOT/CVSROOT/log.pl %s -f $CVSROOT/CVSROOT/commitlog  -m xlu@ncsa.uiuc.edu
 
-DEFAULT                 $CVSROOT/CVSROOT/log.pl %s -f $CVSROOT/CVSROOT/commitlog-m hdf-cvs@sdgmail.ncsa.uiuc.edu
+# default which is the HDF library
+DEFAULT                 $CVSROOT/CVSROOT/log.pl %s -f $CVSROOT/CVSROOT/commitlog  -m hdf-cvs@sdgmail.ncsa.uiuc.edu
 
