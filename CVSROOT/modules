@@ -121,3 +121,6 @@ h5_hstest	h5_standalone_tests/h5_hstest
 
 # standalone szip test suite
 h5_szip_tests	h5_standalone_tests/h5_szip_tests
+
+# standalone szip test suite (hdf4)
+h4_szip_tests	h4_standalone_tests/h4_szip_tests
