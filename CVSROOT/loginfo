@@ -54,7 +54,7 @@
 ^acheng		$CVSROOT/CVSROOT/log.pl %s -f $CVSROOT/CVSROOT/commitlog.acheng -m acheng@ncsa.uiuc.edu
 
 # for Vailin personal tree
-^vailin         $CVSROOT/CVSROOT/log.pl %s -f $CVSROOT/CVSROOT/commitlog.vailin -m vailin@ncsa.uiuc.edu
+^vchoi         $CVSROOT/CVSROOT/log.pl %s -f $CVSROOT/CVSROOT/commitlog.vchoi -m vailin@ncsa.uiuc.edu
 
 # for Pedro personal tree
 ^pvn		$CVSROOT/CVSROOT/log.pl %s -f $CVSROOT/CVSROOT/commitlog.pvn -m pvn@ncsa.uiuc.edu
