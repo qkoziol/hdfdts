@@ -43,8 +43,9 @@
 ^dist                 $CVSROOT/CVSROOT/log.pl %s -f $CVSROOT/CVSROOT/commitlog  -m hdf-cvs@ncsa.uiuc.edu
 ^dev                 $CVSROOT/CVSROOT/log.pl %s -f $CVSROOT/CVSROOT/commitlog  -m hdf-cvs@ncsa.uiuc.edu
 
-# HDF 5.0
+# HDF 5.0 library related modules
 ^hdf5                 $CVSROOT/CVSROOT/log.pl %s -f $CVSROOT/CVSROOT/commitlog  -m hdf5cvs@ncsa.uiuc.edu
+^hdf5_hl              $CVSROOT/CVSROOT/log.pl %s -f $CVSROOT/CVSROOT/commitlog  -m hdf5cvs@ncsa.uiuc.edu
 
 # java-hdf stuff
 ^java-hdf               $CVSROOT/CVSROOT/log.pl %s -f $CVSROOT/CVSROOT/commitlog -m xlu@ncsa.uiuc.edu
