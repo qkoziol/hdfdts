@@ -48,6 +48,9 @@ CMD="$HOME/bin-sys/runsnap ${H5VER}"
 # set up auto-cleanup
 trap "rm -f $LOGDIRLOCK" 0
 
+# setup umask for owner and group read-write sharing.
+umask 007
+
 # Clean up LOGDIR by moving all files that are not "of today"
 # to OLD.
 (   
