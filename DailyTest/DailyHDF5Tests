@@ -85,9 +85,10 @@ if [ -f $LOGFILE ]; then
 fi
 
 # set up the lock file
+# if one already exists, just show it and continues
 if [ -f $LOGDIRLOCK ]; then
-    echo "LOGDIRLOCK($LOGDIRLOCK) exists. Abort"
-    exit 1
+    echo "LOGDIRLOCK($LOGDIRLOCK) exists. Content is:"
+    cat $LOGDIRLOCK
 fi
 date > $LOGDIRLOCK
 echo PID@HOSTNAME=$$@$HOSTNAME >> $LOGDIRLOCK
