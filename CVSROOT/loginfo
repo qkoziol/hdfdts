@@ -17,4 +17,13 @@
 # If the name ALL appears as a regular expression it is always used
 # in addition to the first matching regex or DEFAULT.
 #
+# HDF stuff...
+# Will add these when commit_prep.pl works
+#^hdf/v3.3/src/RCS    $CVSROOT/CVSROOT/log_accum.pl
+#^hdf/v3.3/util/RCS    $CVSROOT/CVSROOT/log_accum.pl
+#^hdf/v3.3/test/RCS    $CVSROOT/CVSROOT/log_accum.pl
+#
+#ALL     $CVSROOT/CVSROOT/mfpipe.pl %s georgev@ncsa.uiuc.edu
+# Default log to common file
 DEFAULT			$CVSROOT/CVSROOT/log.pl %s $CVSROOT/CVSROOT/commitlog
+
