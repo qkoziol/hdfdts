@@ -132,11 +132,11 @@ fi
  echo "   Tests Summary"
  echo "============================="
  if [ -f $FAILEDLOG ]; then
-    cat $FAILEDLOG | tee -a $REPORTED
+    sort $FAILEDLOG | tee -a $REPORTED
     rm $FAILEDLOG
  fi
  if [ -f $PASSEDLOG ]; then
-    cat $PASSEDLOG | tee -a $REPORTED
+    sort $PASSEDLOG | tee -a $REPORTED
     rm $PASSEDLOG
  fi
  echo ""
