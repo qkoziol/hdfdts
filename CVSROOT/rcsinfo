@@ -16,4 +16,4 @@
 # in addition to the first matching regex or DEFAULT.
 #
 # Currently the rcstemplate file is blank.
-DEFAULT			/hdf/src/master/CVSROOT/rcstemplate
+#ROBB# DEFAULT			/hdf/src/master/CVSROOT/rcstemplate
