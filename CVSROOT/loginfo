@@ -22,34 +22,33 @@
 # Default log to common file
 #
 # File cache
-#ROBB# ^fmpool			$CVSROOT/CVSROOT/log.pl %s -f $CVSROOT/CVSROOT/commitlog
-#ROBB# 
-#ROBB# # SDB (CGI)
-#ROBB# ^sdb			$CVSROOT/CVSROOT/log.pl %s -f $CVSROOT/CVSROOT/commitlog
-#ROBB# 
-#ROBB# # FTP hierachy
-#ROBB# ^ftp			$CVSROOT/CVSROOT/log.pl %s -f $CVSROOT/CVSROOT/commitlog -m bljones@ncsa.uiuc.edu
-#ROBB# 
-#ROBB# # for hdf-fits      
-#ROBB# ^hdf-fits		$CVSROOT/CVSROOT/log.pl %s -f $CVSROOT/CVSROOT/commitlog -m xlu@ncsa.uiuc.edu
-#ROBB# 
-#ROBB# # for Java-based HDF viewer
-#ROBB# ^jhv               $CVSROOT/CVSROOT/log.pl %s -f $CVSROOT/CVSROOT/commitlog -m xlu@ncsa.uiuc.edu
-#ROBB# ^jhv-docs               $CVSROOT/CVSROOT/log.pl %s -f $CVSROOT/CVSROOT/commitlog-m xlu@ncsa.uiuc.edu
-#ROBB# ^jhv-native               $CVSROOT/CVSROOT/log.pl %s -f $CVSROOT/CVSROOT/commitlog  -m xlu@ncsa.uiuc.edu
-#ROBB# 
-#ROBB# # HDF 4.0 library related modules
-#ROBB# ^project                 $CVSROOT/CVSROOT/log.pl %s -f $CVSROOT/CVSROOT/commitlog  -m hdf-cvs@sdgmail.ncsa.uiuc.edu
-#ROBB# ^dist                 $CVSROOT/CVSROOT/log.pl %s -f $CVSROOT/CVSROOT/commitlog  -m hdf-cvs@sdgmail.ncsa.uiuc.edu
-#ROBB# ^dev                 $CVSROOT/CVSROOT/log.pl %s -f $CVSROOT/CVSROOT/commitlog  -m hdf-cvs@sdgmail.ncsa.uiuc.edu
-#ROBB# 
-#ROBB# # HDF 5.0
-#ROBB# ^hdf5                 $CVSROOT/CVSROOT/log.pl %s -f $CVSROOT/CVSROOT/commitlog  -m hdf5cvs@ncsa.uiuc.edu
-#ROBB# 
-#ROBB# # java-hdf stuff
-#ROBB# ^java-hdf               $CVSROOT/CVSROOT/log.pl %s -f $CVSROOT/CVSROOT/commitlog -m xlu@ncsa.uiuc.edu
-#ROBB# 
-#ROBB# 
-#ROBB# # default goes to the CVS mailing list
-#ROBB# DEFAULT                 $CVSROOT/CVSROOT/log.pl %s -f $CVSROOT/CVSROOT/commitlog  -m hdf-cvs@sdgmail.ncsa.uiuc.edu
-#ROBB# 
+^fmpool			$CVSROOT/CVSROOT/log.pl %s -f $CVSROOT/CVSROOT/commitlog
+
+# SDB (CGI)
+^sdb			$CVSROOT/CVSROOT/log.pl %s -f $CVSROOT/CVSROOT/commitlog
+
+# FTP hierachy
+^ftp			$CVSROOT/CVSROOT/log.pl %s -f $CVSROOT/CVSROOT/commitlog -m bljones@ncsa.uiuc.edu
+
+# for hdf-fits      
+^hdf-fits		$CVSROOT/CVSROOT/log.pl %s -f $CVSROOT/CVSROOT/commitlog -m xlu@ncsa.uiuc.edu
+
+# for Java-based HDF viewer
+^jhv               $CVSROOT/CVSROOT/log.pl %s -f $CVSROOT/CVSROOT/commitlog -m xlu@ncsa.uiuc.edu
+^jhv-docs               $CVSROOT/CVSROOT/log.pl %s -f $CVSROOT/CVSROOT/commitlog-m xlu@ncsa.uiuc.edu
+^jhv-native               $CVSROOT/CVSROOT/log.pl %s -f $CVSROOT/CVSROOT/commitlog  -m xlu@ncsa.uiuc.edu
+
+# HDF 4.0 library related modules
+^project                 $CVSROOT/CVSROOT/log.pl %s -f $CVSROOT/CVSROOT/commitlog  -m hdf-cvs@sdgmail.ncsa.uiuc.edu
+^dist                 $CVSROOT/CVSROOT/log.pl %s -f $CVSROOT/CVSROOT/commitlog  -m hdf-cvs@sdgmail.ncsa.uiuc.edu
+^dev                 $CVSROOT/CVSROOT/log.pl %s -f $CVSROOT/CVSROOT/commitlog  -m hdf-cvs@sdgmail.ncsa.uiuc.edu
+
+# HDF 5.0
+^hdf5                 $CVSROOT/CVSROOT/log.pl %s -f $CVSROOT/CVSROOT/commitlog  -m hdf5cvs@ncsa.uiuc.edu
+
+# java-hdf stuff
+^java-hdf               $CVSROOT/CVSROOT/log.pl %s -f $CVSROOT/CVSROOT/commitlog -m xlu@ncsa.uiuc.edu
+
+
+# default goes to the CVS mailing list
+DEFAULT                 $CVSROOT/CVSROOT/log.pl %s -f $CVSROOT/CVSROOT/commitlog  -m hdf-cvs@sdgmail.ncsa.uiuc.edu
