@@ -23,7 +23,7 @@
 #^hdf/v3.3/util/RCS    $CVSROOT/CVSROOT/log_accum.pl
 #^hdf/v3.3/test/RCS    $CVSROOT/CVSROOT/log_accum.pl
 #
-#ALL     $CVSROOT/CVSROOT/mfpipe.pl %s georgev@ncsa.uiuc.edu
+ALL     $CVSROOT/CVSROOT/mfpipe.pl %s georgev@ncsa.uiuc.edu
 # Default log to common file
 DEFAULT			$CVSROOT/CVSROOT/log.pl %s $CVSROOT/CVSROOT/commitlog
 
