@@ -157,8 +157,8 @@ if [ $HOSTNAME != gondolin ]; then
 if [ $errcode -eq 0 -a \
     ! -f $RELEASE_NOT -a \
     \( `date +%w` -eq 6 -o -f $RELEASE_ASAP \) ]; then
-    # do a snapshot.  Default to version 1.3
-    H4DIR=$HOME/HDF4/v${H4VERSTR:-_1_5}/hdf4
+    # do a snapshot.
+    H4DIR=$HOME/HDF4/current/hdf4
     if [ -f $RELEASE_ASAP ]; then
 	RELEASE_MESG="Special snapshot release launched for HDF4${H4VERSTR}."
     else
