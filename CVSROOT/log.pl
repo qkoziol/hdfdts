@@ -3,6 +3,14 @@ perl -x -S $0 "$@"
 exit
 
 #! perl
+# Modified by matzke@llnl.gov (Robb Matzke)			11/1/00
+#       Understands the command-line switch `--rst' which
+#       causes mail to not be sent even if `-m' is specified.
+#       RST is Robb's Remote Source Tree software, which
+#       performs one `cvs commit' per changed file and then
+#       sends a single summary e-mail.  Rst sends this switch
+#       like `cvs -s PARENT=--rst commit ...'.
+#
 # Modified by woods@web.apc.org to add support for mailing	3/29/93
 #	use '-m user' for each user to receive cvs log reports
 #	and use '-f logfile' for the logfile to append to
@@ -59,6 +67,8 @@ while (@ARGV) {
 	} elsif ($arg eq '-f') {
 		($logfile) && die "Too many '-f' args";
 		$logfile = shift @ARGV;
+	} elsif ($arg eq '--rst') {
+	        $parent = 'rst';
 	} else {
 		($donefiles) && die "Too many arguments!\n";
 		$donefiles = 1;
@@ -96,7 +106,7 @@ $login = getlogin || (getpwuid($<))[0] || "nobody";
 # open log file for appending
 #
 open(OUT, ">>" . $logfile) || die "Could not open(" . $logfile . "): $!\n";
-if ($users) {
+if ($users && $parent ne 'rst') {
 	$mailcmd = "$mailcmd $users";
 	open(MAIL, $mailcmd) || die "Could not Exec($mailcmd): $!\n";
 }
