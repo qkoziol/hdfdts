@@ -28,5 +28,5 @@
 ^fmpool			$CVSROOT/CVSROOT/log.pl %s -f $CVSROOT/CVSROOT/commitlog
 ^sdb			$CVSROOT/CVSROOT/log.pl %s -f $CVSROOT/CVSROOT/commitlog
 ^hdf-fits		$CVSROOT/CVSROOT/log.pl %s -f $CVSROOT/CVSROOT/commitlog -m xlu@ncsa.uiuc.edu
-DEFAULT			$CVSROOT/CVSROOT/log.pl %s -f $CVSROOT/CVSROOT/commitlog -m hdflib@ncsa.uiuc.edu
+DEFAULT			$CVSROOT/CVSROOT/log.pl %s -f $CVSROOT/CVSROOT/commitlog -m hdf-cvs@ncsa.uiuc.edu
 
