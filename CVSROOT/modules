@@ -40,10 +40,13 @@ editinfo	-i mkmodules CVSROOT editinfo
 # HDF rcs versions
 #top level
 hdf       hdf
-#
+
+# library source
 src       hdf/src
-#utils
+
+# utils
 util      hdf/util
+
 #tests
 test      hdf/test
 
@@ -68,45 +71,34 @@ sdb      sdb
 project  project
 
 # HDF-FITS project source code
-
 # for hdf2fits
-
 hdf2fits        hdf-fits/HDF2FITS/src
 
 # for fits2hdf
- 
 fits2hdf        hdf-fits/FITS2HDF/src
 
 #for fits2sds
-
 fits2sds        hdf-fits/FITS2SDS/src
 
 #for sds2fits
-
 sds2fits        hdf-fits/SDS2FITS/src
 
 #for fits2ris
-
 fits2ris        hdf-fits/FITS2RIS/src
 
 #for ris2fits
-
 ris2fits        hdf-fits/RIS2FITS/src
 
 #for documentation
-
 fits-doc             hdf-fits/doc
 
 #for testfiles
-
 fits-testfiles       hdf-fits/testfiles
 
 # for ftp
-
 fits-ftp             hdf-fits/ftp
 
 #for tools
-
 fits-util            hdf-fits/util
 
 # hdf-java-source-control
