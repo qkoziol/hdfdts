@@ -46,6 +46,7 @@ LOGDIR=$HOME/snapshots-hdf5${H5VERSTR}/log
 LOGDIRLOCK=${LOGDIR}/.lock
 LOGFILE=${LOGDIR}/${PROGRAMNAME}-${HOSTNAME}_${TODAY}
 FAILEDLOG=${LOGDIR}/FAILED_LOG_${TODAY}
+FAILEDLOG_REPORTED=${LOGDIR}/FAILED_LOG_REPORTED_${TODAY}
 SNAPSHOTLOG=${LOGDIR}/SNAPSHOT_LOG_${TODAY}
 RELEASE_ASAP=${LOGDIR}/../release_asap		# make a special release asap
 RELEASE_NOT=${LOGDIR}/../release_not		# Do not release
@@ -115,6 +116,10 @@ else
      echo "============================="
      cat $LOGFILE) |
     $MAIL -s "${TEST_TITLE}_FAILED!!!" $TOWHOM
+    # Save FAILEDLOG in FAILEDLOG_REPORTED.
+    # Remove FAILEDLOG for possible new daily tests.
+    cat $FAILEDLOG >> $FAILEDLOG_REPORTED
+    rm $FAILEDLOG
 fi
 
 if [ $HOSTNAME != gondolin ]; then
