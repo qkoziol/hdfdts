@@ -6,15 +6,10 @@
 
 # general setup
 PROGRAMNAME=`basename $0`
-DEBUGMODE=""
-test -n "$DEBUGMODE" && echo "******** DEBUGMODE is $DEBUGMODE ************"
-
-# Email any messages to whom
-TOWHOM=${DEBUGMODE:+acheng}
-TOWHOM=${TOWHOM:-hdf5cvs@ncsa.uiuc.edu}
+DEBUGMODE=""		# change to -debug for debug mode
 
 # Setup
-HOSTNAME=`hostname | sed -e s/.ncsa.uiuc.edu//`
+HOSTNAME=`hostname | cut -f1 -d.`       # no domain part
 TODAY=`date +%y%m%d`
 H5VER=			# default to current CVS version
 H5VERSTR=		# default to current CVS version
@@ -27,6 +22,9 @@ while [ $# -gt 0 ]; do
 	    H5VER="$1"
 	    H5VERSTR=_`echo $H5VER | sed -e s/-r// -e s/\\\./_/g`
 	    ;;
+	-debug*)
+	    DEBUGMODE="$1"
+	    ;;
 	*)
 	    echo "Unknown option ($1)"
 	    exit 1
@@ -35,20 +33,38 @@ while [ $# -gt 0 ]; do
     shift
 done
 
+# If in debug mode, email output to myself; else to the "group".
+if [ -n "$DEBUGMODE" ]; then
+    echo "******** DEBUGMODE is $DEBUGMODE ************"
+    TOWHOM=acheng
+else
+    TOWHOM=hdf5cvs@ncsa.uiuc.edu
+fi
+
 # Setup test directories
 LOGDIR=$HOME/snapshots-hdf5${H5VERSTR}/log
 LOGDIRLOCK=${LOGDIR}/.lock
-LOGFILE=${LOGDIR}/${PROGRAMNAME}_${TODAY}
+LOGFILE=${LOGDIR}/${PROGRAMNAME}-${HOSTNAME}_${TODAY}
 FAILEDLOG=${LOGDIR}/FAILED_LOG_${TODAY}
 SNAPSHOTLOG=${LOGDIR}/SNAPSHOT_LOG_${TODAY}
 RELEASE_ASAP=${LOGDIR}/../release_asap		# make a special release asap
 RELEASE_NOT=${LOGDIR}/../release_not		# Do not release
 RELEASED=${LOGDIR}/RELEASED_${TODAY}
-CMD="bin/runtest ${H5VER}"
+CMD="bin/runtest $DEBUGMODE ${H5VER}"
+
+# Setup Mailing command and Report title
+if [ $HOSTNAME = gondolin ]; then
+    MAIL=Mail
+    TEST_TITLE="$HOSTNAME HDF5${H5VERSTR}_Daily_Tests"
+else
+    MAIL=mail
+    TEST_TITLE="HDF5${H5VERSTR}_Daily_Tests"
+fi
 
 # set up auto-cleanup
 trap "rm -f $LOGDIRLOCK" 0
 
+if [ $HOSTNAME != gondolin ]; then
 # Clean up LOGDIR by moving all files that are not "of today"
 # to OLD.
 (   
@@ -56,6 +72,7 @@ trap "rm -f $LOGDIRLOCK" 0
     oldfiles=`find * -type d -prune -o -type f ! -name '*'$TODAY -print`
     test -n "$oldfiles" && mv $oldfiles OLD/.
 )
+fi
 
 if [ -f $LOGFILE ]; then
     if [ -n "$DEBUGMODE" ]; then
@@ -69,7 +86,11 @@ if [ -n "$DEBUGMODE" ]; then
     echo "launching runsnap ..."
 fi
 
+if [ $HOSTNAME != gondolin ]; then
 (cd $HOME/HDF5/current/hdf5; $CMD -all) > $LOGFILE 2>&1
+else
+(cd $HOME/HDF5/current/hdf5; $CMD ) > $LOGFILE 2>&1
+fi
 
 # Check result
 if [ -f $FAILEDLOG ]; then
@@ -84,7 +105,7 @@ if [ $errcode -eq 0 ]; then
      echo "   All Tests Results"
      echo "============================="
      cat $LOGFILE) |
-    mail -s "HDF5${H5VERSTR}_Daily_Tests" $TOWHOM
+    $MAIL -s "$TEST_TITLE" $TOWHOM
 else
     # some hosts have failed the tests
     ( cat $FAILEDLOG
@@ -93,9 +114,10 @@ else
      echo "   All Tests Results"
      echo "============================="
      cat $LOGFILE) |
-    mail -s "HDF5${H5VERSTR}_Daily_Tests_FAILED!!!" $TOWHOM
+    $MAIL -s "${TEST_TITLE}_FAILED!!!" $TOWHOM
 fi
 
+if [ $HOSTNAME != gondolin ]; then
 # do a snapshot release if
 #   test-succeeded && 
 #   release-not-is-not-present &&
@@ -133,6 +155,7 @@ if [ $errcode -eq 0 -a \
      echo "    $SNAPSHOTLOG"
     ) |
     mail -s "HDF5${H5VERSTR}_snapshot" $TOWHOM
+fi
 fi
 
 
