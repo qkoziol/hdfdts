@@ -44,7 +44,7 @@ fi
 
 # Setup test directories
 LOGDIR=$HOME/snapshots-hdf5${H5VERSTR}/log
-LOGDIRLOCK=${LOGDIR}/.lock
+LOGDIRLOCK=${LOGDIR}/.lock-${HOSTNAME}
 LOGFILE=${LOGDIR}/${PROGRAMNAME}-${HOSTNAME}_${TODAY}
 FAILEDLOG=${LOGDIR}/FAILED_LOG_${TODAY}
 FAILEDLOG_REPORTED=${LOGDIR}/FAILED_LOG_REPORTED_${TODAY}
@@ -65,6 +65,7 @@ fi
 
 # set up auto-cleanup
 trap "rm -f $LOGDIRLOCK" 0
+trap "rm -f $LOGDIRLOCK" 1 2 3 4 5 6 7 8 9 10 12 13 14 15
 
 if [ $HOSTNAME != gondolin ]; then
 # Clean up LOGDIR by moving all files that are not "of today"
@@ -82,6 +83,14 @@ if [ -f $LOGFILE ]; then
     fi
     exit 1
 fi
+
+# set up the lock file
+if [ -f $LOGDIRLOCK ]; then
+    echo "LOGDIRLOCK($LOGDIRLOCK) exists. Abort"
+    exit 1
+fi
+date > $LOGDIRLOCK
+echo PID@HOSTNAME=$$@$HOSTNAME >> $LOGDIRLOCK
 
 #
 if [ -n "$DEBUGMODE" ]; then
@@ -134,6 +143,9 @@ else
     rm $FAILEDLOG
 fi
 
+# remove lock
+rm $LOGDIRLOCK
+
 if [ $HOSTNAME != gondolin ]; then
 # do a snapshot release if
 #   test-succeeded && 
@@ -149,6 +161,17 @@ if [ $errcode -eq 0 -a \
     else
 	RELEASE_MESG="Weekly snapshot release launched for HDF5${H5VERSTR}."
     fi
+
+    # Before doing the release, check if there are some daily tests in progress.
+    # If so, wait for them to finish (up to 30 minutes).  Then proceed.
+    wait_max=30
+    lockfiles=`ls $LOGDIR/.lock-* 2>/dev/null`
+    while [ -n "$lockfiles" -a $wait_max -gt 0 ] ; do
+	echo $lockfiles exist.  Wait a minute.
+	sleep 60
+	wait_max=`expr $wait_max - 1`
+	lockfiles=`ls $LOGDIR/.lock-* 2>/dev/null`
+    done
     (
 	cd $H5DIR
 	bin/snapshot
