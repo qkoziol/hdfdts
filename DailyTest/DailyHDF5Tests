@@ -56,7 +56,9 @@ then
      cat $LOGFILE) |
     mail -s "HDF5_Daily_Tests_FAILED!!!" $TOWHOM
 else
-    (echo "============================="
+    (echo "No failures reported"
+     echo ""
+     echo "============================="
      echo "   All Tests Results"
      echo "============================="
      cat $LOGFILE) |
