@@ -22,38 +22,38 @@
 # Default log to common file
 #
 # File cache
-^fmpool			$CVSROOT/CVSROOT/log.pl %s -f $CVSROOT/CVSROOT/commitlog
+^fmpool			$CVSROOT/CVSROOT/log.pl %s ${=PARENT} -f $CVSROOT/CVSROOT/commitlog
 
 # SDB (CGI)
-^sdb			$CVSROOT/CVSROOT/log.pl %s -f $CVSROOT/CVSROOT/commitlog
+^sdb			$CVSROOT/CVSROOT/log.pl %s ${=PARENT} -f $CVSROOT/CVSROOT/commitlog
 
 # FTP hierachy
-^ftp			$CVSROOT/CVSROOT/log.pl %s -f $CVSROOT/CVSROOT/commitlog -m bljones@ncsa.uiuc.edu
+^ftp			$CVSROOT/CVSROOT/log.pl %s ${=PARENT} -f $CVSROOT/CVSROOT/commitlog -m bljones@ncsa.uiuc.edu
 
 # for hdf-fits      
-^hdf-fits		$CVSROOT/CVSROOT/log.pl %s -f $CVSROOT/CVSROOT/commitlog -m xlu@ncsa.uiuc.edu
+^hdf-fits		$CVSROOT/CVSROOT/log.pl %s ${=PARENT} -f $CVSROOT/CVSROOT/commitlog -m xlu@ncsa.uiuc.edu
 
 # for Java-based HDF viewer
-^jhv               $CVSROOT/CVSROOT/log.pl %s -f $CVSROOT/CVSROOT/commitlog -m xlu@ncsa.uiuc.edu
-^jhv-docs               $CVSROOT/CVSROOT/log.pl %s -f $CVSROOT/CVSROOT/commitlog-m xlu@ncsa.uiuc.edu
-^jhv-native               $CVSROOT/CVSROOT/log.pl %s -f $CVSROOT/CVSROOT/commitlog  -m xlu@ncsa.uiuc.edu
+^jhv                    $CVSROOT/CVSROOT/log.pl %s ${=PARENT} -f $CVSROOT/CVSROOT/commitlog -m xlu@ncsa.uiuc.edu
+^jhv-docs               $CVSROOT/CVSROOT/log.pl %s ${=PARENT} -f $CVSROOT/CVSROOT/commitlog-m xlu@ncsa.uiuc.edu
+^jhv-native             $CVSROOT/CVSROOT/log.pl %s ${=PARENT} -f $CVSROOT/CVSROOT/commitlog  -m xlu@ncsa.uiuc.edu
 
 # HDF 4.0 library related modules
-^project                 $CVSROOT/CVSROOT/log.pl %s -f $CVSROOT/CVSROOT/commitlog  -m hdf-cvs@ncsa.uiuc.edu
-^dist                 $CVSROOT/CVSROOT/log.pl %s -f $CVSROOT/CVSROOT/commitlog  -m hdf-cvs@ncsa.uiuc.edu
-^dev                 $CVSROOT/CVSROOT/log.pl %s -f $CVSROOT/CVSROOT/commitlog  -m hdf-cvs@ncsa.uiuc.edu
+^project                $CVSROOT/CVSROOT/log.pl %s ${=PARENT} -f $CVSROOT/CVSROOT/commitlog  -m hdf-cvs@ncsa.uiuc.edu
+^dist                   $CVSROOT/CVSROOT/log.pl %s ${=PARENT} -f $CVSROOT/CVSROOT/commitlog  -m hdf-cvs@ncsa.uiuc.edu
+^dev                    $CVSROOT/CVSROOT/log.pl %s ${=PARENT} -f $CVSROOT/CVSROOT/commitlog  -m hdf-cvs@ncsa.uiuc.edu
 
 # HDF 5.0
-^hdf5                 $CVSROOT/CVSROOT/log.pl %s -f $CVSROOT/CVSROOT/commitlog  -m hdf5cvs@ncsa.uiuc.edu
+^hdf5                   $CVSROOT/CVSROOT/log.pl %s ${=PARENT} -f $CVSROOT/CVSROOT/commitlog  -m hdf5cvs@ncsa.uiuc.edu
 
 # java-hdf stuff
-^java-hdf               $CVSROOT/CVSROOT/log.pl %s -f $CVSROOT/CVSROOT/commitlog -m xlu@ncsa.uiuc.edu
+^java-hdf               $CVSROOT/CVSROOT/log.pl %s ${=PARENT} -f $CVSROOT/CVSROOT/commitlog -m xlu@ncsa.uiuc.edu
 
 # for Albert personal tree
-^acheng		$CVSROOT/CVSROOT/log.pl %s -f $CVSROOT/CVSROOT/commitlog.acheng -m acheng@ncsa.uiuc.edu
+^acheng		        $CVSROOT/CVSROOT/log.pl %s ${=PARENT} -f $CVSROOT/CVSROOT/commitlog.acheng -m acheng@ncsa.uiuc.edu
 
 # Travel form
-^travel		$CVSROOT/CVSROOT/log.pl %s -f $CVSROOT/CVSROOT/commitlog.travel -m mcgrath@ncsa.uiuc.edu
+^travel		        $CVSROOT/CVSROOT/log.pl %s ${=PARENT} -f $CVSROOT/CVSROOT/commitlog.travel -m mcgrath@ncsa.uiuc.edu
 
 # default goes to the CVS mailing list
-DEFAULT                 $CVSROOT/CVSROOT/log.pl %s -f $CVSROOT/CVSROOT/commitlog  -m hdf-cvs@ncsa.uiuc.edu
+DEFAULT                 $CVSROOT/CVSROOT/log.pl %s ${=PARENT} -f $CVSROOT/CVSROOT/commitlog  -m hdf-cvs@ncsa.uiuc.edu
