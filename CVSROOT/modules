@@ -108,3 +108,5 @@ jhv			jhv/src
 jhv-docs		jhv/docs
 jhv-hdf-native		jhv/src/native
 
+# Jave wrappers and JHV 
+javahdf                 dist/javahdf
