@@ -33,6 +33,7 @@
 ^hdf-fits		$CVSROOT/CVSROOT/log.pl %s -f $CVSROOT/CVSROOT/commitlog -m xlu@ncsa.uiuc.edu
 
 # for Java-based HDF viewer
+^jhv               $CVSROOT/CVSROOT/log.pl %s -f $CVSROOT/CVSROOT/commitlog -m xlu@ncsa.uiuc.edu
 ^jhv-docs               $CVSROOT/CVSROOT/log.pl %s -f $CVSROOT/CVSROOT/commitlog-m xlu@ncsa.uiuc.edu
 ^jhv-native               $CVSROOT/CVSROOT/log.pl %s -f $CVSROOT/CVSROOT/commitlog  -m xlu@ncsa.uiuc.edu
 
