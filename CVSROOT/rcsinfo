@@ -16,4 +16,5 @@
 # in addition to the first matching regex or DEFAULT.
 #
 # Currently the rcstemplate file is blank.
+^hdf5			/afs/ncsa/projects/hdf/cvs/CVSROOT/hdf5-template
 DEFAULT			/afs/ncsa/projects/hdf/cvs/CVSROOT/rcstemplate
