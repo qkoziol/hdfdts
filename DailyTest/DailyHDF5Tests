@@ -14,6 +14,7 @@ HOSTNAME=`hostname | cut -f1 -d.`       # no domain part
 TODAY=`date +%y%m%d`
 H5VER=			# default to current CVS version
 H5VERSTR=		# default to current CVS version
+TITLE="HDF5 Tests on $TODAY"
 errcode=0		# error code so far
 
 # Parse command options
@@ -137,7 +138,9 @@ fi
     
 # report result
 # save FAILED or SUCCEESS in REPORTED and remove them
-(echo "============================="
+(
+ echo "*** $TITLE ***"
+ echo "============================="
  echo "   Tests Summary"
  echo "============================="
  if [ -f $FAILEDLOG ]; then
@@ -184,7 +187,7 @@ if [ $HOSTNAME != gondolin ]; then
 if [ $errcode -eq 0 -a \
     ! -f $RELEASE_NOT -a \
     \( `date +%a` = Sun -o -f $RELEASE_ASAP \) ]; then
-    # do a snapshot.  Default to version 1.3
+    # do a snapshot.
     H5DIR=$HOME/HDF5/v${H5VERSTR:-dev}/hdf5
     if [ -f $RELEASE_ASAP ]; then
 	RELEASE_MESG="Special snapshot release launched for HDF5${H5VERSTR}."
