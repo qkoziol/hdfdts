@@ -54,4 +54,4 @@ mfhdf     mfhdf
 ftp      ftp
 
 #DIST both HDF and netcdf
-dist     dist hdf mfhdf
+dist     dist 
