@@ -19,4 +19,4 @@
 #
 #  and value is a single-quote delimited value.
 #
-# For example:
+*.h5 -k 'b'
