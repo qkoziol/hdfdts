@@ -20,6 +20,14 @@ LOGFILE=${LOGDIR}/${PROGRAMNAME}_${TODAY}
 # set up auto-cleanup
 trap "rm -f $LOGDIRLOCK" 0
 
+# Clean up LOGDIR by moving all files that are not "of today"
+# to OLD.
+(   
+    cd $LOGDIR
+    oldfiles=`find * -type d -prune -o -type f ! -name '*'$TODAY -print`
+    test -n "$oldfiles" && mv $oldfiles OLD/.
+)
+
 if [ -f $LOGFILE ]; then
     if [ -n "$DEBUGMODE" ]; then
 	echo "$LOGFILE exists.  No more daily tests today"
