@@ -49,6 +49,9 @@
 # java-hdf stuff
 ^java-hdf               $CVSROOT/CVSROOT/log.pl %s -f $CVSROOT/CVSROOT/commitlog -m xlu@ncsa.uiuc.edu
 
+# for Albert personal tree
+^acheng		$CVSROOT/CVSROOT/log.pl %s -f $CVSROOT/CVSROOT/commitlog.acheng -m acheng@ncsa.uiuc.edu
+
 
 # default goes to the CVS mailing list
 DEFAULT                 $CVSROOT/CVSROOT/log.pl %s -f $CVSROOT/CVSROOT/commitlog  -m hdf-cvs@sdgmail.ncsa.uiuc.edu
