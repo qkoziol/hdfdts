@@ -115,3 +115,6 @@ jhv-hdf-native		jhv/src/native
 
 # Jave wrappers and JHV 
 java-hdf                 dist/java-hdf
+
+# standalone hyperslab test suite
+h5_hstest	h5_standalone_tests/h5_hstest
