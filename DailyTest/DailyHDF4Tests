@@ -77,7 +77,7 @@ if [ $HOSTNAME != gondolin ]; then
     cd $LOGDIR
     oldfiles=`find * -type d -prune -o -type f ! -name '*'$TODAY -print`
     test -n "$oldfiles" && mv $oldfiles OLD/.
-    find OLD -mtime +10 -exec rm '{}' \;
+    find OLD -mtime +21 -exec rm '{}' \;
 )
 fi
 
@@ -159,10 +159,10 @@ if [ $HOSTNAME != gondolin ]; then
 # do a snapshot release if
 #   test-passed && 
 #   release_not-is-not-present &&
-#   ( today-is-Saturday || release_asap-is-present || release_always-is-present)
+#   ( today-is-Sunday || release_asap-is-present || release_always-is-present)
 if [ $errcode -eq 0 -a x-$tests_done != x-none -a \
     ! -f $RELEASE_NOT -a \
-    \( `date +%w` -eq 6 -o -f $RELEASE_ASAP -o -f $RELEASE_ALWAYS \) ]; then
+    \( `date +%a` = Sun -o -f $RELEASE_ASAP -o -f $RELEASE_ALWAYS \) ]; then
     # do a snapshot.
     H4DIR=$HOME/HDF4/current/hdf4
     if [ -f $RELEASE_ASAP ]; then
