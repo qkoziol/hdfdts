@@ -1,0 +1,17 @@
+Purpose:
+    [is this a bug fix? feature? ...]
+Description:
+    [describe the bug, or describe the new feature, etc]
+Solution:
+    [details about the changes, algorithm, etc...]
+    [Please as detail as you can since your own explanation is
+    better than others guessing it from the code.]
+Platforms tested:
+    Tested h5committest {arabica (fortran), eirene (fortran, C++)
+	modi4 (parallel, fortran)}?
+    [If no, why not?]
+    Other platforms/configurations tested?
+Misc. update:
+    Update MANIFEST if you add or remove any file.
+    Update release_docs/RELEASE for bug fixes, new features, etc.
+    Update applicable document files too.
