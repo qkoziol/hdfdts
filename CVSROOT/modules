@@ -29,12 +29,16 @@
 world		-a .
 
 # CVSROOT support; run mkmodules whenever anything changes.
-CVSROOT		-i mkmodules CVSROOT
-modules		-i mkmodules CVSROOT modules
-loginfo		-i mkmodules CVSROOT loginfo
-commitinfo	-i mkmodules CVSROOT commitinfo
-rcsinfo		-i mkmodules CVSROOT rcsinfo
-editinfo	-i mkmodules CVSROOT editinfo
+# According to the documentation at cvshome.org, the statements below
+# are no longer necessary in versions of CVS after 1.7, since the
+# administrative database is regenerated automatically ith CVS 1.8 or
+# later. -QAK
+#CVSROOT		-i mkmodules CVSROOT
+#modules		-i mkmodules CVSROOT modules
+#loginfo		-i mkmodules CVSROOT loginfo
+#commitinfo	-i mkmodules CVSROOT commitinfo
+#rcsinfo		-i mkmodules CVSROOT rcsinfo
+#editinfo	-i mkmodules CVSROOT editinfo
 
 # Add other modules here...
 # HDF rcs versions
