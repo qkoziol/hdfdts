@@ -95,11 +95,10 @@ else
     H5SRC_VER=v$H5VERSTR
 fi
 
-echo going $H5SRC_VER to run CMD=$CMD
 if [ $HOSTNAME != gondolin ]; then
     (cd $HOME/HDF5/${H5SRC_VER}/hdf5; $CMD -all) > $LOGFILE 2>&1
 else
-    (cd $HOME/HDF5/${H5SRC_VER}/hdf5; $CMD ) > $LOGFILE 2>&1
+    (cd $HOME/HDF5/${H5SRC_VER}/hdf5; $CMD -nocvs) > $LOGFILE 2>&1
 fi
 
 # Check result
