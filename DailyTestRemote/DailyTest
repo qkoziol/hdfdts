@@ -62,6 +62,7 @@ LOGDIR=$HOME/snapshots-hdf5${H5VERSTR}/log
 LOGDIRLOCK=${LOGDIR}/.lock-${HOSTNAME}
 LOGFILE=${LOGDIR}/${PROGRAMNAME}-${HOSTNAME}_${TODAY}
 FAILEDLOG=${LOGDIR}/FAILED_LOG_${TODAY}
+FAILEDDETAIL=${LOGDIR}/FAILED_DETAIL_${TODAY}
 PASSEDLOG=${LOGDIR}/PASSED_LOG_${TODAY}
 SKIPPEDLOG=${LOGDIR}/SKIPPED_LOG_${TODAY}
 TIMELOG=${LOGDIR}/TIME_LOG_${TODAY}
@@ -134,6 +135,13 @@ case "$CMD" in
 	 if [ -f $TIMELOG ]; then
 	    cat $TIMELOG | tee -a $REPORTED
 	    rm $TIMELOG
+	 fi
+	 if [ -f $FAILEDDETAIL ]; then
+	     echo ""
+	     echo "============================="
+	     echo "   Tests Failures"
+	     echo "============================="
+	     cat $FAILEDDETAIL
 	 fi
 	 echo ""
 	) | $MAIL -s "$REPORT_TITLE" $TOWHOM
