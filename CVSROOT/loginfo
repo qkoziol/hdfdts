@@ -28,6 +28,13 @@
 ^fmpool			$CVSROOT/CVSROOT/log.pl %s -f $CVSROOT/CVSROOT/commitlog
 ^sdb			$CVSROOT/CVSROOT/log.pl %s -f $CVSROOT/CVSROOT/commitlog
 ^ftp			$CVSROOT/CVSROOT/log.pl %s -f $CVSROOT/CVSROOT/commitlog -m bljones@ncsa.uiuc.edu
+
+# for hdf-fits      
 ^hdf-fits		$CVSROOT/CVSROOT/log.pl %s -f $CVSROOT/CVSROOT/commitlog -m xlu@ncsa.uiuc.edu
-DEFAULT			$CVSROOT/CVSROOT/log.pl %s -f $CVSROOT/CVSROOT/commitlog -m hdf-cvs@sdgmail.ncsa.uiuc.edu
+
+# for Java-based HDF viewer
+^jhv-docs               $CVSROOT/CVSROOT/log.pl %s -f $CVSROOT/CVSROOT/commitlog-m xlu@ncsa.uiuc.edu
+^jhv-native               $CVSROOT/CVSROOT/log.pl %s -f $CVSROOT/CVSROOT/commitlog  -m xlu@ncsa.uiuc.edu
+
+DEFAULT                 $CVSROOT/CVSROOT/log.pl %s -f $CVSROOT/CVSROOT/commitlog-m hdf-cvs@sdgmail.ncsa.uiuc.edu
 

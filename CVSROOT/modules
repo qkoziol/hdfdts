@@ -109,4 +109,10 @@ fits-ftp             hdf-fits/ftp
 
 fits-util            hdf-fits/util
 
+# hdf-java-source-control
+
+# Java-based HDF Viewer
+jhv			jhv/src
+jhv-docs		jhv/docs
+jhv-hdf-native		jhv/src/native
 
