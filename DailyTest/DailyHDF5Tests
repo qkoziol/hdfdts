@@ -18,6 +18,7 @@ HOSTNAME=`hostname | sed -e s/.ncsa.uiuc.edu//`
 TODAY=`date +%y%m%d`
 H5VER=			# default to current CVS version
 H5VERSTR=		# default to current CVS version
+errcode=0		# error code so far
 
 # Parse command options
 while [ $# -gt 0 ]; do
@@ -39,6 +40,7 @@ LOGDIR=$HOME/snapshots-hdf5${H5VERSTR}/log
 LOGDIRLOCK=${LOGDIR}/.lock
 LOGFILE=${LOGDIR}/${PROGRAMNAME}_${TODAY}
 FAILEDLOG=${LOGDIR}/FAILED_LOG_${TODAY}
+SNAPSHOTLOG=${LOGDIR}/SNAPSHOT_LOG_${TODAY}
 CMD="$HOME/bin-sys/runsnap ${H5VER}"
 
 # set up auto-cleanup
@@ -67,8 +69,20 @@ fi
 $CMD -all > $LOGFILE 2>&1
 
 # Check result
-if [ -f $FAILEDLOG ];
-then
+if [ -f $FAILEDLOG ]; then
+    errcode=1
+fi
+    
+# report result
+if [ $errcode -eq 0 ]; then
+    (echo "No failures reported"
+     echo ""
+     echo "============================="
+     echo "   All Tests Results"
+     echo "============================="
+     cat $LOGFILE) |
+    mail -s "HDF5${H5VERSTR}_Daily_Tests" $TOWHOM
+else
     # some hosts have failed the tests
     ( cat $FAILEDLOG
      echo ""
@@ -77,13 +91,29 @@ then
      echo "============================="
      cat $LOGFILE) |
     mail -s "HDF5${H5VERSTR}_Daily_Tests_FAILED!!!" $TOWHOM
-else
-    (echo "No failures reported"
-     echo ""
-     echo "============================="
-     echo "   All Tests Results"
-     echo "============================="
-     cat $LOGFILE) |
-    mail -s "HDF5${H5VERSTR}_Daily_Tests" $TOWHOM
 fi
-exit 0
+
+# do a snapshot release if
+# test-succeeded && today-is-saturday && development-branch
+if [ $errcode -eq 0 -a `date +%w` -eq 6 -a -z "$H5VERSTR" ]; then
+    # do a snapshot.  Hardcode it for now.
+    H5DIR=$HOME/HDF5/v_1_3/hdf5
+    (
+	cd $H5DIR
+	bin/snapshot
+    ) >> $SNAPSHOTLOG 2>&1
+    errcode=$?
+
+    # report snapshot result
+    (
+     echo "Weekly Snapshot launched for HDF5${H5VERSTR}."
+     echo "Exit Error Code = ${errcode}."
+     echo "Complete output is stored in"
+     echo "    $SNAPSHOTLOG"
+    ) |
+    mail -s "HDF5${H5VERSTR}_snapshot" $TOWHOM
+fi
+
+
+# final exit
+exit $errcode
