@@ -75,3 +75,6 @@ hdfed     hdf/util Makefile MAKEUTIL.COM HELINK.OPT README.UTILS \
 #tests
 test      hdf/test
 
+#multifile  library
+mfhdf     mfhdf
+
