@@ -1,5 +1,8 @@
 #! /bin/sh
 # Submit daily tests of HDF5 base software
+# Usauge: DailyHDFTests [-r<version>]
+# Example: DailyHDFTests	# test the CVS current version
+#	   DailyHDFTests -r1.2	# test version 1.2
 
 # general setup
 PROGRAMNAME=`basename $0`
@@ -12,12 +15,31 @@ TOWHOM=${TOWHOM:-hdf5cvs@ncsa.uiuc.edu}
 
 # Setup
 HOSTNAME=`hostname | sed -e s/.ncsa.uiuc.edu//`
-H5DIR=$HOME/HDF5/v3/hdf5
 TODAY=`date +%y%m%d`
-LOGDIR=$HOME/snapshots-hdf5/log
+H5VER=			# default to current CVS version
+H5VERSTR=		# default to current CVS version
+
+# Parse command options
+while [ $# -gt 0 ]; do
+    case "$1" in
+	-r*)
+	    H5VER="$1"
+	    H5VERSTR=_`echo $H5VER | sed -e s/-r// -e s/\\\./_/g`
+	    ;;
+	*)
+	    echo "Unknown option ($1)"
+	    exit 1
+	    ;;
+    esac
+    shift
+done
+
+# Setup test directories
+LOGDIR=$HOME/snapshots-hdf5${H5VERSTR}/log
 LOGDIRLOCK=${LOGDIR}/.lock
 LOGFILE=${LOGDIR}/${PROGRAMNAME}_${TODAY}
-FAILEDLOG=$HOME/snapshots-hdf5/log/FAILED_LOG_${TODAY}
+FAILEDLOG=${LOGDIR}/FAILED_LOG_${TODAY}
+CMD="$HOME/bin-sys/runsnap ${H5VER}"
 
 # set up auto-cleanup
 trap "rm -f $LOGDIRLOCK" 0
@@ -42,7 +64,7 @@ if [ -n "$DEBUGMODE" ]; then
     echo "launching runsnap ..."
 fi
 
-$HOME/bin-sys/runsnap -all > $LOGFILE 2>&1
+$CMD -all > $LOGFILE 2>&1
 
 # Check result
 if [ -f $FAILEDLOG ];
@@ -54,7 +76,7 @@ then
      echo "   All Tests Results"
      echo "============================="
      cat $LOGFILE) |
-    mail -s "HDF5_Daily_Tests_FAILED!!!" $TOWHOM
+    mail -s "HDF5${H5VERSTR}_Daily_Tests_FAILED!!!" $TOWHOM
 else
     (echo "No failures reported"
      echo ""
@@ -62,6 +84,6 @@ else
      echo "   All Tests Results"
      echo "============================="
      cat $LOGFILE) |
-    mail -s "HDF5_Daily_Tests" $TOWHOM
+    mail -s "HDF5${H5VERSTR}_Daily_Tests" $TOWHOM
 fi
 exit 0
