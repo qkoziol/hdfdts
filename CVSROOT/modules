@@ -36,77 +36,77 @@ commitinfo	-i mkmodules CVSROOT commitinfo
 rcsinfo		-i mkmodules CVSROOT rcsinfo
 editinfo	-i mkmodules CVSROOT editinfo
 
-# Add other modules here...
-# HDF rcs versions
-#top level
-hdf       hdf
-
-# library source
-src       hdf/src
-
-# utils
-util      hdf/util
-
-#tests
-test      hdf/test
-
-#multifile  library
-mfhdf     mfhdf
-
-#ftp
-ftp      ftp
-
-#DIST both HDF and netcdf
-dist     dist 
-dev      dist
-
-#for docs
-docs   docs
-bugs   docs/bugs
-
-#for Scientific data browser
-sdb      sdb
-
-#for the whole project
-project  project
-
-# HDF-FITS project source code
-# for hdf2fits
-hdf2fits        hdf-fits/HDF2FITS/src
-
-# for fits2hdf
-fits2hdf        hdf-fits/FITS2HDF/src
-
-#for fits2sds
-fits2sds        hdf-fits/FITS2SDS/src
-
-#for sds2fits
-sds2fits        hdf-fits/SDS2FITS/src
-
-#for fits2ris
-fits2ris        hdf-fits/FITS2RIS/src
-
-#for ris2fits
-ris2fits        hdf-fits/RIS2FITS/src
-
-#for documentation
-fits-doc             hdf-fits/doc
-
-#for testfiles
-fits-testfiles       hdf-fits/testfiles
-
-# for ftp
-fits-ftp             hdf-fits/ftp
-
-#for tools
-fits-util            hdf-fits/util
-
-# hdf-java-source-control
-
-# Java-based HDF Viewer
-jhv			jhv/src
-jhv-docs		jhv/docs
-jhv-hdf-native		jhv/src/native
-
-# Jave wrappers and JHV 
-java-hdf                 dist/java-hdf
+#ROBB# # Add other modules here...
+#ROBB# # HDF rcs versions
+#ROBB# #top level
+#ROBB# hdf       hdf
+#ROBB# 
+#ROBB# # library source
+#ROBB# src       hdf/src
+#ROBB# 
+#ROBB# # utils
+#ROBB# util      hdf/util
+#ROBB# 
+#ROBB# #tests
+#ROBB# test      hdf/test
+#ROBB# 
+#ROBB# #multifile  library
+#ROBB# mfhdf     mfhdf
+#ROBB# 
+#ROBB# #ftp
+#ROBB# ftp      ftp
+#ROBB# 
+#ROBB# #DIST both HDF and netcdf
+#ROBB# dist     dist 
+#ROBB# dev      dist
+#ROBB# 
+#ROBB# #for docs
+#ROBB# docs   docs
+#ROBB# bugs   docs/bugs
+#ROBB# 
+#ROBB# #for Scientific data browser
+#ROBB# sdb      sdb
+#ROBB# 
+#ROBB# #for the whole project
+#ROBB# project  project
+#ROBB# 
+#ROBB# # HDF-FITS project source code
+#ROBB# # for hdf2fits
+#ROBB# hdf2fits        hdf-fits/HDF2FITS/src
+#ROBB# 
+#ROBB# # for fits2hdf
+#ROBB# fits2hdf        hdf-fits/FITS2HDF/src
+#ROBB# 
+#ROBB# #for fits2sds
+#ROBB# fits2sds        hdf-fits/FITS2SDS/src
+#ROBB# 
+#ROBB# #for sds2fits
+#ROBB# sds2fits        hdf-fits/SDS2FITS/src
+#ROBB# 
+#ROBB# #for fits2ris
+#ROBB# fits2ris        hdf-fits/FITS2RIS/src
+#ROBB# 
+#ROBB# #for ris2fits
+#ROBB# ris2fits        hdf-fits/RIS2FITS/src
+#ROBB# 
+#ROBB# #for documentation
+#ROBB# fits-doc             hdf-fits/doc
+#ROBB# 
+#ROBB# #for testfiles
+#ROBB# fits-testfiles       hdf-fits/testfiles
+#ROBB# 
+#ROBB# # for ftp
+#ROBB# fits-ftp             hdf-fits/ftp
+#ROBB# 
+#ROBB# #for tools
+#ROBB# fits-util            hdf-fits/util
+#ROBB# 
+#ROBB# # hdf-java-source-control
+#ROBB# 
+#ROBB# # Java-based HDF Viewer
+#ROBB# jhv			jhv/src
+#ROBB# jhv-docs		jhv/docs
+#ROBB# jhv-hdf-native		jhv/src/native
+#ROBB# 
+#ROBB# # Jave wrappers and JHV 
+#ROBB# java-hdf                 dist/java-hdf
