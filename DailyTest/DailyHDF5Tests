@@ -53,6 +53,7 @@ LOGDIR=$HOME/snapshots-hdf5${H5VERSTR}/log
 LOGDIRLOCK=${LOGDIR}/.lock-${HOSTNAME}
 LOGFILE=${LOGDIR}/${PROGRAMNAME}-${HOSTNAME}_${TODAY}
 FAILEDLOG=${LOGDIR}/FAILED_LOG_${TODAY}
+FAILEDDETAIL=${LOGDIR}/FAILED_DETAIL_${TODAY}
 PASSEDLOG=${LOGDIR}/PASSED_LOG_${TODAY}
 SKIPPEDLOG=${LOGDIR}/SKIPPED_LOG_${TODAY}
 TIMELOG=${LOGDIR}/TIME_LOG_${TODAY}
@@ -60,6 +61,7 @@ TIMEKEEPERLOG=${LOGDIR}/TIMEKEEPER_LOG_${TODAY}
 REPORTED=${LOGDIR}/REPORTED_${TODAY}
 SNAPSHOTLOG=${LOGDIR}/SNAPSHOT_LOG_${TODAY}
 RELEASE_ASAP=${LOGDIR}/../release_asap		# make a special release asap
+RELEASE_ALWAYS=${LOGDIR}/../release_always	# always release
 RELEASE_NOT=${LOGDIR}/../release_not		# Do not release
 RELEASED=${LOGDIR}/RELEASED_${TODAY}
 WATCHERFILE=${LOGDIR}/../watchers		# List of platform watchers
@@ -179,10 +181,14 @@ fi
  echo "============================="
  echo "   Tests Details"
  echo "============================="
- if [ $errcode -eq 0 ]; then
-    echo "See $LOGFILE"
- else
-    cat $LOGFILE
+ echo "See $LOGFILE"
+ if [ -f $FAILEDDETAIL ]; then
+    echo ""
+    echo "============================="
+    echo "   Tests Failures"
+    echo "============================="
+    cat $FAILEDDETAIL | tee -a $REPORTED
+    rm $FAILEDDETAIL
     echo ""
     echo "============================="
     echo "   Watchers List"
@@ -198,14 +204,19 @@ if [ $HOSTNAME != gondolin ]; then
 # do a snapshot release if
 #   test-passed && 
 #   release-not-is-not-present &&
-#   ( today-is-sunday || release-asap-is-requested )
+#   ( today-is-Sunday || release_asap-is-present || release_always-is-present)
+# The difference between release_asap and release_always is that release_asap
+# is a one time deal and needs to be set again if desire; while release_always
+# stays in effect until removed.
 if [ $errcode -eq 0 -a \
     ! -f $RELEASE_NOT -a \
-    \( `date +%a` = Sun -o -f $RELEASE_ASAP \) ]; then
+    \( `date +%a` = Sun -o -f $RELEASE_ASAP -o -f $RELEASE_ALWAYS \) ]; then
     # do a snapshot.
     H5DIR=$HOME/HDF5/v${H5VERSTR:-dev}/hdf5
     if [ -f $RELEASE_ASAP ]; then
 	RELEASE_MESG="Special snapshot release launched for HDF5${H5VERSTR}."
+    elif [ -f $RELEASE_ALWAYS ]; then
+	RELEASE_MESG="Snapshot release launched for HDF5${H5VERSTR}."
     else
 	RELEASE_MESG="Weekly snapshot release launched for HDF5${H5VERSTR}."
     fi
