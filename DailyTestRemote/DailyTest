@@ -15,7 +15,7 @@ H5VER=			# default to current CVS version
 H5VERSTR=		# default to current CVS version
 TITLE="HDF5 Tests on $TODAY"
 errcode=0		# error code so far
-CMD=			# What command to run
+CMD=launch		# What command to run. Default to launch.
 
 # Parse command options
 while [ $# -gt 0 ]; do
@@ -147,14 +147,15 @@ case "$CMD" in
 	) | $MAIL -s "$REPORT_TITLE" $TOWHOM
 	;;
     launch)
-	LAUNCH_CMD=JOBS/Dailytest
-	RemoteHosts="lambda theta"
-	# launch myself
-	$LAUNCH_CMD
-	# launch remote hosts
-	for h in $RemoteHosts; do
-	    ssh $h $LAUNCH_CMD < /dev/null
-	done
+	LAUNCH_CMD=JOBS/SubDailytest
+	# Make sure at $HOME
+	(
+	cd
+	echo ====================================
+	echo "`date` `hostname`"
+	echo ====================================
+	$LAUNCH_CMD 2>&1
+	) >> $HOME/crontab.log
 	;;
     *)
 	echo "Unknown Command ($CMD)"
