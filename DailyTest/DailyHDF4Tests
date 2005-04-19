@@ -195,6 +195,9 @@ if [ $HOSTNAME != gondolin ]; then
 #   test-passed && 
 #   release_not-is-not-present &&
 #   ( today-is-Sunday || release_asap-is-present || release_always-is-present)
+# The difference between release_asap and release_always is that release_asap
+# is a one time deal and needs to be set again if desire; while release_always
+# stays in effect until removed.
 if [ $errcode -eq 0 -a x-$tests_done != x-none -a \
     ! -f $RELEASE_NOT -a \
     \( `date +%a` = Sun -o -f $RELEASE_ASAP -o -f $RELEASE_ALWAYS \) ]; then
