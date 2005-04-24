@@ -53,6 +53,7 @@ LOGDIR=$HOME/snapshots-hdf4${H4VERSTR}/log
 LOGDIRLOCK=${LOGDIR}/.lock-${HOSTNAME}
 LOGFILE=${LOGDIR}/${PROGRAMNAME}-${HOSTNAME}_${TODAY}
 FAILEDLOG=${LOGDIR}/FAILED_LOG_${TODAY}
+FAILEDDETAIL=${LOGDIR}/FAILED_DETAIL_${TODAY}
 PASSEDLOG=${LOGDIR}/PASSED_LOG_${TODAY}
 SKIPPEDLOG=${LOGDIR}/SKIPPED_LOG_${TODAY}
 TIMELOG=${LOGDIR}/TIME_LOG_${TODAY}
@@ -79,14 +80,31 @@ trap "rm -f $LOGDIRLOCK" 0
 trap "rm -f $LOGDIRLOCK" 1 2 3 4 5 6 7 8 9 10 12 13 14 15
 
 if [ $HOSTNAME != gondolin ]; then
-# Clean up LOGDIR by moving all files that are not "of today"
-# to OLD.
-# Clean up files older than 10 days in OLD.
+# Clean up LOGDIR by moving all files that are not "of today" to OLD.
+# Then go into OLD and move all files older than 10 days to OLDER.
+# Then go into OLDer and remove all files older than 20 days.
+# This procedure keeps old logfiles in two tiers.  The first tier is OLD
+# which should be in AFS space so that the files are available to most hosts.
+# The second tier is OLDER which could be in HDF's own NFS space which has
+# much bigger capacity but not as widely available.
 (   
+    nold=10
+    nolder=20
+    echo cleaning $LOGDIR by moving all old logfiles to OLD
     cd $LOGDIR
-    oldfiles=`find * -type d -prune -o -type f ! -name '*'$TODAY -print`
-    test -n "$oldfiles" && mv $oldfiles OLD/.
-    find OLD -mtime +21 -exec rm '{}' \;
+    test -d OLD || mkdir OLD
+    find . \( -type d -name OLD -prune \) \
+	-o -type f ! -name '*'$TODAY'*' -exec mv '{}' OLD \;
+
+    echo cleaning $LOGDIR/OLD by moving all files older than $nold days to OLDER
+    cd OLD
+    test -d OLDER || mkdir OLDER
+    find . \( -type d -name OLDER -prune \) \
+	-o -mtime +$nold -exec mv '{}' OLDER \;
+
+    echo cleaning $LOGDIR/OLDER by removing all files older than $nolder days.
+    cd OLDER
+    find . -mtime +21 -exec rm '{}' \;
 )
 fi
 
@@ -170,10 +188,14 @@ fi
  echo "============================="
  echo "   Tests Details"
  echo "============================="
- if [ $errcode -eq 0 ]; then
-    echo "See $LOGFILE"
- else
-    cat $LOGFILE
+ echo "See $LOGFILE"
+ if [ -f $FAILEDDETAIL ]; then
+    echo ""
+    echo "============================="
+    echo "   Tests Failures"
+    echo "============================="
+    cat $FAILEDDETAIL | tee -a $REPORTED
+    rm $FAILEDDETAIL
     echo ""
     echo "============================="
     echo "   Watchers List"
