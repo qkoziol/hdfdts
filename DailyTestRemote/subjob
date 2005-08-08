@@ -1,0 +1,25 @@
+#! /bin/sh
+#bsub -q smallq -n 4 -o out4 -W 10 prun -t -n 4 -N 1 basicScaleF.exe  100000 1
+#bsub -q threadq -o $taskname.$nproc.$today.$$ -W $job_time $* $task
+
+nproc=4
+myemail=acheng@ncsa.uiuc.edu
+
+# Default job_time is 2 hours.
+# flash is slow and need more time.  
+# qsc's Testdir disks are slow, need more time.
+case `hostname` in
+    ffe*|qsc*)
+	job_time=180	# 3 hours
+	;;
+    *)
+	job_time=120	# 2 hours
+	;;
+esac
+
+task=$1
+taskname=`basename $task`
+shift
+
+bsub -n $nproc -W $job_time -u $myemail $* $task
+bjobs
