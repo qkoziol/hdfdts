@@ -11,7 +11,7 @@ CVS: [Be as detail as you can since your own explanation is
 CVS: better than others guessing it from the code.]
 
 Platforms tested:
-CVS: [If you tested with h5committest, say "h5committested"].  
+CVS: h5committested?
 CVS: [What other platforms/configurations were tested?]
 CVS: [If no platforms were tested, why not?]
 CVS: [Note:  h5committest tests the following:
