@@ -88,23 +88,23 @@ if [ $HOSTNAME != gondolin ]; then
 # The second tier is OLDER which could be in HDF's own NFS space which has
 # much bigger capacity but not as widely available.
 (   
-    nold=10
-    nolder=20
+    nold=7
+    nolder=21
     echo cleaning $LOGDIR by moving all old logfiles to OLD
     cd $LOGDIR
-    test -d OLD || mkdir OLD
-    find . \( -type d -name OLD -prune \) \
-	-o -type f ! -name '*'$TODAY'*' -exec mv '{}' OLD \;
+    test -d OLD/. || mkdir OLD
+    find . \( -name OLD -prune \) \
+	-o -type f ! -name '*'$TODAY'*' -exec mv '{}' OLD/. \;
 
     echo cleaning $LOGDIR/OLD by moving all files older than $nold days to OLDER
     cd OLD
-    test -d OLDER || mkdir OLDER
-    find . \( -type d -name OLDER -prune \) \
-	-o -mtime +$nold -exec mv '{}' OLDER \;
+    test -d OLDER/. || mkdir OLDER
+    find . \( -name OLDER -prune \) \
+	-o -type f -mtime +$nold -exec mv '{}' OLDER/. \;
 
     echo cleaning $LOGDIR/OLDER by removing all files older than $nolder days.
     cd OLDER
-    find . -mtime +21 -exec rm '{}' \;
+    find . -type f -mtime +21 -exec rm '{}' \;
 )
 fi
 
