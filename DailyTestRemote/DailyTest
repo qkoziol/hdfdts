@@ -36,6 +36,9 @@ while [ $# -gt 0 ]; do
 	launch)
 	    CMD=launch
 	    ;;
+	update)
+	    CMD=update
+	    ;;
 	*)
 	    echo "Unknown option ($1)"
 	    exit 1
@@ -72,6 +75,8 @@ RELEASE_ASAP=${LOGDIR}/../release_asap		# make a special release asap
 RELEASE_NOT=${LOGDIR}/../release_not		# Do not release
 RELEASED=${LOGDIR}/RELEASED_${TODAY}
 WATCHERFILE=${LOGDIR}/../watchers		# List of platform watchers
+SOURCEDIR=${LOGDIR}/../current			# Source directory
+CVSDATE=$SOURCEDIR/cvs_lastdate			# Date of last cvs update
 
 # Setup Mailing command and Report title
 MAIL=Mail
@@ -114,6 +119,8 @@ case "$CMD" in
 	 echo "============================="
 	 echo "   Tests Summary"
 	 echo "============================="
+	 xdate="`(test -f $CVSDATE && cat $CVSDATE) || echo Unknown`"
+	 echo "Last cvs update: $xdate"
 	 if [ -f $FAILEDLOG ]; then
 	    sort $FAILEDLOG | tee -a $REPORTED
 	    echo ""
@@ -156,6 +163,11 @@ case "$CMD" in
 	echo ====================================
 	$LAUNCH_CMD 2>&1
 	) >> $HOME/crontab.log
+	;;
+    update)
+	cd $SOURCEDIR
+	cvs update -Pd 
+	date > $CVSDATE
 	;;
     *)
 	echo "Unknown Command ($CMD)"

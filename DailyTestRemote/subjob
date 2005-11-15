@@ -4,13 +4,18 @@
 
 nproc=4
 myemail=acheng@ncsa.uiuc.edu
+extra_option=
 
 # Default job_time is 2 hours.
 # flash is slow and need more time.  
 # qsc's Testdir disks are slow, need more time.
+# qsc's Testdir disks are much faster now.  Need normal time.
+# flash: can only use largeq, longq. Use longq which is less crowded.
+# Stopped asking for longq since it is crowded.
 case `hostname` in
-    ffe*|qsc*)
+    ffe*)
 	job_time=180	# 3 hours
+	#extra_option="-q longq"
 	;;
     *)
 	job_time=120	# 2 hours
@@ -21,5 +26,5 @@ task=$1
 taskname=`basename $task`
 shift
 
-bsub -n $nproc -W $job_time -u $myemail $* $task
+bsub -n $nproc -W $job_time -u $myemail $extra_option $* $task
 bjobs
