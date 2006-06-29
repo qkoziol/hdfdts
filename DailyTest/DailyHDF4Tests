@@ -45,7 +45,7 @@ if [ -n "$DEBUGMODE" ]; then
     TOWHOM_FAILED=acheng
 else
     TOWHOM_PASSED=hdf-cvs@ncsa.uiuc.edu
-    TOWHOM_FAILED=hdflib@ncsa.uiuc.edu
+    TOWHOM_FAILED=hdf4lib@ncsa.uiuc.edu
 fi
 
 # Setup test directories
