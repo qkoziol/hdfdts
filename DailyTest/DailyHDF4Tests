@@ -81,15 +81,15 @@ trap "rm -f $LOGDIRLOCK" 1 2 3 4 5 6 7 8 9 10 12 13 14 15
 
 if [ $HOSTNAME != gondolin ]; then
 # Clean up LOGDIR by moving all files that are not "of today" to OLD.
-# Then go into OLD and move all files older than 10 days to OLDER.
-# Then go into OLDer and remove all files older than 20 days.
+# Then go into OLD and move all files older than 7 days to OLDER.
+# Then go into OLDer and remove all files older than 30 days.
 # This procedure keeps old logfiles in two tiers.  The first tier is OLD
 # which should be in AFS space so that the files are available to most hosts.
 # The second tier is OLDER which could be in HDF's own NFS space which has
 # much bigger capacity but not as widely available.
 (   
     nold=7
-    nolder=21
+    nolder=31
     echo cleaning $LOGDIR by moving all old logfiles to OLD
     cd $LOGDIR
     test -d OLD/. || mkdir OLD
