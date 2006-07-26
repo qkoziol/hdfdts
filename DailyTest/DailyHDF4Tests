@@ -104,7 +104,7 @@ if [ $HOSTNAME != gondolin ]; then
 
     echo cleaning $LOGDIR/OLDER by removing all files older than $nolder days.
     cd OLDER
-    find . -type f -mtime +21 -exec rm '{}' \;
+    find . -type f -mtime +$nolder -exec rm '{}' \;
 )
 fi
 
