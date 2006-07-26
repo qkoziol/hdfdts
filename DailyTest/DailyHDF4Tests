@@ -184,11 +184,8 @@ fi
     cat $TIMELOG | tee -a $REPORTED
     rm $TIMELOG
  fi
- echo ""
- echo "============================="
- echo "   Tests Details"
- echo "============================="
- echo "See $LOGFILE"
+ # If failures detected, show failed details, watchers list and test details.
+ # Else just show test details file name.
  if [ -f $FAILEDDETAIL ]; then
     echo ""
     echo "============================="
@@ -201,6 +198,16 @@ fi
     echo "   Watchers List"
     echo "============================="
     cat $WATCHERFILE
+    echo ""
+    echo "============================="
+    echo "   Tests Details"
+    echo "============================="
+    cat $LOGFILE
+ else
+    echo "============================="
+    echo "   Tests Details"
+    echo "============================="
+    echo "See $LOGFILE"
  fi
 ) | $MAIL -s "$REPORT_TITLE" $TOWHOM
 
