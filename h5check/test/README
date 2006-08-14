@@ -1,0 +1,19 @@
+README
+------
+The current prototype for the test files generator is composed of the files:
+
+testgen.h
+testgen.c
+
+Installation
+------------
+For now, the generator can be built as follows:
+
+h5cc testgen.c -o testgen
+
+Execution
+---------
+To run the generator, just execute it in the command line without any arguments.
+After a successful execution, a number of test files will be created in the
+execution directory.
+
