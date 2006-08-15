@@ -543,6 +543,8 @@ int main(int argc, char *argv[])
     gen_group_datasets(fid, GROUP_PREFIX, HEIGHT, RIGHT);
     close_file(fid, "");
 
+    /* creates a file with datasets using different
+    basic numerical datatypes */
     fid = create_file(fname[i++], "");
     gen_basic_ntypes(fid, FULL);
     close_file(fid, "");
