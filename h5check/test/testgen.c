@@ -24,7 +24,7 @@
 
 #define NUM_GROUPS 512 /* number of groups for linear structure */
 
-#define HEIGHT 2 /* height of group trees (recursion levels) */
+#define HEIGHT 5 /* height of group trees (recursion levels) */
 
 /* type of group structure */
 #define HIERARCHICAL 0
