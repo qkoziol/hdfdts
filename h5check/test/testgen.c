@@ -581,7 +581,7 @@ void gen_compound(hid_t oid, int fill_dataset)
     VRFY((ret>=0), "H5Tclose");
 
     /* Create the dataset */
-    dset_id = H5Dcreate (oid, "s1", s1_tid, dspace_id, H5P_DEFAULT);
+    dset_id = H5Dcreate (oid, "compound1", s1_tid, dspace_id, H5P_DEFAULT);
     VRFY((dset_id>=0), "H5Dcreate");
 
     if (fill_dataset) {
