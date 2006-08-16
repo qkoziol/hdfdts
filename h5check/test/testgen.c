@@ -66,9 +66,17 @@
     (i==10)?H5T_NATIVE_OPAQUE:    \
         string_type1    \
 
-
 char *ntype_dset[]={"char","short","int","uint","long","llong",
     "float","double","ldouble", "bitfield","opaque","string"};
+
+/* Compound dataset struct 1 */
+typedef struct s1_t {
+    unsigned int a;
+    unsigned int b;
+    unsigned int c[4];
+    unsigned int d;
+    unsigned int e;
+} s1_t;
 
 int nerrors=0;
 
@@ -354,7 +362,7 @@ static void gen_linear(hid_t fid)
 *
 * This function generates a dataset per allowed dimensionality, i.e. one
 * dataset is 1D, another one is 2D, and so on, up to dimension H5S_MAX_RANK.
-* The option 'status' determines if data is to be written in the file.
+* The option 'status' determines if data is to be written in the datasets.
 */
 
 static void gen_rank_datasets(hid_t oid, int fill_dataset)
@@ -426,7 +434,7 @@ static void gen_rank_datasets(hid_t oid, int fill_dataset)
 *
 * This function generates a dataset per basic datatype , i.e. one dataset is char,
 * another one is int, and so on. The option 'fill_dataset' determines whether data is
-* to be written into the file.
+* to be written into the dataset.
 */
 
 static void gen_basic_types(hid_t oid, int fill_dataset)
@@ -445,6 +453,7 @@ static void gen_basic_types(hid_t oid, int fill_dataset)
     VRFY((RANK>0), "RANK");
     VRFY((SIZE>0), "SIZE");
 
+    /* define size for dataspace dimensions */
     for(i=0; i < RANK; i++)
         dims[i] = SIZE;
 
@@ -452,14 +461,15 @@ static void gen_basic_types(hid_t oid, int fill_dataset)
     dspace_id = H5Screate_simple(RANK, dims, NULL);
     VRFY((dspace_id>=0), "H5Screate_simple");
 
-    /* allocate integer buffer and assigns data */
+    /* allocate integer buffer and assign data */
     uchar_buffer = (unsigned char *)malloc(powl(SIZE,RANK)*sizeof(unsigned char));
     VRFY((uchar_buffer!=NULL), "malloc");
-
+    
+    /* allocate string buffer and assign data */
     string_buffer = (unsigned char *)malloc(STR_SIZE*powl(SIZE,RANK)*sizeof(unsigned char));
     VRFY((uchar_buffer!=NULL), "malloc");
     
-    /* allocate float buffer and assigns data */
+    /* allocate float buffer and assign data */
     float_buffer = (float *)malloc(powl(SIZE,RANK)*sizeof(float));
     VRFY((float_buffer!=NULL), "malloc");
 
@@ -521,6 +531,90 @@ static void gen_basic_types(hid_t oid, int fill_dataset)
 
 
 
+/*
+*
+* This function generates a dataset with a compound datatype. The option
+* 'fill_dataset' determines whether data is to be written into the dataset.
+*/
+
+void gen_compound(hid_t oid, int fill_dataset)
+{
+    s1_t *s1;                   /* compound struct */
+    hid_t dset_id, dspace_id;   /* dataset and dataspace IDs */
+    hid_t s1_tid, array_dt;     /* datatypes IDs */
+
+    hsize_t dims[RANK];         /* dataspace dimension size */
+    hsize_t memb_size[1] = {4}; /* array datatype dimension */
+    herr_t ret;
+
+    long int i;
+
+    VRFY((RANK>0), "RANK");
+    VRFY((SIZE>0), "SIZE");
+
+    /* define size for dataspace dimensions */
+    for(i=0; i < RANK; i++)
+        dims[i] = SIZE;
+
+    /* Create the data space */
+    dspace_id = H5Screate_simple (RANK, dims, NULL);
+    VRFY((dspace_id>=0),"H5Screate_simple");
+    
+    /* create compound datatype */
+    s1_tid = H5Tcreate (H5T_COMPOUND, sizeof(s1_t));
+    VRFY((s1_tid>=0), "H5Tcreate");
+
+    /* compound datatype includes an array */
+    array_dt=H5Tarray_create(H5T_NATIVE_INT, 1, memb_size, NULL);
+    VRFY((array_dt>=0), "H5Tarray_create");
+   
+    /* define the fields of the compound datatype */
+    if (H5Tinsert (s1_tid, "a", HOFFSET(s1_t,a), H5T_NATIVE_INT)<0 ||
+        H5Tinsert (s1_tid, "b", HOFFSET(s1_t,b), H5T_NATIVE_INT)<0 ||
+        H5Tinsert (s1_tid, "c", HOFFSET(s1_t,c), array_dt)<0 ||
+        H5Tinsert (s1_tid, "d", HOFFSET(s1_t,d), H5T_NATIVE_INT)<0 ||
+        H5Tinsert (s1_tid, "e", HOFFSET(s1_t,e), H5T_NATIVE_INT)<0)
+        VRFY(FALSE, "H5Tinsert");
+
+    /* close array datatype */
+    ret = H5Tclose(array_dt);
+    VRFY((ret>=0), "H5Tclose");
+
+    /* Create the dataset */
+    dset_id = H5Dcreate (oid, "s1", s1_tid, dspace_id, H5P_DEFAULT);
+    VRFY((dset_id>=0), "H5Dcreate");
+
+    if (fill_dataset) {
+        /* allocate buffer and assign data */
+        s1 = (s1_t *)malloc(powl(SIZE,RANK)*sizeof(s1_t));
+        VRFY((s1!=NULL), "malloc");
+    
+        /* Initialize the dataset */
+        for (i=0; i<powl(SIZE,RANK); i++) {
+	        s1[i].a = 8*i+0;
+	        s1[i].b = 2000+2*i;
+	        s1[i].c[0] = 8*i+2;
+	        s1[i].c[1] = 8*i+3;
+	        s1[i].c[2] = 8*i+4;
+	        s1[i].c[3] = 8*i+5;
+	        s1[i].d = 2001+2*i;
+	        s1[i].e = 8*i+7;
+        }
+
+        /* Write the data */
+        ret = H5Dwrite (dset_id, s1_tid, H5S_ALL, H5S_ALL, H5P_DEFAULT, s1);
+        VRFY((ret>=0), "H5Dwrite");
+    }
+
+    /* close dataset */
+    ret = H5Dclose(dset_id);
+    VRFY((ret>=0), "H5Dclose");
+
+    /* close dataspace */
+    ret = H5Sclose(dspace_id);
+    VRFY((ret>=0), "H5Sclose");
+}
+
 
 
 /* main function of test generator */
@@ -531,7 +625,8 @@ int main(int argc, char *argv[])
     hid_t fid;
 
     char *fname[]={"root.h5","linear.h5","hierarchical.h5","multipath.h5","cyclical.h5",
-        "rank_dsets_empty.h5","rank_dsets_full.h5","group_dsets.h5","basic_types.h5"}; /* file names */
+        "rank_dsets_empty.h5","rank_dsets_full.h5","group_dsets.h5","basic_types.h5",
+        "compound.h5"}; /* file names */
 
     unsigned i=0;
 
@@ -585,6 +680,10 @@ int main(int argc, char *argv[])
     gen_basic_types(fid, FULL);
     close_file(fid, "");
 
+    /* create a file with a dataset using a compound datatype */
+    fid = create_file(fname[i++], "");
+    gen_compound(fid, FULL);
+    close_file(fid, "");
     
     /* successful completion message */
     printf("\rTest files generation for H5check successful!\n");
