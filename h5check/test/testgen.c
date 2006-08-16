@@ -41,15 +41,17 @@
 #define FULL 2
 
 /* dataspace properties */
-#define RANK 2      /* default rank */
-#define SIZE 10     /* default dimension size */
+#define RANK 2     /* default rank */
+#define SIZE 10    /* default dimension size */
 
 /* child nodes of a binary tree */
 #define LEFT 0
 #define RIGHT 1
 
+#define STR_SIZE 12 /* default size for fixed-length strings */
+
 /* numerical basic types */
-#define NTYPES 9
+#define NTYPES 12
 #define NATIVE_TYPE(i)  \
     (i==0)?H5T_NATIVE_CHAR: \
     (i==1)?H5T_NATIVE_SHORT:    \
@@ -59,10 +61,14 @@
     (i==5)?H5T_NATIVE_LLONG:    \
     (i==6)?H5T_NATIVE_FLOAT:    \
     (i==7)?H5T_NATIVE_DOUBLE:   \
-        H5T_NATIVE_LDOUBLE
+    (i==8)?H5T_NATIVE_LDOUBLE:    \
+    (i==9)?H5T_NATIVE_B8:    \
+    (i==10)?H5T_NATIVE_OPAQUE:    \
+        string_type1    \
+
 
 char *ntype_dset[]={"char","short","int","uint","long","llong",
-    "float","double","ldouble"};
+    "float","double","ldouble", "bitfield","opaque","string"};
 
 int nerrors=0;
 
@@ -418,22 +424,26 @@ static void gen_rank_datasets(hid_t oid, int fill_dataset)
 
 /*
 *
-* This function generates a dataset per numerical datatype , i.e. one
-* dataset is char, another one is int, and so on. The option 'fill_dataset' determines
-* if data is to be written in the file.
+* This function generates a dataset per basic datatype , i.e. one dataset is char,
+* another one is int, and so on. The option 'fill_dataset' determines whether data is
+* to be written into the file.
 */
 
-static void gen_basic_ntypes(hid_t oid, int fill_dataset)
+static void gen_basic_types(hid_t oid, int fill_dataset)
 {
 
     hid_t dset_id, dspace_id; /* HDF5 IDs */
-    hid_t datatype;
+    hid_t datatype, string_type1;
     hsize_t dims[RANK]; 
     herr_t ret;
-    int *int_buffer;
+    unsigned char *uchar_buffer, *string_buffer;
     float *float_buffer;
 
     long int i;
+
+
+    VRFY((RANK>0), "RANK");
+    VRFY((SIZE>0), "SIZE");
 
     for(i=0; i < RANK; i++)
         dims[i] = SIZE;
@@ -443,18 +453,30 @@ static void gen_basic_ntypes(hid_t oid, int fill_dataset)
     VRFY((dspace_id>=0), "H5Screate_simple");
 
     /* allocate integer buffer and assigns data */
-    int_buffer = (int *)malloc(powl(SIZE,RANK)*sizeof(int));
-    VRFY((int_buffer!=NULL), "malloc");
+    uchar_buffer = (unsigned char *)malloc(powl(SIZE,RANK)*sizeof(unsigned char));
+    VRFY((uchar_buffer!=NULL), "malloc");
+
+    string_buffer = (unsigned char *)malloc(STR_SIZE*powl(SIZE,RANK)*sizeof(unsigned char));
+    VRFY((uchar_buffer!=NULL), "malloc");
     
     /* allocate float buffer and assigns data */
     float_buffer = (float *)malloc(powl(SIZE,RANK)*sizeof(float));
     VRFY((float_buffer!=NULL), "malloc");
 
-    /* fill buffer with data */
-    for (i=0; i < powl(SIZE,RANK); i++)
-        float_buffer[i] = int_buffer[i] = i%SIZE;
+    /* Create a datatype to refer to */
+    string_type1 = H5Tcopy (H5T_C_S1);
+    VRFY((string_type1>=0), "H5Tcopy");
 
-    /* iterate over numerical basic datatypes */            
+    ret = H5Tset_size (string_type1, STR_SIZE);
+    VRFY((ret>=0), "H5Tset_size");
+
+    /* fill buffer with data */
+    for (i=0; i < powl(SIZE,RANK); i++){
+        float_buffer[i] = uchar_buffer[i] = i%SIZE;
+        strcpy(&string_buffer[i*STR_SIZE], "sample text");
+    }
+
+    /* iterate over basic datatypes */            
     for(i=0;i<NTYPES;i++){
  
         /* create dataset */
@@ -465,13 +487,25 @@ static void gen_basic_ntypes(hid_t oid, int fill_dataset)
         if (fill_dataset){
             /* since some datatype conversions are not allowed, select buffer with
             compatible datatype class */
-            if(H5Tget_class(NATIVE_TYPE(i)) == H5T_INTEGER)
-                /* writes buffer into dataset */
-                ret = H5Dwrite(dset_id, H5T_NATIVE_INT, H5S_ALL, H5S_ALL, H5P_DEFAULT, int_buffer);
-            else
-                /* writes buffer into dataset */
+            switch (H5Tget_class(NATIVE_TYPE(i))) {
+            case H5T_INTEGER:
+                ret = H5Dwrite(dset_id, H5T_NATIVE_UCHAR, H5S_ALL, H5S_ALL, H5P_DEFAULT, uchar_buffer);
+                break;
+            case H5T_FLOAT:
                 ret = H5Dwrite(dset_id, H5T_NATIVE_FLOAT, H5S_ALL, H5S_ALL, H5P_DEFAULT, float_buffer);
-
+                break;
+            case H5T_BITFIELD:
+                ret = H5Dwrite(dset_id, H5T_NATIVE_B8, H5S_ALL, H5S_ALL, H5P_DEFAULT, uchar_buffer);
+                break;
+            case H5T_OPAQUE:
+                ret = H5Dwrite(dset_id, H5T_NATIVE_OPAQUE, H5S_ALL, H5S_ALL, H5P_DEFAULT, uchar_buffer);
+                break;
+            case H5T_STRING:
+                ret = H5Dwrite(dset_id, string_type1, H5S_ALL, H5S_ALL, H5P_DEFAULT, string_buffer);
+                break;
+            default:
+                VRFY(FALSE, "Invalid datatype conversion");
+            }
             VRFY((ret>=0), "H5Dwrite");
         }
 
@@ -487,6 +521,8 @@ static void gen_basic_ntypes(hid_t oid, int fill_dataset)
 
 
 
+
+
 /* main function of test generator */
 
 int main(int argc, char *argv[])
@@ -495,7 +531,7 @@ int main(int argc, char *argv[])
     hid_t fid;
 
     char *fname[]={"root.h5","linear.h5","hierarchical.h5","multipath.h5","cyclical.h5",
-        "rank_dsets_empty.h5","rank_dsets_full.h5","group_dsets.h5","basic_ntypes.h5"}; /* file names */
+        "rank_dsets_empty.h5","rank_dsets_full.h5","group_dsets.h5","basic_types.h5"}; /* file names */
 
     unsigned i=0;
 
@@ -544,9 +580,9 @@ int main(int argc, char *argv[])
     close_file(fid, "");
 
     /* creates a file with datasets using different
-    basic numerical datatypes */
+    basic datatypes */
     fid = create_file(fname[i++], "");
-    gen_basic_ntypes(fid, FULL);
+    gen_basic_types(fid, FULL);
     close_file(fid, "");
 
     
