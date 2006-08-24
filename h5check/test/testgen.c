@@ -20,13 +20,12 @@
 
 #include "testgen.h"
 
-/* macro definitions for test generator functions */
-
+/* Definitions for test generator functions */
 #define NUM_GROUPS 512 /* number of groups for linear structure */
 
-#define HEIGHT 5 /* height of group trees (recursion levels) */
+#define HEIGHT 3 /* height of group trees (recursion levels) */
 
-/* type of group structure */
+/* types of group structures */
 #define HIERARCHICAL 0
 #define MULTIPATH 1
 #define CYCLICAL 2
@@ -42,7 +41,7 @@
 
 /* dataspace properties */
 #define RANK 2     /* default rank */
-#define SIZE 10    /* default dimension size */
+#define SIZE 10    /* default size for all dimensions */
 
 /* child nodes of a binary tree */
 #define LEFT 0
@@ -69,7 +68,9 @@
 char *ntype_dset[]={"char","short","int","uint","long","llong",
     "float","double","ldouble", "bitfield","opaque","string"};
 
-/* Compound dataset struct 1 */
+
+/* Definition for generation of files with compound and
+   variable length datatypes */
 typedef struct s1_t {
     unsigned int a;
     unsigned int b;
@@ -78,8 +79,32 @@ typedef struct s1_t {
     unsigned int e;
 } s1_t;
 
-int nerrors=0;
 
+/* Definition for generation of file with enumerated
+   datatype */
+#define CPTR(VAR,CONST)	((VAR)=(CONST),&(VAR))
+
+typedef enum {
+    E1_RED,
+    E1_GREEN,
+    E1_BLUE,
+    E1_WHITE,
+    E1_BLACK
+} c_e1;
+
+#define NUM_VALUES 5
+
+
+/* Definition for generation of a compound datatype which will
+   be pointed by a reference datatype */
+typedef struct s2_t {
+    unsigned int a;
+    unsigned int b;
+    float c;
+} s2_t;
+
+
+int nerrors=0;
 
 
 /*
@@ -248,10 +273,10 @@ static void gen_group_datasets(hid_t parent_id, char* prefix, int height, int da
     VRFY((dset_id>=0), "H5Dcreate");
 
     /* allocate buffer and assign data */
-    buffer = (int *)malloc(powl(SIZE,RANK)*sizeof(int));
+    buffer = (int *)malloc(pow(SIZE,RANK)*sizeof(int));
     VRFY((buffer!=NULL), "malloc");
 
-    for (i=0; i < powl(SIZE,RANK); i++)
+    for (i=0; i < pow(SIZE,RANK); i++)
         buffer[i] = i%SIZE;
 
     /* write buffer into dataset */
@@ -332,11 +357,12 @@ static void gen_linear(hid_t fid)
     hid_t gid; /* group ID */
     herr_t ret;
     char gname[64]; /* group name */
+    int i;
 
     VRFY((NUM_GROUPS > 0), "");
 
     /* create NUM_GROUPS at the root */
-    for (int i=0; i<NUM_GROUPS; i++){
+    for (i=0; i<NUM_GROUPS; i++){
         
         /* append index to a name prefix */
         sprintf(gname, "group%d", i);
@@ -404,10 +430,10 @@ static void gen_rank_datasets(hid_t oid, int fill_dataset)
         if (fill_dataset){
 
             /* allocate buffer and assigns data */
-            buffer = (int *)malloc(powl(size,rank)*sizeof(int));
+            buffer = (int *)malloc(pow(size,rank)*sizeof(int));
             VRFY((buffer!=NULL), "malloc");
 
-            for (i=0; i < powl(size,rank); i++)
+            for (i=0; i < pow(size,rank); i++)
                 buffer[i] = i%size;
 
             /* writes buffer into dataset */
@@ -462,15 +488,15 @@ static void gen_basic_types(hid_t oid, int fill_dataset)
     VRFY((dspace_id>=0), "H5Screate_simple");
 
     /* allocate integer buffer and assign data */
-    uchar_buffer = (unsigned char *)malloc(powl(SIZE,RANK)*sizeof(unsigned char));
+    uchar_buffer = (unsigned char *)malloc(pow(SIZE,RANK)*sizeof(unsigned char));
     VRFY((uchar_buffer!=NULL), "malloc");
     
     /* allocate string buffer and assign data */
-    string_buffer = (unsigned char *)malloc(STR_SIZE*powl(SIZE,RANK)*sizeof(unsigned char));
+    string_buffer = (unsigned char *)malloc(STR_SIZE*pow(SIZE,RANK)*sizeof(unsigned char));
     VRFY((uchar_buffer!=NULL), "malloc");
     
     /* allocate float buffer and assign data */
-    float_buffer = (float *)malloc(powl(SIZE,RANK)*sizeof(float));
+    float_buffer = (float *)malloc(pow(SIZE,RANK)*sizeof(float));
     VRFY((float_buffer!=NULL), "malloc");
 
     /* Create a datatype to refer to */
@@ -481,7 +507,7 @@ static void gen_basic_types(hid_t oid, int fill_dataset)
     VRFY((ret>=0), "H5Tset_size");
 
     /* fill buffer with data */
-    for (i=0; i < powl(SIZE,RANK); i++){
+    for (i=0; i < pow(SIZE,RANK); i++){
         float_buffer[i] = uchar_buffer[i] = i%SIZE;
         strcpy(&string_buffer[i*STR_SIZE], "sample text");
     }
@@ -527,6 +553,10 @@ static void gen_basic_types(hid_t oid, int fill_dataset)
     /* close dataspace */
     ret = H5Sclose(dspace_id);
     VRFY((ret>=0), "H5Sclose");
+
+    free(uchar_buffer);
+    free(float_buffer);
+    free(string_buffer);
 }
 
 
@@ -537,7 +567,7 @@ static void gen_basic_types(hid_t oid, int fill_dataset)
 * 'fill_dataset' determines whether data is to be written into the dataset.
 */
 
-void gen_compound(hid_t oid, int fill_dataset)
+static void gen_compound(hid_t oid, int fill_dataset)
 {
     s1_t *s1;                   /* compound struct */
     hid_t dset_id, dspace_id;   /* dataset and dataspace IDs */
@@ -586,11 +616,11 @@ void gen_compound(hid_t oid, int fill_dataset)
 
     if (fill_dataset) {
         /* allocate buffer and assign data */
-        s1 = (s1_t *)malloc(powl(SIZE,RANK)*sizeof(s1_t));
+        s1 = (s1_t *)malloc(pow(SIZE,RANK)*sizeof(s1_t));
         VRFY((s1!=NULL), "malloc");
     
         /* Initialize the dataset */
-        for (i=0; i<powl(SIZE,RANK); i++) {
+        for (i=0; i<pow(SIZE,RANK); i++) {
 	        s1[i].a = 8*i+0;
 	        s1[i].b = 2000+2*i;
 	        s1[i].c[0] = 8*i+2;
@@ -604,6 +634,8 @@ void gen_compound(hid_t oid, int fill_dataset)
         /* Write the data */
         ret = H5Dwrite (dset_id, s1_tid, H5S_ALL, H5S_ALL, H5P_DEFAULT, s1);
         VRFY((ret>=0), "H5Dwrite");
+
+        free(s1);
     }
 
     /* close dataset */
@@ -617,6 +649,288 @@ void gen_compound(hid_t oid, int fill_dataset)
 
 
 
+/*
+*
+* This function generates a dataset with a VL datatype. The option
+* 'fill_dataset' determines whether data is to be written into the dataset.
+*/
+
+static void gen_vl(hid_t oid, int fill_dataset)
+{
+    hid_t dset_id, dspace_id;   /* dataset and dataspace IDs */
+    hid_t s1_tid, array_dt;     /* datatypes IDs */
+
+    hsize_t dims[RANK];         /* dataspace dimension size */
+    hsize_t memb_size[1] = {4}; /* array datatype dimension */
+    herr_t ret;
+
+    hvl_t *wdata;   /* Information to write */
+    hid_t tid1;         /* Datatype ID			*/
+    hsize_t size;       /* Number of bytes which will be used */
+    unsigned i,j;       /* counting variables */
+    size_t mem_used=0;  /* Memory used during allocation */
+
+
+    VRFY((RANK>0), "RANK");
+    VRFY((SIZE>0), "SIZE");
+
+    /* define size for dataspace dimensions */
+    for(i=0; i < RANK; i++)
+        dims[i] = SIZE;
+
+    /* Create dataspace for datasets */
+    dspace_id = H5Screate_simple(RANK, dims, NULL);
+    VRFY((dspace_id>=0), "H5Screate_simple");
+
+    /* Create a datatype to refer to */
+    tid1 = H5Tvlen_create(H5T_NATIVE_UINT);
+    VRFY((tid1>=0), "H5Tvlen_create");
+
+    /* Create a dataset */
+    dset_id = H5Dcreate(oid,"Dataset1", tid1, dspace_id, H5P_DEFAULT);
+    VRFY((dset_id>=0), "H5Dcreate");
+
+    if (fill_dataset) {
+        /* allocate buffer */
+        wdata = (hvl_t *)malloc(pow(SIZE,RANK)*sizeof(hvl_t));
+        VRFY((wdata!=NULL), "malloc");
+
+        /* initialize VL data to write */
+        for (i=0; i<pow(SIZE,RANK); i++) {
+            wdata[i].p=malloc((i+1)*sizeof(unsigned int));
+            wdata[i].len=i+1;
+            for(j=0; j<(i+1); j++)
+                ((unsigned int *)wdata[i].p)[j]=i*10+j;
+        } /* end for */
+
+        /* write dataset */
+        ret=H5Dwrite(dset_id,tid1,H5S_ALL,H5S_ALL,H5P_DEFAULT,wdata);
+        VRFY((ret>=0), "H5Dwrite");
+
+        free(wdata);
+    }
+
+    /* Close Dataset */
+    ret = H5Dclose(dset_id);
+    VRFY((ret>=0), "H5Dclose");
+
+    /* Close datatype */
+    ret = H5Tclose(tid1);
+    VRFY((ret>=0), "H5Tclose");
+
+    /* Close disk dataspace */
+    ret = H5Sclose(dspace_id);
+    VRFY((ret>=0), "H5Sclose");
+
+}
+
+
+/*
+*
+* This function generates a dataset with an enumerated datatype. The option
+* 'fill_dataset' determines whether data is to be written into the dataset.
+*/
+
+static int gen_enum(hid_t oid, int fill_dataset)
+{
+    hid_t	type, dspace_id, dset_id, ret;  /* HDF5 IDs */
+    c_e1 val;
+    hsize_t dims[RANK]; /* dataspace dimension size */
+    c_e1 *data1;        /* data buffer */
+    hsize_t	i, j;
+
+    VRFY((RANK>0), "RANK");
+    VRFY((SIZE>0), "SIZE");
+
+    /* define size for dataspace dimensions */
+    for(i=0; i < RANK; i++)
+        dims[i] = SIZE;
+
+    /* create enumerated datatype */
+    type = H5Tcreate(H5T_ENUM, sizeof(c_e1));
+    VRFY((type>=0), "H5Tcreate");
+
+    /* insertion of enumerated values */
+    if ((H5Tenum_insert(type, "RED",   CPTR(val, E1_RED  ))<0) ||
+        (H5Tenum_insert(type, "GREEN", CPTR(val, E1_GREEN))<0) ||
+        (H5Tenum_insert(type, "BLUE",  CPTR(val, E1_BLUE ))<0) ||
+        (H5Tenum_insert(type, "WHITE", CPTR(val, E1_WHITE))<0) ||
+        (H5Tenum_insert(type, "BLACK", CPTR(val, E1_BLACK))<0))
+        VRFY(FALSE, "H5Tenum_insert");
+
+    /* create dataspace */
+    dspace_id=H5Screate_simple(RANK, dims, NULL);
+    VRFY((dspace_id>=0), "H5Screate_simple");
+
+    /* create dataset */
+    dset_id=H5Dcreate(oid, "color_table", type, dspace_id, H5P_DEFAULT);
+    VRFY((dset_id>=0), "H5Dcreate");
+   
+    if (fill_dataset) {
+        /* allocate buffer */
+        data1 = (c_e1 *)malloc(pow(SIZE,RANK)*sizeof(c_e1));
+        VRFY((data1!=NULL), "malloc");
+
+        /* allocate and initialize enumerated data to write */
+        for (i=0; i<pow(SIZE,RANK); i++) {
+            j=i%NUM_VALUES;
+            data1[i]=(j<1)?E1_RED:((j<2)?E1_GREEN:((j<3)?E1_BLUE:((j<4)?E1_WHITE:
+            E1_BLACK)));
+        } /* end for */
+
+        /* write dataset */
+        ret=H5Dwrite(dset_id, type, dspace_id, dspace_id, H5P_DEFAULT, data1);
+        VRFY((ret>=0), "H5Dwrite");
+
+        free(data1);
+    }
+
+    /* close dataset */
+    ret=H5Dclose(dset_id);
+    VRFY((ret>=0), "H5Dclose");
+
+    /* close dataspace */
+    ret=H5Sclose(dspace_id);
+    VRFY((ret>=0), "H5Sclose");
+
+    /* close datatype */
+    ret=H5Tclose(type);
+    VRFY((ret>=0), "H5Tclose");
+
+}
+
+
+/*
+*
+* This function generates 1 group with 2 datasets and a compound datatype.
+* Then it creates a dataset containing references to these 4 objects.
+*/
+
+static void gen_reference(hid_t oid)
+{
+    hid_t		dset_id;	/* Dataset ID			*/
+    hid_t		group;      /* Group ID             */
+    hid_t		dspace_id;       /* Dataspace ID			*/
+    hid_t		tid1;       /* Datatype ID			*/
+    hsize_t		dims[RANK];
+    hobj_ref_t      *wbuf;      /* buffer to write to disk */
+    unsigned      *tu32;      /* Temporary pointer to uint32 data */
+    int        i;          /* counting variables */
+    const char *write_comment="Foo!"; /* Comments for group */
+    herr_t		ret;		/* Generic return value		*/
+
+    VRFY((RANK>0), "RANK");
+    VRFY((SIZE>0), "SIZE");
+
+    /* define size for dataspace dimensions */
+    for(i=0; i < RANK; i++)
+        dims[i] = SIZE;
+
+    /* Allocate write & read buffers */
+    wbuf=malloc(MAX(sizeof(unsigned),sizeof(hobj_ref_t))*pow(SIZE,RANK));
+
+    /* Create dataspace for datasets */
+    dspace_id = H5Screate_simple(RANK, dims, NULL);
+    VRFY((dspace_id>=0), "H5Screate_simple");
+
+    /* Create a group */
+    group=H5Gcreate(oid,"Group1",(size_t)-1);
+    VRFY((group>=0), "H5Gcreate");
+
+    /* Set group's comment */
+    ret=H5Gset_comment(group,".",write_comment);
+    VRFY((ret>=0), "H5Gset_comment");
+
+    /* Create a dataset (inside Group1) */
+    dset_id=H5Dcreate(group,"Dataset1",H5T_NATIVE_UINT,dspace_id,H5P_DEFAULT);
+    VRFY((dset_id>=0), "H5Dcreate");
+
+    for(tu32=(unsigned *)wbuf,i=0; i<pow(SIZE,RANK); i++)
+        *tu32++=i*3;
+
+    /* Write selection to disk */
+    ret=H5Dwrite(dset_id,H5T_NATIVE_UINT,H5S_ALL,H5S_ALL,H5P_DEFAULT,wbuf);
+    VRFY((ret>=0), "H5Dwrite");
+
+    /* Close Dataset */
+    ret = H5Dclose(dset_id);
+    VRFY((ret>=0), "H5Dclose");
+
+    /* Create another dataset (inside Group1) */
+    dset_id=H5Dcreate(group,"Dataset2",H5T_NATIVE_UCHAR,dspace_id,H5P_DEFAULT);
+    VRFY((dset_id>=0), "H5Dcreate");
+
+    /* Close Dataset */
+    ret = H5Dclose(dset_id);
+    VRFY((ret>=0), "H5Dclose");
+
+    /* Create a datatype to refer to */
+    tid1 = H5Tcreate (H5T_COMPOUND, sizeof(s2_t));
+    VRFY((tid1>=0), "H5Tcreate");
+
+    /* Insert fields */
+    ret=H5Tinsert (tid1, "a", HOFFSET(s2_t,a), H5T_NATIVE_INT);
+    VRFY((ret>=0), "H5Tinsert");
+
+    ret=H5Tinsert (tid1, "b", HOFFSET(s2_t,b), H5T_NATIVE_INT);
+    VRFY((ret>=0), "H5Tinsert");
+
+    ret=H5Tinsert (tid1, "c", HOFFSET(s2_t,c), H5T_NATIVE_FLOAT);
+    VRFY((ret>=0), "H5Tinsert");
+
+    /* Save datatype for later */
+    ret=H5Tcommit (group, "Datatype1", tid1);
+    VRFY((ret>=0), "H5Tcommit");
+
+    /* Close datatype */
+    ret = H5Tclose(tid1);
+    VRFY((ret>=0), "H5Tclose");
+
+    /* Close group */
+    ret = H5Gclose(group);
+    VRFY((ret>=0), "H5Gclose");
+
+    /* Create a dataset */
+    dset_id=H5Dcreate(oid,"Dataset3",H5T_STD_REF_OBJ,dspace_id,H5P_DEFAULT);
+    VRFY((dset_id>=0), "H5Dcreate");
+    
+    for (i=0;i<((int)pow(SIZE,RANK))/4;i++){
+        /* Create reference to dataset */
+        ret = H5Rcreate(&wbuf[i*4+0],oid,"/Group1/Dataset1",H5R_OBJECT,-1);
+        VRFY((ret>=0), "H5Rcreate");
+
+        /* Create reference to dataset */
+        ret = H5Rcreate(&wbuf[i*4+1],oid,"/Group1/Dataset2",H5R_OBJECT,-1);
+        VRFY((ret>=0),"H5Rcreate");
+
+        /* Create reference to group */
+        ret = H5Rcreate(&wbuf[i*4+2],oid,"/Group1",H5R_OBJECT,-1);
+        VRFY((ret>=0), "H5Rcreate");
+
+        /* Create reference to named datatype */
+        ret = H5Rcreate(&wbuf[i*4+3],oid,"/Group1/Datatype1",H5R_OBJECT,-1);
+        VRFY((ret>=0), "H5Rcreate");
+    }
+
+    /* Write selection to disk */
+    ret=H5Dwrite(dset_id,H5T_STD_REF_OBJ,H5S_ALL,H5S_ALL,H5P_DEFAULT,wbuf);
+    VRFY((ret>=0), "H5Dwrite");
+
+    /* Close disk dataspace */
+    ret = H5Sclose(dspace_id);
+    VRFY((ret>=0), "H5Sclose");
+
+    /* Close Dataset */
+    ret = H5Dclose(dset_id);
+    VRFY((ret>=0), "H5Dclose");
+
+    /* Free memory buffers */
+    free(wbuf);
+
+}   /* test_reference_obj() */
+
+
+
 /* main function of test generator */
 
 int main(int argc, char *argv[])
@@ -626,7 +940,7 @@ int main(int argc, char *argv[])
 
     char *fname[]={"root.h5","linear.h5","hierarchical.h5","multipath.h5","cyclical.h5",
         "rank_dsets_empty.h5","rank_dsets_full.h5","group_dsets.h5","basic_types.h5",
-        "compound.h5"}; /* file names */
+        "compound.h5","vl.h5","enum.h5","refer.h5"}; /* file names */
 
     unsigned i=0;
 
@@ -684,6 +998,21 @@ int main(int argc, char *argv[])
     fid = create_file(fname[i++], "");
     gen_compound(fid, FULL);
     close_file(fid, "");
+
+    /* create a file with a dataset using a VL datatype */
+    fid = create_file(fname[i++], "");
+    gen_vl(fid, FULL);
+    close_file(fid, "");
+
+    /* create a file with a dataset using an enumerated datatype */
+    fid = create_file(fname[i++], "");
+    gen_enum(fid, FULL);
+    close_file(fid, "");
+
+    fid = create_file(fname[i++], "");
+    gen_reference(fid);
+    close_file(fid, "");
+
     
     /* successful completion message */
     printf("\rTest files generation for H5check successful!\n");

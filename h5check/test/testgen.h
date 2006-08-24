@@ -37,6 +37,8 @@
 
 #define VERBOSE 0
 
+#define MAX(a, b)  ((a)>(b))?a:b
+
 
 /* Define some handy debugging shorthands, routines, ... */
 /* debugging tools */
