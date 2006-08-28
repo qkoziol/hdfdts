@@ -1,0 +1,7 @@
+CC=icc
+
+iospeed: gopt.c iospeed.c
+	$(CC) gopt.c iospeed.c -lffio -lrt -o $@
+
+clean:
+	rm iospeed
