@@ -1,0 +1,10 @@
+# Makefile to build the IO speed measurement tool with FFIO enabled.
+
+CFLAGS=-DFFIO_MACHINE
+FFIO_LIBS=-lffio -lrt
+
+iospeed: gopt.c iospeed.c
+	$(CC) $(CFLAGS) gopt.c iospeed.c $(FFIO_LIBS) -o $@
+
+clean:
+	rm iospeed

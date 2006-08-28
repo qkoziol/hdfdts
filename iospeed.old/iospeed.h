@@ -7,8 +7,6 @@
 #include <fcntl.h>
 #include <errno.h>
 
-#define FFIO_MACHINE
-
 #ifdef FFIO_MACHINE
 #include "ffio.h"
 #endif
