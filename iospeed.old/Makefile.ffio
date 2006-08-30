@@ -7,4 +7,4 @@ iospeed: gopt.c iospeed.c
 	$(CC) $(CFLAGS) gopt.c iospeed.c $(FFIO_LIBS) -o $@
 
 clean:
-	rm iospeed
+	rm -f iospeed

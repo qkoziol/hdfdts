@@ -6,6 +6,7 @@
 #include <unistd.h>
 #include <fcntl.h>
 #include <errno.h>
+#include <malloc.h>
 
 #ifdef FFIO_MACHINE
 #include "ffio.h"
@@ -16,3 +17,7 @@
 #define KB 1024
 #define MB KB*KB
 
+/* different UNIX write modes */
+#define	UNIX_BASIC	0	/* basic write */
+#define	UNIX_DIRECTIO	1	/* Direct IO */
+#define	UNIX_NONBLOCK	2	/* Non-blocking IO */

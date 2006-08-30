@@ -4,4 +4,4 @@ iospeed: gopt.c iospeed.c
 	$(CC) gopt.c iospeed.c -o $@
 
 clean:
-	rm iospeed
+	rm -f iospeed

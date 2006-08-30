@@ -1,19 +1,20 @@
 
 #include "iospeed.h"
 
-
 #define READWRITE_TEST 0
 #define WRITE_TEST  1
 #define READ_TEST   2
 #define threshhold 10 * MB
 #define DEFAULT_FILE_NAME "./test_temp_file.dat"
 
+/* memory page size needed for the Direct IO option. */
+size_t mem_page_size;
 
 char* initBuffer(size_t bsize)
 {
     char *buffer;
 
-    if (NULL==(buffer=malloc(bsize* sizeof(char))))
+    if (NULL==(buffer=(char* )memalign(mem_page_size, bsize)))
     {
         printf("\n Error unable to reserve memory\n\n");
         return NULL;
@@ -145,12 +146,12 @@ double testUnixIO(int operation_type, int type, size_t fsize, size_t bsize, char
         gettimeofday(&timeval_start,NULL);
     }    
     /* create file*/
-    if(type == 1)    
-        flag = O_WRONLY | O_CREAT | O_DIRECT;
-    else if (type == 2)
-        flag = O_WRONLY | O_CREAT | O_NONBLOCK;
+    if(type == UNIX_DIRECTIO)    
+        flag = O_CREAT|O_TRUNC|O_WRONLY|O_DIRECT;
+    else if (type == UNIX_NONBLOCK)
+        flag = O_CREAT|O_TRUNC|O_WRONLY|O_NONBLOCK;
     else
-        flag = O_WRONLY | O_CREAT;
+        flag = O_CREAT|O_TRUNC|O_WRONLY;
 
     if ((file=open(fname,flag,S_IRWXU))== -1)
     {
@@ -160,12 +161,13 @@ double testUnixIO(int operation_type, int type, size_t fsize, size_t bsize, char
             
     while(written <= fsize)
     {
-        if ((op_size = write(file, buffer,bsize)) < 0)
+        op_size = write(file, buffer,bsize);
+        if (op_size < 0)
         {
             printf(" Error in writing data to file because %s \n", strerror(errno));
             return -1;
         }
-        else if ((op_size = write(file, buffer,bsize)) == 0)
+        else if (op_size == 0)
         {
             printf(" unable to write sufficent data to file because %s \n", strerror(errno));
             return -1;
@@ -201,12 +203,12 @@ double testUnixIO(int operation_type, int type, size_t fsize, size_t bsize, char
         /*start timing*/
         gettimeofday(&timeval_start,NULL);
     } 
-    if(type == 1)    
-        flag = O_RDWR | O_DIRECT;
-    else if (type == 2)
-        flag = O_RDWR | O_NONBLOCK;
+    if(type == UNIX_DIRECTIO)    
+        flag = O_RDONLY | O_DIRECT;
+    else if (type == UNIX_NONBLOCK)
+        flag = O_RDONLY | O_NONBLOCK;
     else
-        flag = O_RDWR;
+        flag = O_RDONLY;
 
     if ((file=open(fname,flag))== -1)
     {
@@ -379,7 +381,9 @@ wmain (int argc, char **argv)
     char filename[150];
 
     /*init*/    
-    block_size = 1 * KB;
+    /* memory page size needed for the Direct IO option. */
+    mem_page_size = getpagesize();
+    block_size = mem_page_size;		/* default to memory page size */
     file_size = 128 * MB;       
     if ((validOptions=malloc(6*sizeof(char*))) == NULL)
         return -1;
@@ -593,13 +597,13 @@ wmain (int argc, char **argv)
  
   switch(mode){
     case 1:
-      elapsed_time = testUnixIO(input_operation,0,file_size, block_size, filename);
+      elapsed_time = testUnixIO(input_operation,UNIX_BASIC,file_size, block_size, filename);
       break;
     case 2:      
       elapsed_time = testPosixIO(input_operation,file_size, block_size, filename);
       break;
     case 3:
-      elapsed_time = testUnixIO(input_operation,1,file_size, block_size, filename);
+      elapsed_time = testUnixIO(input_operation,UNIX_DIRECTIO,file_size, block_size, filename);
       break;
 #ifdef FFIO_MACHINE
     case 4:
@@ -607,7 +611,7 @@ wmain (int argc, char **argv)
       break;
 #endif
     case 5:
-      elapsed_time = testUnixIO(input_operation,2,file_size, block_size, filename);
+      elapsed_time = testUnixIO(input_operation,UNIX_NONBLOCK,file_size, block_size, filename);
       break;
     default:
         printInfo();
