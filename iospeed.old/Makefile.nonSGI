@@ -1,0 +1,7 @@
+# Generic Makefile to build the IO speed measurement tool.
+
+iospeed: gopt.c iospeed.c
+	$(CC) gopt.c iospeed.c -o $@
+
+clean:
+	rm -f iospeed
