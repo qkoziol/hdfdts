@@ -15,15 +15,16 @@
 /*
    FILE
    testgen.c - HDF5 test generator main file for h5check
-
  */
 
 #include "testgen.h"
 
 /* Definitions for test generator functions */
-#define NUM_GROUPS 512 /* number of groups for linear structure */
 
-#define HEIGHT 3 /* height of group trees (recursion levels) */
+#define NUM_GROUPS 512 /* number of groups and recursion levels for linear
+                        structure */
+
+#define HEIGHT 5 /* height of group trees (recursion levels) */
 
 /* types of group structures */
 #define HIERARCHICAL 0
@@ -49,7 +50,7 @@
 
 #define STR_SIZE 12 /* default size for fixed-length strings */
 
-/* numerical basic types */
+/* numerical basic datatypes */
 #define NTYPES 12
 #define NATIVE_TYPE(i)  \
     (i==0)?H5T_NATIVE_CHAR: \
@@ -92,7 +93,7 @@ typedef enum {
     E1_BLACK
 } c_e1;
 
-#define NUM_VALUES 5
+#define NUM_VALUES 5 /* number of possible values in enumerated datatype */
 
 
 /* Definition for generation of a compound datatype which will
@@ -104,7 +105,63 @@ typedef struct s2_t {
 } s2_t;
 
 
+/* Macros for testing filters */
+#define DSET_CONV_BUF_NAME	"conv_buf"
+#define DSET_TCONV_NAME		"tconv"
+#define DSET_DEFLATE_NAME	"deflate"
+#define DSET_SZIP_NAME          "szip"
+#define DSET_SHUFFLE_NAME	"shuffle"
+#define DSET_FLETCHER32_NAME	"fletcher32"
+#define DSET_FLETCHER32_NAME_2	"fletcher32_2"
+#define DSET_FLETCHER32_NAME_3	"fletcher32_3"
+#define DSET_SHUF_DEF_FLET_NAME	"shuffle+deflate+fletcher32"
+#define DSET_SHUF_DEF_FLET_NAME_2	"shuffle+deflate+fletcher32_2"
+#define DSET_SHUF_SZIP_FLET_NAME	"shuffle+szip+fletcher32"
+#define DSET_SHUF_SZIP_FLET_NAME_2	"shuffle+szip+fletcher32_2"
+#define DSET_BOGUS_NAME		"bogus"
+
+/* Parameters for internal filter test */
+#define CHUNKING_FACTOR 10
+
+/* Temporary filter IDs used for testing */
+#define H5Z_FILTER_BOGUS	305
+#define H5Z_FILTER_CORRUPT	306
+#define H5Z_FILTER_BOGUS2	307
+
+#define H5_SZIP_NN_OPTION_MASK          32
+
+unsigned szip_options_mask=H5_SZIP_NN_OPTION_MASK;
+unsigned szip_pixels_per_block=4;
+
 int nerrors=0;
+
+/* Local prototypes for filter functions */
+static size_t filter_bogus(unsigned int flags, size_t cd_nelmts,
+const unsigned int *cd_values, size_t nbytes, size_t *buf_size, void **buf);
+
+
+/* This message derives from H5Z */
+const H5Z_class_t H5Z_BOGUS[1] = {{
+    H5Z_FILTER_BOGUS,		/* Filter id number		*/
+    "bogus",			/* Filter name for debugging	*/
+    NULL,                       /* The "can apply" callback     */
+    NULL,                       /* The "set local" callback     */
+    filter_bogus,		/* The actual filter function	*/
+}};
+
+
+
+/*
+* This function implements a bogus filter that just returns the value
+* of an argument.
+*/
+
+static size_t filter_bogus(unsigned int UNUSED flags, size_t UNUSED cd_nelmts,
+const unsigned int UNUSED *cd_values, size_t nbytes,size_t UNUSED *buf_size,
+void UNUSED **buf)
+{
+    return nbytes;
+}
 
 
 /*
@@ -931,6 +988,333 @@ static void gen_reference(hid_t oid)
 
 
 
+/*
+* This function is called by test_filters in order to create a dataset with
+* the respective filters.
+*/
+
+static void test_filter_internal(hid_t fid, const char *name, hid_t dcpl, hsize_t *dset_size)
+{
+    hid_t		dataset;        /* Dataset ID */
+    hid_t		dxpl;           /* Dataset xfer property list ID */
+    hid_t		write_dxpl;     /* Dataset xfer property list ID for writing */
+    hid_t		sid;            /* Dataspace ID */
+    hsize_t	size[RANK];           /* Dataspace dimensions */
+    int *points;
+    void		*tconv_buf = NULL;      /* Temporary conversion buffer */
+    hsize_t		i, j, n;        /* Local index variables */
+    herr_t              ret;         /* Error status */
+
+
+    /* define size for dataspace dimensions */
+    for(i=0; i < RANK; i++)
+        size[i] = SIZE+szip_pixels_per_block;
+
+    /* Create the data space */
+    sid = H5Screate_simple(RANK, size, NULL);
+    VRFY((sid>=0), "H5Screate_simple");
+
+    /*
+     * Create a small conversion buffer to test strip mining. We
+     * might as well test all we can!
+     */
+    dxpl = H5Pcreate (H5P_DATASET_XFER);
+    VRFY((dxpl>=0), "H5Pcreate");
+
+    tconv_buf = malloc (1000);
+#ifdef H5_WANT_H5_V1_4_COMPAT
+    ret=H5Pset_buffer (dxpl, (hsize_t)1000, tconv_buf, NULL);
+#else /* H5_WANT_H5_V1_4_COMPAT */
+    ret=H5Pset_buffer (dxpl, (size_t)1000, tconv_buf, NULL);
+#endif /* H5_WANT_H5_V1_4_COMPAT */
+    VRFY((ret>=0), "H5Pset_buffer");
+
+    write_dxpl = H5Pcopy(dxpl);
+    VRFY((write_dxpl>=0), "H5Screate_simple");
+
+    /* Check if all the filters are available */
+    VRFY((H5Pall_filters_avail(dcpl)==TRUE), "Incorrect filter availability");
+
+    /* Create the dataset */
+    dataset = H5Dcreate(fid, name, H5T_NATIVE_INT, sid, dcpl);
+    VRFY((dataset>=0), "H5Dcreate");
+
+    /*----------------------------------------------------------------------
+     * Test filters by setting up a chunked dataset and writing
+     * to it.
+     *----------------------------------------------------------------------
+     */
+
+    points = (int *)malloc(pow(SIZE,RANK)*sizeof(int));
+    VRFY((points!=NULL), "malloc");
+
+    for (i=0; i < pow(SIZE,RANK); i++)
+        points[i]= (int)rand();
+
+    ret=H5Dwrite(dataset, H5T_NATIVE_INT, H5S_ALL, H5S_ALL, write_dxpl, points);
+    VRFY((ret>=0), "H5Dwrite");
+	
+    *dset_size=H5Dget_storage_size(dataset);
+    VRFY((*dset_size!=0), "H5Dget_storage_size");
+
+    ret=H5Dclose(dataset);
+    VRFY((ret>=0), "H5Dclose");
+
+    ret=H5Sclose(sid);
+    VRFY((ret>=0), "H5Sclose");
+
+    ret=H5Pclose (dxpl);
+    VRFY((ret>=0), "H5Pclose");
+
+    free(points);
+    free (tconv_buf);
+
+}
+
+
+
+/*
+* This function generates several datasets with different filters. Filters are used
+* individually and in combinations. The combination of filters in different order is
+* also tested.
+*/
+
+static void test_filters(hid_t file)
+{
+    hid_t	dc;                 /* Dataset creation property list ID */
+    hsize_t chunk_size[RANK]; /* Chunk dimensions */
+    hsize_t     null_size;          /* Size of dataset with null filter */
+
+    hsize_t     fletcher32_size;       /* Size of dataset with Fletcher32 checksum */
+
+    hsize_t     deflate_size;       /* Size of dataset with deflate filter */
+
+    hsize_t     szip_size;       /* Size of dataset with szip filter */
+
+
+    hsize_t     shuffle_size;       /* Size of dataset with shuffle filter */
+
+    hsize_t     combo_size;     /* Size of dataset with shuffle+deflate filter */
+
+    herr_t ret;
+
+    int i,j;
+
+    VRFY((RANK>0), "RANK");
+    VRFY((SIZE>0), "SIZE");
+
+    /* define size for dataspace dimensions */
+    for(i=0; i < RANK; i++)
+        chunk_size[i] = SIZE/CHUNKING_FACTOR+szip_pixels_per_block;
+
+    /*----------------------------------------------------------
+     * STEP 0: Test null I/O filter by itself.
+     *----------------------------------------------------------
+     */
+    dc = H5Pcreate(H5P_DATASET_CREATE);
+    VRFY((dc>=0), "H5Pcreate");
+
+    ret=H5Pset_chunk(dc, RANK, chunk_size);
+    VRFY((ret>=0), "H5Pset_chunk");
+
+#ifdef H5_WANT_H5_V1_4_COMPAT
+    ret=H5Zregister (H5Z_FILTER_BOGUS, "bogus", filter_bogus);
+#else /* H5_WANT_H5_V1_4_COMPAT */
+    ret=H5Zregister (H5Z_BOGUS);
+#endif /* H5_WANT_H5_V1_4_COMPAT */
+    VRFY((ret>=0), "H5Zregister");
+
+    ret=H5Pset_filter (dc, H5Z_FILTER_BOGUS, 0, 0, NULL);
+    VRFY((ret>=0), "H5Pset_filter");
+
+    test_filter_internal(file,DSET_BOGUS_NAME,dc,&null_size);
+
+    /* Clean up objects used for this test */
+    ret=H5Pclose(dc);
+    VRFY((ret>=0), "H5Pclose");
+
+
+    /*----------------------------------------------------------
+     * STEP 1: Test Fletcher32 Checksum by itself.
+     *----------------------------------------------------------
+     */
+    dc = H5Pcreate(H5P_DATASET_CREATE);
+    VRFY((dc>=0), "H5Pcreate");
+
+    ret=H5Pset_chunk(dc, RANK, chunk_size);
+    VRFY((ret>=0), "H5Pset_chunk");
+
+    ret=H5Pset_filter(dc,H5Z_FILTER_FLETCHER32,0,0,NULL);
+    VRFY((ret>=0), "H5Pset_filter");
+
+    /* Enable checksum during read */
+    test_filter_internal(file,DSET_FLETCHER32_NAME,dc,&fletcher32_size);
+    
+    VRFY((fletcher32_size>null_size), "size after checksumming is incorrect.");
+
+    /* Clean up objects used for this test */
+    ret=H5Pclose(dc);
+    VRFY((ret>=0), "H5Pclose");
+
+    /*----------------------------------------------------------
+     * STEP 2: Test deflation by itself.
+     *----------------------------------------------------------
+     */
+    dc = H5Pcreate(H5P_DATASET_CREATE);
+    VRFY((dc>=0), "H5Pcreate");
+
+    ret=H5Pset_chunk(dc, RANK, chunk_size);
+    VRFY((ret>=0), "H5Pset_chunk");
+
+    ret=H5Pset_deflate(dc, 6);
+    VRFY((ret>=0), "H5Pset_deflate");
+
+    test_filter_internal(file,DSET_DEFLATE_NAME,dc,&deflate_size);
+
+    /* Clean up objects used for this test */
+    ret=H5Pclose(dc);
+    VRFY((ret>=0), "H5Pclose");
+    
+    /*----------------------------------------------------------
+     * STEP 3: Test szip compression by itself.
+     *----------------------------------------------------------
+     */
+
+	/* with encoder */
+    dc = H5Pcreate(H5P_DATASET_CREATE);
+    VRFY((dc>=0), "H5Pcreate");
+
+    ret=H5Pset_chunk(dc, RANK, chunk_size);
+    VRFY((ret>=0), "H5Pset_chunk");
+
+	ret=H5Pset_szip(dc, szip_options_mask, szip_pixels_per_block);
+    VRFY((ret>=0), "H5Pset_szip");
+
+	test_filter_internal(file,DSET_SZIP_NAME,dc,&szip_size);
+
+    ret=H5Pclose(dc);
+    VRFY((ret>=0), "H5Pclose");
+    	
+    /*----------------------------------------------------------
+     * STEP 4: Test shuffling by itself.
+     *----------------------------------------------------------
+     */
+    dc = H5Pcreate(H5P_DATASET_CREATE);
+    VRFY((dc>=0), "H5Pcreate");
+
+    ret=H5Pset_chunk(dc, RANK, chunk_size);
+    VRFY((ret>=0), "H5Pset_chunk");
+
+    ret=H5Pset_shuffle(dc);
+    VRFY((ret>=0), "H5Pset_shuffle");
+
+    test_filter_internal(file,DSET_SHUFFLE_NAME,dc,&shuffle_size);
+
+    VRFY((shuffle_size==null_size), "Shuffled size not the same as uncompressed size.");
+
+    /* Clean up objects used for this test */
+    ret=H5Pclose (dc);
+    VRFY((dc>=0), "H5Pclose");
+
+    /*----------------------------------------------------------
+     * STEP 5: Test shuffle + deflate + checksum in any order.
+     *----------------------------------------------------------
+     */
+    dc = H5Pcreate(H5P_DATASET_CREATE);
+    VRFY((dc>=0), "H5Pcreate");
+
+    ret=H5Pset_chunk (dc, RANK, chunk_size);
+    VRFY((ret>=0), "H5Pset_chunk");
+
+    ret=H5Pset_fletcher32(dc);
+    VRFY((ret>=0), "H5Pset_fletcher32");
+
+    ret=H5Pset_shuffle(dc);
+    VRFY((ret>=0), "H5Pset_shuffle");
+
+    ret=H5Pset_deflate (dc, 6);
+    VRFY((ret>=0), "H5Pset_deflate");
+
+    test_filter_internal(file,DSET_SHUF_DEF_FLET_NAME,dc,&combo_size);
+
+    /* Clean up objects used for this test */
+    ret=H5Pclose(dc);
+    VRFY((ret>=0), "H5Pclose");
+
+    dc = H5Pcreate(H5P_DATASET_CREATE);
+    VRFY((dc>=0), "H5Pcreate");
+
+    ret=H5Pset_chunk (dc, RANK, chunk_size);
+    VRFY((ret>=0), "H5Pset_chunk");
+
+    ret=H5Pset_shuffle(dc);
+    VRFY((ret>=0), "H5Pset_shuffle");
+
+    ret=H5Pset_deflate (dc, 6);
+    VRFY((ret>=0), "H5Pcreate");
+
+    ret=H5Pset_fletcher32(dc);
+    VRFY((ret>=0), "H5Pcreate");
+
+    test_filter_internal(file,DSET_SHUF_DEF_FLET_NAME_2,dc,&combo_size);
+
+    /* Clean up objects used for this test */
+    ret=H5Pclose (dc);
+    VRFY((ret>=0), "H5Pclose");
+
+    /*----------------------------------------------------------
+     * STEP 6: Test shuffle + szip + checksum in any order.
+     *----------------------------------------------------------
+     */
+
+    dc = H5Pcreate(H5P_DATASET_CREATE);
+    VRFY((dc>=0), "H5Pcreate");
+
+    ret=H5Pset_chunk (dc, RANK, chunk_size);
+    VRFY((ret>=0), "H5Pset_chunk");
+
+    ret=H5Pset_fletcher32(dc);
+    VRFY((ret>=0), "H5Pset_fletcher");
+
+    ret=H5Pset_shuffle(dc);
+    VRFY((ret>=0), "H5Pset_shuffle");
+
+	/* Make sure encoding is enabled */
+	ret=H5Pset_szip(dc, szip_options_mask, szip_pixels_per_block);
+    VRFY((ret>=0), "H5Pset_szip");
+
+	test_filter_internal(file,DSET_SHUF_SZIP_FLET_NAME,dc,&combo_size);
+
+    /* Clean up objects used for this test */
+    ret=H5Pclose(dc);
+    VRFY((ret>=0), "H5Pclose");
+
+    /* Make sure encoding is enabled */
+	dc = H5Pcreate(H5P_DATASET_CREATE);
+    VRFY((dc>=0), "H5Pcreate");
+
+	ret=H5Pset_chunk (dc, RANK, chunk_size);
+    VRFY((ret>=0), "H5Pset_chunk");
+
+	ret=H5Pset_shuffle(dc);
+    VRFY((ret>=0), "H5Pset_shuffle");
+
+	ret=H5Pset_szip(dc, szip_options_mask, szip_pixels_per_block);
+    VRFY((ret>=0), "H5Pset_szip");
+
+	ret=H5Pset_fletcher32(dc);
+    VRFY((ret>=0), "H5Pset_fletcher32");
+
+    test_filter_internal(file,DSET_SHUF_SZIP_FLET_NAME_2,dc,&combo_size);
+
+	/* Clean up objects used for this test */
+	ret=H5Pclose(dc);
+    VRFY((ret>=0), "H5Pclose");
+}
+
+
+
+
 /* main function of test generator */
 
 int main(int argc, char *argv[])
@@ -940,7 +1324,7 @@ int main(int argc, char *argv[])
 
     char *fname[]={"root.h5","linear.h5","hierarchical.h5","multipath.h5","cyclical.h5",
         "rank_dsets_empty.h5","rank_dsets_full.h5","group_dsets.h5","basic_types.h5",
-        "compound.h5","vl.h5","enum.h5","refer.h5"}; /* file names */
+        "compound.h5","vl.h5","enum.h5","refer.h5","filters.h5"}; /* file names */
 
     unsigned i=0;
 
@@ -1008,11 +1392,16 @@ int main(int argc, char *argv[])
     fid = create_file(fname[i++], "");
     gen_enum(fid, FULL);
     close_file(fid, "");
-
+    
+    /* create a file with a dataset using reference datatype */
     fid = create_file(fname[i++], "");
     gen_reference(fid);
     close_file(fid, "");
 
+    /* create a file with several datasets using different filters */
+    fid = create_file(fname[i++], "");
+    test_filters(fid);
+    close_file(fid, "");
     
     /* successful completion message */
     printf("\rTest files generation for H5check successful!\n");

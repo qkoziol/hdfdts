@@ -27,6 +27,7 @@
 #include <math.h>
 #include <ctype.h>
 
+
 #ifndef TRUE
 #define TRUE    1
 #endif  /* !TRUE */
@@ -34,6 +35,30 @@
 #ifndef FALSE
 #define FALSE   (!TRUE)
 #endif  /* !FALSE */
+
+#define SUCCEED         0
+#define FAIL            (-1)
+#define UFAIL           (unsigned)(-1)
+
+
+/*
+ * Does the compiler support the __attribute__(()) syntax?  This is how gcc
+ * suppresses warnings about unused function arguments.  It's no big deal if
+ * we don't.
+ */
+#ifdef __cplusplus
+#   define __attribute__(X)     /*void*/
+#   define UNUSED               /*void*/
+#else /* __cplusplus */
+#ifdef H5_HAVE_ATTRIBUTE
+#   define UNUSED               __attribute__((unused))
+#else
+#   define __attribute__(X)     /*void*/
+#   define UNUSED               /*void*/
+#endif
+#endif /* __cplusplus */
+
+
 
 #define VERBOSE 0
 
