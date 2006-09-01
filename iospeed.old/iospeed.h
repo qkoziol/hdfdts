@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -6,7 +7,6 @@
 #include <unistd.h>
 #include <fcntl.h>
 #include <errno.h>
-#include <malloc.h>
 
 #ifdef FFIO_MACHINE
 #include "ffio.h"
@@ -14,6 +14,7 @@
 
 #include "gopt.h"
 
+#define _XOPEN_SOURCE 600
 #define KB 1024
 #define MB KB*KB
 

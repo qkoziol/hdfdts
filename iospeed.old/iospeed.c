@@ -12,15 +12,23 @@ size_t mem_page_size;
 
 char* initBuffer(size_t bsize)
 {
-    char *buffer;
+    char *buffer = NULL, *p;
+    int  ret;
+    size_t i;
 
-    if (NULL==(buffer=(char* )memalign(mem_page_size, bsize)))
-    {
+    ret = posix_memalign(&buffer, mem_page_size, bsize);
+
+    if(ret!=0 || !buffer) {
         printf("\n Error unable to reserve memory\n\n");
         return NULL;
     }
-    return buffer;
 
+    /*Initialize the buffer*/
+    p = buffer;
+    for(i=0; i<bsize; i++, p++)
+	*p = (char)i%256;
+
+    return buffer;
 }
 
 double reportTime(struct timeval start)
@@ -62,13 +70,14 @@ double testPosixIO(int operation_type, size_t fsize, size_t bsize, char *fname)
         return -1;
     }    
             
-    while(written <= fsize)
+    while(written < fsize)
     {
         if ((op_size = fwrite(buffer,sizeof(char), bsize,file)) == 0)
         {
             printf(" unable to write sufficent data to file \n");
             return -1;
         }            
+#ifdef TMP        
         if (operation_type != READ_TEST)
         {
             if (( fsize/ reportTime(timeval_start)) < threshhold)
@@ -76,13 +85,10 @@ double testPosixIO(int operation_type, size_t fsize, size_t bsize, char *fname)
                 return -2;
             }
         }
+#endif /*TMP*/
         written += op_size;
-        if (written < 0)
-        {
-            printf( "Error Overflow\n");
-            return -1;
-        }
     }
+
     if (fclose(file) < 0)
     {
         printf(" unable to close the file\n");
@@ -105,25 +111,25 @@ double testPosixIO(int operation_type, size_t fsize, size_t bsize, char *fname)
         return -1;
     }
 
-    while(read_data <= fsize)
+    while(read_data < fsize)
     {
         if ((op_size = fread(buffer,sizeof(char), bsize,file)) == 0)
         {
             printf(" unable to read sufficent data from file \n");
             return -1;
         }            
+#ifdef TMP        
         if (( fsize/ reportTime(timeval_start)) < threshhold)
         {
             return -2;
         }
+#endif /*TMP*/
         read_data += op_size;        
-        if (read_data < 0)
-        {
-            printf( "Error Overflow\n");
-            return -1;
-        }
     }
+
     fclose(file);
+    free(buffer);
+
     return reportTime(timeval_start);
 }
 
@@ -159,7 +165,7 @@ double testUnixIO(int operation_type, int type, size_t fsize, size_t bsize, char
         return -1;
     }    
             
-    while(written <= fsize)
+    while(written < fsize)
     {
         op_size = write(file, buffer,bsize);
         if (op_size < 0)
@@ -171,7 +177,8 @@ double testUnixIO(int operation_type, int type, size_t fsize, size_t bsize, char
         {
             printf(" unable to write sufficent data to file because %s \n", strerror(errno));
             return -1;
-        }        
+        }
+#ifdef TMP        
         if(operation_type != READ_TEST)
         {
             if ((fsize/ reportTime(timeval_start)) < threshhold)
@@ -179,20 +186,15 @@ double testUnixIO(int operation_type, int type, size_t fsize, size_t bsize, char
                 return -2;
             }
         }
+#endif /*TMP*/
         written += op_size;
-        if (written < 0)
-        {
-            printf( "Error Overflow\n");
-            return -1;
-        }
-
     }
+
     if (close(file) < 0)
     {
         printf(" unable to close the file\n");
         return -1;
     }
-
     
     if (operation_type == WRITE_TEST)
     {
@@ -202,7 +204,8 @@ double testUnixIO(int operation_type, int type, size_t fsize, size_t bsize, char
     {
         /*start timing*/
         gettimeofday(&timeval_start,NULL);
-    } 
+    }
+ 
     if(type == UNIX_DIRECTIO)    
         flag = O_RDONLY | O_DIRECT;
     else if (type == UNIX_NONBLOCK)
@@ -216,26 +219,25 @@ double testUnixIO(int operation_type, int type, size_t fsize, size_t bsize, char
         return -1;
     }    
 
-    while(read_data <= fsize)
+    while(read_data < fsize)
     {
         if ((op_size = read(file, buffer, bsize)) <= 0)
         {
             printf(" unable to read sufficent data from file \n");
             return -1;
         }    
+#ifdef TMP        
         if (( fsize/ reportTime(timeval_start)) < threshhold)
         {
             return -2;
         }        
-
+#endif /*TMP*/
         read_data += op_size;        
-        if (read_data < 0)
-        {
-            printf( "Error Overflow\n");
-            return -1;
-        }
     }
+
     close(file);
+    free(buffer);
+
     return reportTime(timeval_start);
 }
 
@@ -265,13 +267,14 @@ double testFFIO(int operation_type, size_t fsize, size_t bsize, char *fname)
         return -1;
     }    
             
-    while(written <= fsize)
+    while(written < fsize)
     {
         if ((op_size = ffwrite(file, buffer, bsize)) <= 0)
         {          
             printf("\n unable to write sufficent data to file \n\n");
             return -1;
         }
+#ifdef TMP
         if (operation_type != READ_TEST)
         {
             if ((fsize/ reportTime(timeval_start)) < threshhold)
@@ -279,13 +282,10 @@ double testFFIO(int operation_type, size_t fsize, size_t bsize, char *fname)
                 return -2;
             }
         }
+#endif /*TMP*/
         written += op_size;        
-        if (written < 0)
-        {
-            printf( "Error Overflow\n");
-            return -1;
-        }
     }
+
     if (ffclose(file) < 0 )
     {
         printf(" unable to close the file\n");
@@ -309,27 +309,26 @@ double testFFIO(int operation_type, size_t fsize, size_t bsize, char *fname)
         return -1;
     }    
 
-    while(read_data <= fsize)
+    while(read_data < fsize)
     {
         if ((op_size = ffread(file,buffer, bsize)) <= 0)
         {
             printf(" unable to read sufficent data from file\n");
             return -1;
         }            
+#ifdef TMP
         if ((fsize/ reportTime(timeval_start)) < threshhold)
         {
             return -2;
         }
+#endif /*TMP*/
         read_data += op_size;        
-        if (read_data < 0)
-        {
-            printf( "Error Overflow\n");
-            return -1;
-        }
     }
-    ffclose(file);
-    return reportTime(timeval_start);
 
+    ffclose(file);
+    free(buffer);
+
+    return reportTime(timeval_start);
 }
 #endif
 
@@ -630,7 +629,7 @@ wmain (int argc, char **argv)
   }
 
   free(options);
-  remove(filename);
+  /*remove(filename);*/
   if (elapsed_time < 0)
       return -1;
   return 0;
