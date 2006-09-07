@@ -14,11 +14,19 @@
 
 #include "gopt.h"
 
-#define _XOPEN_SOURCE 600
 #define KB 1024
-#define MB KB*KB
+#define MB (KB*KB)
+#define GB (MB*KB)
 
-/* different UNIX write modes */
-#define	UNIX_BASIC	0	/* basic write */
-#define	UNIX_DIRECTIO	1	/* Direct IO */
-#define	UNIX_NONBLOCK	2	/* Non-blocking IO */
+/* different IO modes */
+#define	UNIX_BASIC	1	/* basic write */
+#define	Posix_IO	2	/* basic write */
+#define	UNIX_DIRECTIO	3	/* Direct IO */
+#define	FFIO		4	/* basic write */
+#define	UNIX_NONBLOCK	5	/* Non-blocking IO */
+
+/* IO Error Code */
+#define IOERR		-1	/* IO error occured */
+#define IOSLOW		-2	/* IO speed too slow */
+
+#define NUMOPTIONS	6	/* number of options */

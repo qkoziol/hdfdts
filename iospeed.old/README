@@ -1,0 +1,27 @@
+IOSPEED is a simple IO Speed benchmark tools, testing the following
+IO API's.
+    Unix I/O:
+	Unix basic I/O using open/close/read/write API
+    Posix I/O:
+	POSIX IO API using fopen/fclose/fread/fwrite
+    FFIO:
+	Flexible File I/O API (SGI systems only)
+    Unix Direct I/O:
+	Unix basic I/O with DIRECT I/O mode (not available on all systems)
+    Unix Non-block I/O:
+	Unix basic I/O with non-block mode (not available on all systems)
+
+How to build:
+    % make clean	# clean out previous built binary
+    % make		# to build iospeed
+
+How to run:
+    % ./iospeed			    # run default setting using Unix I/O.
+    % ./iospeed	help		    # display help page.
+    % ./iospeed -m 1		    # same as default.
+    % ./iospeed -m 3    	    # run Unix Direct IO
+    % ./iospeed -m 1 -w -s 1000	    # Run Unix IO for datasize = 1000MB.
+    % ./iospeed -m 3 -w -s 1000	    # Run Unix IO for datasize = 1000MB.
+
+---------
+Questions? email acheng@hdfgroup.org

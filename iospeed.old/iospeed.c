@@ -4,7 +4,7 @@
 #define READWRITE_TEST 0
 #define WRITE_TEST  1
 #define READ_TEST   2
-#define threshhold 10 * MB
+#define iospeed_min (1 * MB)
 #define DEFAULT_FILE_NAME "./test_temp_file.dat"
 
 /* memory page size needed for the Direct IO option. */
@@ -12,13 +12,12 @@ size_t mem_page_size;
 
 char* initBuffer(size_t bsize)
 {
-    char *buffer = NULL, *p;
+    char *buffer, *p;
     int  ret;
     size_t i;
 
-    ret = posix_memalign(&buffer, mem_page_size, bsize);
-
-    if(ret!=0 || !buffer) {
+    /* mem_page_size is set in main. */
+    if (posix_memalign(&buffer, mem_page_size, bsize) != 0) {
         printf("\n Error unable to reserve memory\n\n");
         return NULL;
     }
@@ -26,7 +25,7 @@ char* initBuffer(size_t bsize)
     /*Initialize the buffer*/
     p = buffer;
     for(i=0; i<bsize; i++, p++)
-	*p = (char)i%256;
+	*p = (char)i;
 
     return buffer;
 }
@@ -47,6 +46,26 @@ double reportTime(struct timeval start)
     return (double)timeval_diff.tv_sec+((double)timeval_diff.tv_usec/(double)1000000.0);        
 }
 
+/* print sizes in human readable format */
+void showiosize(char* prefix, size_t value, char* suffix)
+{
+    printf("%s%lu", prefix, value);
+    if (value > KB){
+	if (value < MB)
+	    /* Use KB range */
+	    printf("(%gKB)",value/(double)KB);
+	else if (value < GB)
+	    /* Use MB range */
+	    printf("(%gMB)",value/(double)MB);
+	else
+	    /* Use GB range */
+	    printf("(%gGB)",value/(double)GB);
+    }
+
+    printf("%s", suffix);
+    return;
+}
+
 double testPosixIO(int operation_type, size_t fsize, size_t bsize, char *fname)
 {
     FILE* file;
@@ -56,7 +75,7 @@ double testPosixIO(int operation_type, size_t fsize, size_t bsize, char *fname)
     char* buffer;
 
     if ((buffer = initBuffer(bsize)) == NULL)
-        return -1;
+        return IOERR;
     if (operation_type != READ_TEST)
     {
         /*start timing*/
@@ -67,7 +86,7 @@ double testPosixIO(int operation_type, size_t fsize, size_t bsize, char *fname)
     if ((file=fopen(fname,"w"))== 0)
     {
         printf(" unable to create the file\n");
-        return -1;
+        return IOERR;
     }    
             
     while(written < fsize)
@@ -75,24 +94,35 @@ double testPosixIO(int operation_type, size_t fsize, size_t bsize, char *fname)
         if ((op_size = fwrite(buffer,sizeof(char), bsize,file)) == 0)
         {
             printf(" unable to write sufficent data to file \n");
-            return -1;
+            return IOERR;
         }            
-#ifdef TMP        
         if (operation_type != READ_TEST)
         {
-            if (( fsize/ reportTime(timeval_start)) < threshhold)
+            if (( fsize/ reportTime(timeval_start)) < iospeed_min)
             {
-                return -2;
+		/* IO speed too slow. Abort. */
+                return IOSLOW;
             }
         }
-#endif /*TMP*/
         written += op_size;
+#if 0
+	/* check is not needed any more? */
+        if (written < 0)
+        {
+	    /* integer overflow detected. */
+            printf( "Error: Integer overflow during write\n");
+            return IOERR;
+        }
+#endif
     }
+#ifndef NDEBUG
+	showiosize("Data written=", written, "\n");
+#endif
 
     if (fclose(file) < 0)
     {
         printf(" unable to close the file\n");
-        return -1;
+        return IOERR;
     }    
     
     if (operation_type == WRITE_TEST)
@@ -108,7 +138,7 @@ double testPosixIO(int operation_type, size_t fsize, size_t bsize, char *fname)
     if ((file=fopen(fname,"r"))== 0)
     {
         printf(" unable to open the file\n");
-        return -1;
+        return IOERR;
     }
 
     while(read_data < fsize)
@@ -116,16 +146,27 @@ double testPosixIO(int operation_type, size_t fsize, size_t bsize, char *fname)
         if ((op_size = fread(buffer,sizeof(char), bsize,file)) == 0)
         {
             printf(" unable to read sufficent data from file \n");
-            return -1;
+            return IOERR;
         }            
-#ifdef TMP        
-        if (( fsize/ reportTime(timeval_start)) < threshhold)
+        if (( fsize/ reportTime(timeval_start)) < iospeed_min)
         {
-            return -2;
+	    /* IO speed too slow. Abort. */
+            return IOSLOW;
         }
-#endif /*TMP*/
         read_data += op_size;        
+#if 0
+	/* check is not needed any more? */
+        if (read_data < 0)
+        {
+	    /* integer overflow detected. */
+            printf( "Error: Integer overflow during read\n");
+            return IOERR;
+        }
+#endif
     }
+#ifndef NDEBUG
+	showiosize("Data read=", read_data, "\n");
+#endif
 
     fclose(file);
     free(buffer);
@@ -144,7 +185,7 @@ double testUnixIO(int operation_type, int type, size_t fsize, size_t bsize, char
     char* buffer;
 
     if ((buffer = initBuffer(bsize)) == NULL)
-        return -1;
+        return IOERR;
 
     /*start timing*/
     if (operation_type != READ_TEST)
@@ -162,7 +203,7 @@ double testUnixIO(int operation_type, int type, size_t fsize, size_t bsize, char
     if ((file=open(fname,flag,S_IRWXU))== -1)
     {
         printf(" unable to create the file\n");
-        return -1;
+        return IOERR;
     }    
             
     while(written < fsize)
@@ -171,29 +212,40 @@ double testUnixIO(int operation_type, int type, size_t fsize, size_t bsize, char
         if (op_size < 0)
         {
             printf(" Error in writing data to file because %s \n", strerror(errno));
-            return -1;
+            return IOERR;
         }
         else if (op_size == 0)
         {
             printf(" unable to write sufficent data to file because %s \n", strerror(errno));
-            return -1;
+            return IOERR;
         }
-#ifdef TMP        
         if(operation_type != READ_TEST)
         {
-            if ((fsize/ reportTime(timeval_start)) < threshhold)
+            if ((fsize/ reportTime(timeval_start)) < iospeed_min)
             {
-                return -2;
+		/* IO speed too slow. Abort. */
+                return IOSLOW;
             }
         }
-#endif /*TMP*/
         written += op_size;
+#if 0
+	/* check is not needed any more? */
+        if (written < 0)
+        {
+	    /* integer overflow detected. */
+            printf( "Error: Integer overflow during write\n");
+            return IOERR;
+        }
+#endif
     }
+#ifndef NDEBUG
+	showiosize("Data written=", written, "\n");
+#endif
 
     if (close(file) < 0)
     {
         printf(" unable to close the file\n");
-        return -1;
+        return IOERR;
     }
     
     if (operation_type == WRITE_TEST)
@@ -216,7 +268,7 @@ double testUnixIO(int operation_type, int type, size_t fsize, size_t bsize, char
     if ((file=open(fname,flag))== -1)
     {
         printf(" unable to open the file because %s \n", strerror(errno));
-        return -1;
+        return IOERR;
     }    
 
     while(read_data < fsize)
@@ -224,16 +276,27 @@ double testUnixIO(int operation_type, int type, size_t fsize, size_t bsize, char
         if ((op_size = read(file, buffer, bsize)) <= 0)
         {
             printf(" unable to read sufficent data from file \n");
-            return -1;
+            return IOERR;
         }    
-#ifdef TMP        
-        if (( fsize/ reportTime(timeval_start)) < threshhold)
+        if (( fsize/ reportTime(timeval_start)) < iospeed_min)
         {
-            return -2;
+	    /* IO speed too slow. Abort. */
+            return IOSLOW;
         }        
-#endif /*TMP*/
         read_data += op_size;        
+#if 0
+	/* check is not needed any more? */
+        if (read_data < 0)
+        {
+	    /* integer overflow detected. */
+            printf( "Error: Integer overflow during read\n");
+            return IOERR;
+        }
+#endif
     }
+#ifndef NDEBUG
+	showiosize("Data read=", read_data, "\n");
+#endif
 
     close(file);
     free(buffer);
@@ -252,7 +315,7 @@ double testFFIO(int operation_type, size_t fsize, size_t bsize, char *fname)
     char* buffer;
 
     if ((buffer = initBuffer(bsize)) == NULL)
-        return -1;
+        return IOERR;
     if (operation_type != READ_TEST)
     {
         /*start timing*/
@@ -264,7 +327,7 @@ double testFFIO(int operation_type, size_t fsize, size_t bsize, char *fname)
     if ((file=ffopen(fname,flag))== -1)
     {
         printf(" unable to create the file\n");
-        return -1;
+        return IOERR;
     }    
             
     while(written < fsize)
@@ -272,24 +335,35 @@ double testFFIO(int operation_type, size_t fsize, size_t bsize, char *fname)
         if ((op_size = ffwrite(file, buffer, bsize)) <= 0)
         {          
             printf("\n unable to write sufficent data to file \n\n");
-            return -1;
+            return IOERR;
         }
-#ifdef TMP
         if (operation_type != READ_TEST)
         {
-            if ((fsize/ reportTime(timeval_start)) < threshhold)
+            iospeed_min ((fsize/ reportTime(timeval_start)) < iospeed_min)
             {
-                return -2;
+		/* IO speed too slow. Abort. */
+                return IOSLOW;
             }
         }
-#endif /*TMP*/
         written += op_size;        
+#if 0
+	/* check is not needed any more? */
+        if (written < 0)
+        {
+	    /* integer overflow detected. */
+            printf( "Error: Integer overflow during write\n");
+            return IOERR;
+        }
+#endif
     }
+#ifndef NDEBUG
+	showiosize("Data written=", written, "\n");
+#endif
 
     if (ffclose(file) < 0 )
     {
         printf(" unable to close the file\n");
-        return -1;
+        return IOERR;
     }
     
     if (operation_type == WRITE_TEST)
@@ -306,7 +380,7 @@ double testFFIO(int operation_type, size_t fsize, size_t bsize, char *fname)
     if ((file=ffopen(fname,flag))== -1)
     {
         printf(" unable to open the file\n");
-        return -1;
+        return IOERR;
     }    
 
     while(read_data < fsize)
@@ -314,16 +388,27 @@ double testFFIO(int operation_type, size_t fsize, size_t bsize, char *fname)
         if ((op_size = ffread(file,buffer, bsize)) <= 0)
         {
             printf(" unable to read sufficent data from file\n");
-            return -1;
+            return IOERR;
         }            
-#ifdef TMP
-        if ((fsize/ reportTime(timeval_start)) < threshhold)
+        if ((fsize/ reportTime(timeval_start)) < iospeed_min)
         {
-            return -2;
+	    /* IO speed too slow. Abort. */
+            return IOSLOW;
         }
-#endif /*TMP*/
         read_data += op_size;        
+#if 0
+	/* check is not needed any more? */
+        if (read_data < 0)
+        {
+	    /* integer overflow detected. */
+            printf( "Error: Integer overflow during read\n");
+            return IOERR;
+        }
+#endif
     }
+#ifndef NDEBUG
+	showiosize("Data read=", read_data, "\n");
+#endif
 
     ffclose(file);
     free(buffer);
@@ -334,20 +419,27 @@ double testFFIO(int operation_type, size_t fsize, size_t bsize, char *fname)
 
 void printInfo()
 {
-    printf("Usage: \n");
-    printf("[-m <mode>] [-w] [-r] [-b <bsize>] [-s <fsize>] [-f <fname>]\n");
-    printf("-m          I/O API <mode> to test.  1 for Unix I/O, 2 for Posix I/O, 3 for Unix with O_DIRECT, 4 for FFIO\n");
-    printf("            , and 5 for Unix I/O with O_NONBlOCK\n");
-    printf("-r          read only\n");
-    printf("-w          write only (default to do both read and write)\n");
-    printf("-b <bsize>  data transfer block size (default 1KB=1024B)\n");
-    printf("-s <fsize>  total file size in MB=1024*1024B (default 128)\n");
-    printf("-f <fname>  temporary data file name (default current directory)\n");
-    printf("help        prints this message\n");
+    printf(
+	"Usage: iospeed [-m <mode>] [-w] [-r] [-b <bsize>] [-s <fsize>] [-f <fname>]\n"
+	"    -m          I/O API <mode> to test.\n"
+        "                1 for Unix I/O\n"
+        "                2 for Posix I/O\n"
+        "                3 for Unix I/O with O_DIRECT\n"
+#ifdef FFIO_MACHINE
+        "                4 for FFIO\n"
+#endif
+        "                5 for Unix I/O with O_NONBlOCK\n"
+        "    -r          read only\n"
+        "    -w          write only (default to do both read and write)\n"
+        "    -b <bsize>  data transfer block size (default 1KB=1024B)\n"
+        "    -s <fsize>  total file size in MB=1024*1024B (default 128)\n"
+        "    -f <fname>  temporary data file name (default current directory)\n"
+        "    help        prints this message\n"
+    );
 }
 
 /*-------------------------------------------------------------------------
- * Function:    wmain
+ * Function:    main
  * 
  * Purpose:     Tests the basic different modes of I/O
  * 
@@ -355,15 +447,12 @@ void printInfo()
  *              
  *              Failure:        exit(1)
  * 
- * Programmer:  Arash Termehchy 
- *              3/11/06
- * 
  * Modifications:
  *
  *-------------------------------------------------------------------------
  */
 int
-wmain (int argc, char **argv)
+main (int argc, char **argv)
 {  
     char shortopt;
     unsigned int i, mode = 1;
@@ -384,9 +473,9 @@ wmain (int argc, char **argv)
     mem_page_size = getpagesize();
     block_size = mem_page_size;		/* default to memory page size */
     file_size = 128 * MB;       
-    if ((validOptions=malloc(6*sizeof(char*))) == NULL)
+    if ((validOptions=malloc(NUMOPTIONS*sizeof(char*))) == NULL)
         return -1;
-    for(i = 0; i < 6; i++)
+    for(i = 0; i < NUMOPTIONS; i++)
     {
         if ((validOptions[i]=malloc(1*sizeof(char))) == NULL)
             return -1;
@@ -412,7 +501,7 @@ wmain (int argc, char **argv)
         return -1;
     }
     /* Checking*/
-   if ((!isValid(options,validOptions,1)) && (oldargc > 1))
+   if ((!isValid(options,(const char**)validOptions,NUMOPTIONS)) && (oldargc > 1))
     {
         printInfo();
         return -1;
@@ -422,7 +511,7 @@ wmain (int argc, char **argv)
     goptreturn=gopt(options,'m',0,&ptr);    
     switch(goptreturn){
         case GOPT_NOTPRESENT:
-            mode = 1;
+            mode = UNIX_BASIC;
             if (header)
             {
                 printf(" Mode=Unix I/O ");      
@@ -433,12 +522,12 @@ wmain (int argc, char **argv)
             {
                 printf(" Mode=Unix I/O ");      
             }
-            mode = 1;
+            mode = UNIX_BASIC;
             break;
         case GOPT_PRESENT_WITHARG:
             if (*ptr =='1')
             {
-                mode = 1;
+                mode = UNIX_BASIC;
                 if (header)
                 {
                     printf(" Mode=Unix I/O ");      
@@ -446,7 +535,7 @@ wmain (int argc, char **argv)
             }
             else if (*ptr =='2')
             {
-                mode = 2;
+                mode = Posix_IO;
                 if (header)
                 {
                     printf(" Mode=Posix I/O ");      
@@ -454,7 +543,7 @@ wmain (int argc, char **argv)
             }
             else if (*ptr == '3')
             {
-                mode = 3;
+                mode = UNIX_DIRECTIO;
                 if (header)
                 {
                     printf(" Mode=Direct Unix I/O  ");      
@@ -463,7 +552,7 @@ wmain (int argc, char **argv)
 #ifdef FFIO_MACHINE
             else if (*ptr == '4')
             {                
-                mode = 4;
+                mode = FFIO;
                 if (header)
                 {
                     printf(" Mode=FFIO ");      
@@ -473,7 +562,7 @@ wmain (int argc, char **argv)
 #endif
             else if (*ptr == '5')
             {
-                mode = 5;
+                mode = UNIX_NONBLOCK;
                 if (header)
                 {
                     printf(" Mode=Non-Blocking Unix I/O ");      
@@ -481,15 +570,13 @@ wmain (int argc, char **argv)
             }
             else
             {
-                printf("error\n");
+                printf("Error: Unknown mode(%c)\n", *ptr);
                 printInfo();
                 return 1;
             }
                 
             break;
     }
-
-    
     
     /*read, write */
     goptreturn=gopt(options,'r',0,&ptr);       
@@ -561,7 +648,7 @@ wmain (int argc, char **argv)
             break;
         }
     }
-    printf("%lu, ",file_size);
+    showiosize("file-size=", file_size, ", ");
 
     /* block size*/
     goptreturn=gopt(options,'b',0,&ptr);    
@@ -577,7 +664,8 @@ wmain (int argc, char **argv)
             break;
         }
     }
-    printf("%lu, ",block_size);
+    showiosize("block-size=", block_size, ", ");
+
     /*file name*/
     goptreturn=gopt(options,'f',0,&ptr);    
     switch(goptreturn){
@@ -591,25 +679,26 @@ wmain (int argc, char **argv)
       strcpy(filename,ptr);
       break;
     }    
+    printf("filename=%s\n",filename);
 
     /*run*/    
  
   switch(mode){
-    case 1:
+    case UNIX_BASIC:
       elapsed_time = testUnixIO(input_operation,UNIX_BASIC,file_size, block_size, filename);
       break;
-    case 2:      
+    case Posix_IO:      
       elapsed_time = testPosixIO(input_operation,file_size, block_size, filename);
       break;
-    case 3:
+    case UNIX_DIRECTIO:
       elapsed_time = testUnixIO(input_operation,UNIX_DIRECTIO,file_size, block_size, filename);
       break;
 #ifdef FFIO_MACHINE
-    case 4:
+    case FFIO:
       elapsed_time = testFFIO(input_operation,file_size, block_size, filename);
       break;
 #endif
-    case 5:
+    case UNIX_NONBLOCK:
       elapsed_time = testUnixIO(input_operation,UNIX_NONBLOCK,file_size, block_size, filename);
       break;
     default:
@@ -618,131 +707,20 @@ wmain (int argc, char **argv)
         break;
   }
    
-  if (elapsed_time  == -1)
-      printf("Error\n");
-  else if (elapsed_time  == -2)
-      printf("Too Long\n");
+  if (elapsed_time  == IOERR)
+      printf("IO Error encountered.  Test aborted.\n");
+  else if (elapsed_time  == IOSLOW)
+      printf("IO Speed too slow (<%dMB/s). Test aborted.\n", iospeed_min/MB);
   else
   {
-      printf(" %f,", elapsed_time);      
-      printf(" %f \n", file_size / ( elapsed_time * MB));
+      printf("elapsed time=%fs,", elapsed_time);      
+      printf(" IO speed=%f(MB/s) \n", file_size / ( elapsed_time * MB));
   }
 
   free(options);
-  /*remove(filename);*/
+  remove(filename);
   if (elapsed_time < 0)
       return -1;
   return 0;
 }
-
-/*-------------------------------------------------------------------------
- * Function:    main
- * 
- * Purpose:     a wrapper to the wmain function
- * 
- * Return:      Success:        exit(0)
- *              
- *              Failure:        exit(1)
- * 
- * Programmer:  Arash Termehchy 
- *              3/11/06
- * 
- * Modifications:
- *
- *-------------------------------------------------------------------------
- */
-int
-main (int argc, char **argv)
-{  
-        
-    return wmain(argc,argv);
-    
-/*    
-    int fSizeCount = 0;
-    int bSizeCount = 0;
-    int mode=0, count = 0, i = 0, unfinished = 0;
-    int wr = WRITE_TEST;
-    
-    char command[11][255];
-
-    if (argc > 2)
-    {
-        return wmain(argc,argv);
-    }
-    else if(argc <= 1)
-    {
-        printf ("Error, enter parameter\n");
-        exit(1);
-    }
-        
-    sprintf(command[count],"iospeed");        
-    count++;
-    for(mode = 1; mode <= 4 ; mode++)
-    {                
-        if (mode == 3)
-            continue;
-        sprintf(command[count],"-m");        
-        count++;
-        sprintf(command[count],"%d",mode);
-        count++;        
-        for(wr = WRITE_TEST; wr <= READ_TEST; wr++)
-        {                    
-            header = 1;
-            if (wr == WRITE_TEST)
-            {
-                sprintf(command[count],"-w");
-                count++;
-
-            }
-            else if (wr == READ_TEST)
-            {
-                sprintf(command[count],"-r");
-                count++;
-            }
-            for(bSizeCount = 1; bSizeCount <= 5; bSizeCount)
-            {
-                sprintf(command[count],"-b");
-                count++;
-                if (bSizeCount <= 2)
-                {
-                    sprintf(command[count],"%d",bSizeCount);                        
-                    count++;
-                }
-                else if (bSizeCount < 5)
-                {
-                    sprintf(command[count],"%d",(bSizeCount - 2) * KB);                        
-                    count++;
-                }
-                else
-                {
-                    sprintf(command[count],"%d",(bSizeCount - 1) * KB);
-                    count++;
-                }
-                for(fSizeCount = 128; fSizeCount <= 8192; fSizeCount*= 2)
-                {
-                    sprintf(command[count],"-s");            
-                    count++;
-                    sprintf(command[count],"%d",fSizeCount);            
-                    count++;
-                    sprintf(command[count],"-f");   
-                    count++;
-                    sprintf(command[count],"%s",argv[1]);   
-                    count++;
-                    for (i = 0; i < count; i++)
-                        printf("%s\n",command[i]);
-
-                    if (wmain(count,command) < 0)
-                    {
-                        unfinished = 1;
-                        header = 0;
-                        break;
-                    }
-                    header = 0;
-                }
-            }
-        }
-    }*/
-
-}
-
 
