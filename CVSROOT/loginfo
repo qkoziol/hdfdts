@@ -22,33 +22,6 @@
 # Default log to common file
 #
 # File cache
-^fmpool			$CVSROOT/CVSROOT/log.pl %s -f $CVSROOT/CVSROOT/commitlog
-
-# SDB (CGI)
-^sdb			$CVSROOT/CVSROOT/log.pl %s -f $CVSROOT/CVSROOT/commitlog
-
-# FTP hierachy
-^ftp			$CVSROOT/CVSROOT/log.pl %s -f $CVSROOT/CVSROOT/commitlog -m bljones@ncsa.uiuc.edu
-
-# for hdf-fits      
-^hdf-fits		$CVSROOT/CVSROOT/log.pl %s -f $CVSROOT/CVSROOT/commitlog -m xlu@ncsa.uiuc.edu
-
-# for Java-based HDF viewer
-^jhv               $CVSROOT/CVSROOT/log.pl %s -f $CVSROOT/CVSROOT/commitlog -m xlu@ncsa.uiuc.edu
-^jhv-docs               $CVSROOT/CVSROOT/log.pl %s -f $CVSROOT/CVSROOT/commitlog-m xlu@ncsa.uiuc.edu
-^jhv-native               $CVSROOT/CVSROOT/log.pl %s -f $CVSROOT/CVSROOT/commitlog  -m xlu@ncsa.uiuc.edu
-
-# HDF 4.0 library related modules
-^project                 $CVSROOT/CVSROOT/log.pl %s -f $CVSROOT/CVSROOT/commitlog  -m hdf-cvs@ncsa.uiuc.edu
-^dist                 $CVSROOT/CVSROOT/log.pl %s -f $CVSROOT/CVSROOT/commitlog  -m hdf-cvs@ncsa.uiuc.edu
-^dev                 $CVSROOT/CVSROOT/log.pl %s -f $CVSROOT/CVSROOT/commitlog  -m hdf-cvs@ncsa.uiuc.edu
-
-# HDF 5.0 library related modules
-^hdf5                 $CVSROOT/CVSROOT/log.pl %s -f $CVSROOT/CVSROOT/commitlog  -m hdf5cvs@ncsa.uiuc.edu
-^hdf5_hl              $CVSROOT/CVSROOT/log.pl %s -f $CVSROOT/CVSROOT/commitlog  -m hdf5cvs@ncsa.uiuc.edu
-
-# java-hdf stuff
-^java-hdf               $CVSROOT/CVSROOT/log.pl %s -f $CVSROOT/CVSROOT/commitlog -m xlu@ncsa.uiuc.edu
 
 # for Albert personal tree
 ^acheng		$CVSROOT/CVSROOT/log.pl %s -f $CVSROOT/CVSROOT/commitlog.acheng -m acheng@ncsa.uiuc.edu
@@ -56,21 +29,11 @@
 # for Vailin personal tree
 ^vchoi         $CVSROOT/CVSROOT/log.pl %s -f $CVSROOT/CVSROOT/commitlog.vchoi -m vailin@ncsa.uiuc.edu
 
-# for Pedro personal tree
-^pvn		$CVSROOT/CVSROOT/log.pl %s -f $CVSROOT/CVSROOT/commitlog.pvn -m pvn@ncsa.uiuc.edu
-^buda		$CVSROOT/CVSROOT/log.pl %s -f $CVSROOT/CVSROOT/commitlog.pvn -m pvn@ncsa.uiuc.edu
-
-# Travel form
-^travel		$CVSROOT/CVSROOT/log.pl %s -f $CVSROOT/CVSROOT/commitlog.travel -m mcgrath@ncsa.uiuc.edu
-
-# Parallel HDF stuff
-^phdf		$CVSROOT/CVSROOT/log.pl %s -f $CVSROOT/CVSROOT/commitlog.phdf -m "koziol@ncsa.uiuc.edu acheng@ncsa.uiuc.edu"
-
 # Parallel HDF stuff
 ^h5check		$CVSROOT/CVSROOT/log.pl %s -f $CVSROOT/CVSROOT/commitlog.phdf -m "acheng@hdfgroup.org chilan@hdfgroup.org slu@hdfgroup.org vchoi@hdfgroup.org"
 
-# ffio code
-^ffio		$CVSROOT/CVSROOT/log.pl %s -f $CVSROOT/CVSROOT/commitlog.phdf -m "acheng@hdfgroup.org slu@hdfgroup.org"
+# iospeed code (old name was ffio)
+^iospeed		$CVSROOT/CVSROOT/log.pl %s -f $CVSROOT/CVSROOT/commitlog.phdf -m "acheng@hdfgroup.org slu@hdfgroup.org"
 
 # default goes to the CVS mailing list
-DEFAULT                 $CVSROOT/CVSROOT/log.pl %s -f $CVSROOT/CVSROOT/commitlog  -m hdf-cvs@ncsa.uiuc.edu
+DEFAULT                 $CVSROOT/CVSROOT/log.pl %s -f $CVSROOT/CVSROOT/commitlog  -m acheng@hdfgroup.org
