@@ -304,6 +304,248 @@ double testUnixIO(int operation_type, int type, size_t fsize, size_t bsize, char
     return reportTime(timeval_start);
 }
 
+double testMMAP(int operation_type, int type, size_t fsize, size_t bsize, char *fname)
+{
+    int file, flag;
+    size_t written = 0,read_data = 0;    
+    ssize_t op_size;    
+    struct timeval timeval_start,timeval_stop;
+    struct timeval timeval_diff;
+    char *buffer, *pmap, *p;
+    size_t interval, i, batch=4;
+   
+    if(bsize > fsize) {
+	printf("block size is too small.  Try again.\n");
+        return IOERR;
+    }
+ 
+    if ((buffer = initBuffer(bsize)) == NULL)
+        return IOERR;
+
+    /*start timing*/
+    if (operation_type != READ_TEST)
+    {
+        gettimeofday(&timeval_start,NULL);
+    }    
+
+    /* create file*/
+    if(type == UNIX_DIRECTIO)    
+        flag = O_CREAT|O_TRUNC|O_RDWR|O_DIRECT;
+    else
+        flag = O_CREAT|O_TRUNC|O_RDWR;
+
+    if ((file=open(fname,flag,S_IRWXU))== -1)
+    {
+        printf(" unable to create the file\n");
+        return IOERR;
+    }   
+
+    /* first extend file size */
+    if(ftruncate(file, fsize)<0) {
+	printf(" unable to extend file size\n"); 
+        return IOERR;
+    }
+
+    if(fsize<(size_t)2*1024*MB) {
+        /* if the file is smaller than 2GB, map the whole file into memory using mmap */
+        if((pmap = (char*)mmap(0, fsize, PROT_WRITE | PROT_READ, MAP_SHARED, file, 0))<0) {
+            printf(" Error in mmap because %s.\n", strerror(errno));
+       	    return IOERR;
+        }
+ 
+        p = pmap;    
+        while(written < fsize)
+        {
+            memcpy(p, buffer, bsize);
+
+	    if(operation_type != READ_TEST)
+	    {
+	        if ((fsize/ reportTime(timeval_start)) < iospeed_min)
+	        {
+		    /* IO speed too slow. Abort. */
+		    return IOSLOW;
+	        }
+	    }
+
+	    p += bsize;
+            written += bsize;
+#if 0
+	    /* check is not needed any more? */
+            if (written < 0)
+            {
+	        /* integer overflow detected. */
+                printf( "Error: Integer overflow during write\n");
+                return IOERR;
+            }
+#endif
+        }
+
+        if(munmap(pmap, fsize)<0) {
+            printf("munmap failed\n");
+       	    return IOERR;
+        }
+    } else if (fsize >= (bsize*batch) && ((fsize % (bsize*batch))==0)) {
+	/* if the file is bigger, map the file a few times into memory. */
+        interval = fsize / (bsize*batch);
+
+        for(i=0; i<interval; i++) {
+	    if((pmap = (char*)mmap(0, bsize*batch, PROT_WRITE | PROT_READ, MAP_SHARED, file, 
+		i*bsize*batch))<0) {
+                printf(" Error in mmap because %s.\n", strerror(errno));
+       	        return IOERR;
+            }
+ 
+            p = pmap;
+	    written = 0;    
+            while(written < bsize*batch)
+            {
+	        memcpy(p, buffer, bsize);
+
+	        if(operation_type != READ_TEST)
+	        {
+	            if ((fsize/ reportTime(timeval_start)) < iospeed_min)
+	            {
+		        /* IO speed too slow. Abort. */
+		        return IOSLOW;
+	            }
+	        }
+
+	        p += bsize;
+	        written += bsize;
+#if 0
+	    	/* check is not needed any more? */
+            	if (written < 0)
+            	{
+	            /* integer overflow detected. */
+                    printf( "Error: Integer overflow during write\n");
+                    return IOERR;
+            	}
+#endif
+            }
+
+    	    if(munmap(pmap, bsize*batch)<0) {
+                printf("munmap failed\n");
+       	        return IOERR;
+            }
+        }
+    } else {
+	printf("\nfile size should be a multiple of block size times 4 for convenience.\n");
+       	return IOERR;
+    }
+
+    if (close(file) < 0)
+    {
+        printf(" unable to close the file\n");
+       	return IOERR;
+    }
+    
+    if (operation_type == WRITE_TEST)
+    {
+        return reportTime(timeval_start);    
+    }
+    else if (operation_type == READ_TEST)
+    {
+        /*start timing*/
+        gettimeofday(&timeval_start,NULL);
+    }
+ 
+    if(type == UNIX_DIRECTIO)    
+        flag = O_RDONLY | O_DIRECT;
+    else
+        flag = O_RDONLY;
+
+    if ((file=open(fname,flag))== -1)
+    {
+        printf(" unable to open the file because %s \n", strerror(errno));
+       	return IOERR;
+    }    
+
+    if(fsize<(size_t)2*1024*MB) {
+        /* if the file is smaller than 2GB, map the whole file into memory using mmap */
+        if((pmap = (char*)mmap(0, fsize, PROT_READ, MAP_SHARED, file, 0))<0) {
+            printf(" Error in mmap because %s.\n", strerror(errno));
+       	    return IOERR;
+        }
+
+        p = pmap;
+        while(read_data < fsize)
+        {
+            memcpy(buffer, p, bsize);
+
+            if (( fsize/ reportTime(timeval_start)) < iospeed_min)
+            {
+	        /* IO speed too slow. Abort. */
+                return IOSLOW;
+            }
+ 
+	    p += bsize;
+            read_data += bsize;        
+#if 0
+	    /* check is not needed any more? */
+            if (read_data < 0)
+            {
+	        /* integer overflow detected. */
+                printf( "Error: Integer overflow during read\n");
+                return IOERR;
+            }
+#endif
+        }
+
+        if(munmap(pmap, fsize)<0) {
+            printf("munmap failed\n");
+       	    return IOERR;
+        }
+    } else if (fsize >= (bsize*batch) && ((fsize % (bsize*batch))==0)) {
+	/* if the file is bigger, map the file a few times into memory. */
+        for(i=0; i<interval; i++) {
+	    if((pmap = (char*)mmap(0, bsize*batch, PROT_READ, MAP_SHARED, file, i*bsize*batch))<0) {
+                printf(" Error in mmap because %s.\n", strerror(errno));
+       	        return IOERR;
+            }
+ 
+            p = pmap;
+	    read_data = 0; 
+
+            while(read_data < bsize*batch)
+            {
+	        memcpy(buffer, p, bsize);
+
+                if ((fsize / reportTime(timeval_start)) < iospeed_min)
+                {
+	            /* IO speed too slow. Abort. */
+                    return IOSLOW;
+                }
+
+	        p += bsize;
+	        read_data += bsize;
+#if 0
+	        /* check is not needed any more? */
+                if (read_data < 0)
+                {
+	            /* integer overflow detected. */
+                    printf( "Error: Integer overflow during read\n");
+                    return IOERR;
+                }
+#endif
+            }
+
+    	    if(munmap(pmap, bsize*batch)<0) {
+                printf("munmap failed\n");
+       	        return IOERR;
+            }
+	}
+    } else {
+	printf("\nfile size should be a multiple of block size times 4 for convenience.\n");
+       	return IOERR;
+    }
+
+
+    close(file);
+    free(buffer);
+
+    return reportTime(timeval_start);
+}
+
 #ifdef FFIO_MACHINE
 double testFFIO(int operation_type, size_t fsize, size_t bsize, char *fname)
 {    
@@ -429,6 +671,8 @@ void printInfo()
         "                4 for FFIO\n"
 #endif
         "                5 for Unix I/O with O_NONBlOCK\n"
+        "                6 for mmap I/O\n"
+        "                7 for Direct I/O with mmap\n"
         "    -r          read only\n"
         "    -w          write only (default to do both read and write)\n"
         "    -b <bsize>  data transfer block size (default 1KB=1024B)\n"
@@ -568,6 +812,22 @@ main (int argc, char **argv)
                     printf(" Mode=Non-Blocking Unix I/O ");      
                 }
             }
+            else if (*ptr == '6')
+            {
+                mode = 6;
+                if (header)
+                {
+                    printf(" Mode=Unix I/O with mmap");      
+                }
+            }
+            else if (*ptr == '7')
+            {
+                mode = 7;
+                if (header)
+                {
+                    printf(" Mode=Direct I/O with mmap");      
+                }
+            }
             else
             {
                 printf("Error: Unknown mode(%c)\n", *ptr);
@@ -701,6 +961,12 @@ main (int argc, char **argv)
     case UNIX_NONBLOCK:
       elapsed_time = testUnixIO(input_operation,UNIX_NONBLOCK,file_size, block_size, filename);
       break;
+    case 6:
+      elapsed_time = testMMAP(input_operation, UNIX_BASIC, file_size, block_size, filename);
+      break;
+    case 7:
+      elapsed_time = testMMAP(input_operation, UNIX_DIRECTIO, file_size, block_size, filename);
+      break;
     default:
         printInfo();
         return 1;
@@ -718,9 +984,10 @@ main (int argc, char **argv)
   }
 
   free(options);
-  remove(filename);
+  /*remove(filename);*/
   if (elapsed_time < 0)
       return -1;
   return 0;
 }
+
 

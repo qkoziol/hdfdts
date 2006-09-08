@@ -10,6 +10,10 @@ IO API's.
 	Unix basic I/O with DIRECT I/O mode (not available on all systems)
     Unix Non-block I/O:
 	Unix basic I/O with non-block mode (not available on all systems)
+    mmap I/O:
+	Mapping the file directly into memory using mmap function.
+    Direct I/O with mmap:
+	Direct I/O with mmap.
 
 How to build:
     % make clean	# clean out previous built binary
@@ -20,8 +24,10 @@ How to run:
     % ./iospeed	help		    # display help page.
     % ./iospeed -m 1		    # same as default.
     % ./iospeed -m 3    	    # run Unix Direct IO
-    % ./iospeed -m 1 -w -s 1000	    # Run Unix IO for datasize = 1000MB.
-    % ./iospeed -m 3 -w -s 1000	    # Run Unix IO for datasize = 1000MB.
+    % ./iospeed -m 1 -w -s 1000	    # Run Unix IO write-only for datasize = 1000MB.
+    % ./iospeed -m 3 -w -s 1000	    # Run Direct IO for datasize = 1000MB.
+    % ./iospeed -m 3 -w -b 4096	    # Run Direct IO with memory buffer of 4KB.
+    % ./iospeed -m 6 -w -b 16384    # Run mmap IO with memory buffer of 16KB.
 
 ---------
 Questions? email acheng@hdfgroup.org
