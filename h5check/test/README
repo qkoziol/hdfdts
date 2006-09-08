@@ -11,6 +11,10 @@ For now, the generator can be built as follows:
 
 h5cc testgen.c -o testgen
 
+The test generator creates files and datasets with features available by default
+in the HDF5 library. To test features not included by default, the user must 
+define certain macros. For instance, to test the external filter szip, the user must define the macro HAVE_SZIP.
+
 Execution
 ---------
 To run the generator, just execute it in the command line without any arguments.

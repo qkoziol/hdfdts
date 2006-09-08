@@ -1133,7 +1133,6 @@ static void test_filters(hid_t file)
     ret=H5Pclose(dc);
     VRFY((ret>=0), "H5Pclose");
 
-
     /*----------------------------------------------------------
      * STEP 1: Test Fletcher32 Checksum by itself.
      *----------------------------------------------------------
@@ -1156,6 +1155,7 @@ static void test_filters(hid_t file)
     ret=H5Pclose(dc);
     VRFY((ret>=0), "H5Pclose");
 
+
     /*----------------------------------------------------------
      * STEP 2: Test deflation by itself.
      *----------------------------------------------------------
@@ -1175,6 +1175,7 @@ static void test_filters(hid_t file)
     ret=H5Pclose(dc);
     VRFY((ret>=0), "H5Pclose");
     
+#ifdef HAVE_SZIP
     /*----------------------------------------------------------
      * STEP 3: Test szip compression by itself.
      *----------------------------------------------------------
@@ -1194,6 +1195,8 @@ static void test_filters(hid_t file)
 
     ret=H5Pclose(dc);
     VRFY((ret>=0), "H5Pclose");
+
+#endif /* HAVE_SZIP */
     	
     /*----------------------------------------------------------
      * STEP 4: Test shuffling by itself.
@@ -1262,6 +1265,7 @@ static void test_filters(hid_t file)
     ret=H5Pclose (dc);
     VRFY((ret>=0), "H5Pclose");
 
+#ifdef HAVE_SZIP
     /*----------------------------------------------------------
      * STEP 6: Test shuffle + szip + checksum in any order.
      *----------------------------------------------------------
@@ -1310,6 +1314,9 @@ static void test_filters(hid_t file)
 	/* Clean up objects used for this test */
 	ret=H5Pclose(dc);
     VRFY((ret>=0), "H5Pclose");
+
+#endif /* HAVE SZIP */
+
 }
 
 
