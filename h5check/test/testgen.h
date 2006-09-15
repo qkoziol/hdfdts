@@ -26,6 +26,8 @@
 #include <stdlib.h>
 #include <math.h>
 #include <ctype.h>
+#include <string.h>
+#include <time.h>
 
 
 #ifndef TRUE
@@ -43,6 +45,18 @@
 #define VERBOSE 0
 
 #define MAX(a, b)  ((a)>(b))?a:b
+#define MIN(a, b)  ((a)<(b))?a:b
+
+
+
+/*
+ * A macro to portably increment enumerated types.
+ */
+#ifndef H5_INC_ENUM
+#  define H5_INC_ENUM(TYPE,VAR) (VAR)=((TYPE)((VAR)+1))
+#endif
+
+
 
 
 /* Define some handy debugging shorthands, routines, ... */
