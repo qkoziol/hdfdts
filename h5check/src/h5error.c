@@ -110,7 +110,7 @@ H5E_print(FILE *stream)
     		     fprintf(stream, "%s(): %s\n", 
 			     estack->slot[i].func_name, 
 			     estack->slot[i].desc);
-    		else fprintf(stream, "%s(at %d): %s\n", 
+    		else fprintf(stream, "%s(at %lld): %s\n", 
 			     estack->slot[i].func_name, 
 			     estack->slot[i].address,
 			     estack->slot[i].desc);
