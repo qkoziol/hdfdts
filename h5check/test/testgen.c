@@ -133,7 +133,40 @@ typedef struct s2_t {
 unsigned szip_options_mask=H5_SZIP_NN_OPTION_MASK;
 unsigned szip_pixels_per_block=4;
 
+
+/* Macros for testing attributes */
+#define ATTR_NAME_LEN   16
+#define ATTR_MAX_DIMS   7
+#define ATTR_TMP_NAME   "temp_name"
+
+/* Named Datatype Information */
+#define TYPE1_NAME "/Type"
+
+/* Attribute Rank & Dimensions */
+#define ATTR1_NAME  "Attr1"
+#define ATTR1_RANK	1
+#define ATTR1_DIM1	3
+int attr_data1[ATTR1_DIM1]={512,-234,98123}; /* Test data for 1st attribute */
+
+/* rank & dimensions for another attribute */
+#define ATTR1A_NAME  "Attr1_a"
+int attr_data1a[ATTR1_DIM1]={256,11945,-22107};
+
+#define ATTR2_NAME  "Attr2"
+#define ATTR2_RANK	2
+#define ATTR2_DIM1	2
+#define ATTR2_DIM2	2
+int attr_data2[ATTR2_DIM1][ATTR2_DIM2]={{7614,-416},{197814,-3}}; /* Test data for 2nd attribute */
+
+#define ATTR3_NAME  "Attr3"
+#define ATTR3_RANK	3
+#define ATTR3_DIM1	2
+#define ATTR3_DIM2	2
+#define ATTR3_DIM3	2
+double attr_data3[ATTR3_DIM1][ATTR3_DIM2][ATTR3_DIM3]={{{2.3,-26.1},{0.123,-10.0}},{{981724.2,-0.91827},{2.0,23.0}}}; /* Test data for 3rd attribute */
+
 int nerrors=0;
+
 
 /* Local prototypes for filter functions */
 static size_t filter_bogus(unsigned int flags, size_t cd_nelmts,
@@ -163,6 +196,152 @@ void UNUSED **buf)
     return nbytes;
 }
 
+hid_t
+h5_fileaccess(char *name)
+{
+    const char	*val = NULL;
+    char s[1024];
+    hid_t fapl = -1;
+    herr_t ret;
+    char *logfile = "logfile.txt";
+
+
+    fapl=H5Pcreate(H5P_FILE_ACCESS);
+
+    if (strstr(name, "sec2")) {
+	    /* Unix read() and write() system calls */
+	    ret=H5Pset_fapl_sec2(fapl);
+        VRFY((ret>=0), "H5Pset_fapl_sec2");
+    } else if (strstr(name, "stdio")) {
+	    /* Standard C fread() and fwrite() system calls */
+	    ret=H5Pset_fapl_stdio(fapl);
+        VRFY((ret>=0), "H5Pset_fapl_stdio");
+    } else if (strstr(name, "core")) {
+	    /* In-core temporary file with 1MB increment */
+	    ret=H5Pset_fapl_core(fapl, 1024*1024, FALSE);
+        VRFY((ret>=0), "H5Pset_fapl_core");
+    } else if (strstr(name, "split")) {
+	    /* Split meta data and raw data each using default driver */
+	    ret=H5Pset_fapl_split(fapl,
+			      "-m.h5", H5P_DEFAULT,
+			      "-r.h5", H5P_DEFAULT);
+        VRFY((ret>=0), "H5Pset_fapl_split");
+    } else if (strstr(name, "multi")) {
+	    /* Multi-file driver, general case of the split driver */
+	    H5FD_mem_t memb_map[H5FD_MEM_NTYPES];
+	    hid_t memb_fapl[H5FD_MEM_NTYPES];
+	    const char *memb_name[H5FD_MEM_NTYPES];
+	    char sv[H5FD_MEM_NTYPES][1024];
+	    haddr_t memb_addr[H5FD_MEM_NTYPES];
+        H5FD_mem_t	mt;
+
+	    memset(memb_map, 0, sizeof(memb_map));
+	    memset(memb_fapl, 0, sizeof(memb_fapl));
+	    memset(memb_name, 0, sizeof(memb_name));
+	    memset(memb_addr, 0, sizeof(memb_addr));
+        memset(sv, 0, sizeof(sv));
+        
+	    for (mt=H5FD_MEM_DEFAULT; mt<H5FD_MEM_NTYPES; H5_INC_ENUM(H5FD_mem_t,mt))
+            memb_map[mt] = mt;
+
+        memb_map[H5FD_MEM_DEFAULT]=H5FD_MEM_SUPER;
+
+	    memb_fapl[H5FD_MEM_SUPER] = H5P_DEFAULT;
+	    sprintf(sv[H5FD_MEM_SUPER], "%%s-%c.h5", 's');
+	    memb_name[H5FD_MEM_SUPER] = sv[H5FD_MEM_SUPER];
+        memb_addr[H5FD_MEM_SUPER] = 0*(HADDR_MAX/6);
+
+	    memb_fapl[H5FD_MEM_BTREE] = H5P_DEFAULT;
+	    sprintf(sv[H5FD_MEM_BTREE], "%%s-%c.h5", 'b');
+	    memb_name[H5FD_MEM_BTREE] = sv[H5FD_MEM_BTREE];
+        memb_addr[H5FD_MEM_BTREE] = 1*(HADDR_MAX/6);
+
+	    memb_fapl[H5FD_MEM_DRAW] = H5P_DEFAULT;
+	    sprintf(sv[H5FD_MEM_DRAW], "%%s-%c.h5", 'r');
+	    memb_name[H5FD_MEM_DRAW] = sv[H5FD_MEM_DRAW];
+        memb_addr[H5FD_MEM_DRAW] = 2*(HADDR_MAX/6);
+
+	    memb_fapl[H5FD_MEM_GHEAP] = H5P_DEFAULT;
+	    sprintf(sv[H5FD_MEM_GHEAP], "%%s-%c.h5", 'g');
+	    memb_name[H5FD_MEM_GHEAP] = sv[H5FD_MEM_GHEAP];
+        memb_addr[H5FD_MEM_GHEAP] = 3*(HADDR_MAX/6);
+
+	    memb_fapl[H5FD_MEM_LHEAP] = H5P_DEFAULT;
+	    sprintf(sv[H5FD_MEM_LHEAP], "%%s-%c.h5", 'l');
+	    memb_name[H5FD_MEM_LHEAP] = sv[H5FD_MEM_LHEAP];
+        memb_addr[H5FD_MEM_LHEAP] = 4*(HADDR_MAX/6);
+
+	    memb_fapl[H5FD_MEM_OHDR] = H5P_DEFAULT;
+	    sprintf(sv[H5FD_MEM_OHDR], "%%s-%c.h5", 'o');
+	    memb_name[H5FD_MEM_OHDR] = sv[H5FD_MEM_OHDR];
+        memb_addr[H5FD_MEM_OHDR] = 5*(HADDR_MAX/6);
+ 
+	    ret=H5Pset_fapl_multi(fapl, memb_map, memb_fapl, memb_name,memb_addr, FALSE);
+        VRFY((ret>=0), "H5Pset_fapl_multi");
+
+    } else if (strstr(name, "family")) {
+        hsize_t fam_size = 32*1024; /*10 MB*/
+
+	/* Family of files, each 1MB and using the default driver */
+	    /*fam_size = (hsize_t)(1024*1024);*/
+	    ret=H5Pset_fapl_family(fapl, fam_size, H5P_DEFAULT);
+        VRFY((ret>=0), "H5Pset_fapl_family");
+    } else if (strstr(name, "log")) {
+#ifdef H5_WANT_H5_V1_4_COMPAT
+        long verbosity = 1;
+
+        /* Log file access */
+        ret=H5Pset_fapl_log(fapl, logfile, (int)verbosity);
+        VRFY((ret>=0), "H5Pset_fapl_");
+
+#else /* H5_WANT_H5_V1_4_COMPAT */
+        unsigned log_flags = H5FD_LOG_LOC_IO;
+
+        /* Log file access */
+        ret=H5Pset_fapl_log(fapl, logfile, log_flags, 0);
+        VRFY((ret>=0), "H5Pset_fapl_log");
+#endif /* H5_WANT_H5_V1_4_COMPAT */
+    } else {
+	/* Unknown driver */
+    	return -1;
+    }
+
+    return fapl;
+}
+
+
+
+/*
+* This function prepares the filename by appending the suffix needed
+* by the file driver.
+*/
+
+static void h5_fixname(char *fullname, hid_t fapl)
+{
+    const char     *suffix = ".h5";     /* suffix has default */
+    hid_t           driver = -1;
+
+
+    VRFY((fullname), "");
+
+    /* figure out the suffix */
+    if (H5P_DEFAULT != fapl) {
+
+	    driver = H5Pget_driver(fapl);
+        VRFY((driver>=0), "H5Pget_driver");
+
+	    if (H5FD_FAMILY == driver)
+	        suffix = "%05d.h5";
+	    else if (H5FD_CORE == driver || H5FD_MULTI == driver)
+	        suffix = NULL;
+    }
+
+    /* Append a suffix */
+    if (suffix) 
+	    strcat(fullname, suffix);
+}
+
+
 
 /*
 * This function creates a file using default properties.
@@ -170,16 +349,29 @@ void UNUSED **buf)
 
 static hid_t create_file(char *fname, char *options)
 {
-    hid_t fid;
+    hid_t fid, fapl;
+    char name[64];
+    herr_t ret;
+
+    strcpy(name, fname);
 
     VRFY(isalnum(*fname),"filename");
 
+    if ((fapl = h5_fileaccess(name))<0)
+        fapl = H5P_DEFAULT;
+
+    h5_fixname(name, fapl);
+
     /* create a file */  
-    fid = H5Fcreate(fname, H5F_ACC_TRUNC, H5P_DEFAULT, H5P_DEFAULT);
+    fid = H5Fcreate(name, H5F_ACC_TRUNC, H5P_DEFAULT, fapl);
     VRFY((fid>=0), "H5Fcreate");
 
-    return fid;
+    /* close file */
+    ret = H5Pclose(fapl);
+    VRFY((ret>=0), "H5Pclose");
 
+
+    return fid;
 }
 
 
@@ -853,7 +1045,6 @@ static int gen_enum(hid_t oid, int fill_dataset)
     /* close datatype */
     ret=H5Tclose(type);
     VRFY((ret>=0), "H5Tclose");
-
 }
 
 
@@ -989,11 +1180,11 @@ static void gen_reference(hid_t oid)
 
 
 /*
-* This function is called by test_filters in order to create a dataset with
+* This function is called by gen_filters in order to create a dataset with
 * the respective filters.
 */
 
-static void test_filter_internal(hid_t fid, const char *name, hid_t dcpl, hsize_t *dset_size)
+static void gen_filter_internal(hid_t fid, const char *name, hid_t dcpl, hsize_t *dset_size)
 {
     hid_t		dataset;        /* Dataset ID */
     hid_t		dxpl;           /* Dataset xfer property list ID */
@@ -1079,7 +1270,7 @@ static void test_filter_internal(hid_t fid, const char *name, hid_t dcpl, hsize_
 * also tested.
 */
 
-static void test_filters(hid_t file)
+static void gen_filters(hid_t file)
 {
     hid_t	dc;                 /* Dataset creation property list ID */
     hsize_t chunk_size[RANK]; /* Chunk dimensions */
@@ -1090,7 +1281,6 @@ static void test_filters(hid_t file)
     hsize_t     deflate_size;       /* Size of dataset with deflate filter */
 
     hsize_t     szip_size;       /* Size of dataset with szip filter */
-
 
     hsize_t     shuffle_size;       /* Size of dataset with shuffle filter */
 
@@ -1127,11 +1317,12 @@ static void test_filters(hid_t file)
     ret=H5Pset_filter (dc, H5Z_FILTER_BOGUS, 0, 0, NULL);
     VRFY((ret>=0), "H5Pset_filter");
 
-    test_filter_internal(file,DSET_BOGUS_NAME,dc,&null_size);
+    gen_filter_internal(file,DSET_BOGUS_NAME,dc,&null_size);
 
     /* Clean up objects used for this test */
     ret=H5Pclose(dc);
     VRFY((ret>=0), "H5Pclose");
+
 
     /*----------------------------------------------------------
      * STEP 1: Test Fletcher32 Checksum by itself.
@@ -1147,14 +1338,13 @@ static void test_filters(hid_t file)
     VRFY((ret>=0), "H5Pset_filter");
 
     /* Enable checksum during read */
-    test_filter_internal(file,DSET_FLETCHER32_NAME,dc,&fletcher32_size);
+    gen_filter_internal(file,DSET_FLETCHER32_NAME,dc,&fletcher32_size);
     
     VRFY((fletcher32_size>null_size), "size after checksumming is incorrect.");
 
     /* Clean up objects used for this test */
     ret=H5Pclose(dc);
     VRFY((ret>=0), "H5Pclose");
-
 
     /*----------------------------------------------------------
      * STEP 2: Test deflation by itself.
@@ -1169,13 +1359,12 @@ static void test_filters(hid_t file)
     ret=H5Pset_deflate(dc, 6);
     VRFY((ret>=0), "H5Pset_deflate");
 
-    test_filter_internal(file,DSET_DEFLATE_NAME,dc,&deflate_size);
+    gen_filter_internal(file,DSET_DEFLATE_NAME,dc,&deflate_size);
 
     /* Clean up objects used for this test */
     ret=H5Pclose(dc);
     VRFY((ret>=0), "H5Pclose");
     
-#ifdef HAVE_SZIP
     /*----------------------------------------------------------
      * STEP 3: Test szip compression by itself.
      *----------------------------------------------------------
@@ -1191,12 +1380,10 @@ static void test_filters(hid_t file)
 	ret=H5Pset_szip(dc, szip_options_mask, szip_pixels_per_block);
     VRFY((ret>=0), "H5Pset_szip");
 
-	test_filter_internal(file,DSET_SZIP_NAME,dc,&szip_size);
+	gen_filter_internal(file,DSET_SZIP_NAME,dc,&szip_size);
 
     ret=H5Pclose(dc);
     VRFY((ret>=0), "H5Pclose");
-
-#endif /* HAVE_SZIP */
     	
     /*----------------------------------------------------------
      * STEP 4: Test shuffling by itself.
@@ -1211,7 +1398,7 @@ static void test_filters(hid_t file)
     ret=H5Pset_shuffle(dc);
     VRFY((ret>=0), "H5Pset_shuffle");
 
-    test_filter_internal(file,DSET_SHUFFLE_NAME,dc,&shuffle_size);
+    gen_filter_internal(file,DSET_SHUFFLE_NAME,dc,&shuffle_size);
 
     VRFY((shuffle_size==null_size), "Shuffled size not the same as uncompressed size.");
 
@@ -1238,7 +1425,7 @@ static void test_filters(hid_t file)
     ret=H5Pset_deflate (dc, 6);
     VRFY((ret>=0), "H5Pset_deflate");
 
-    test_filter_internal(file,DSET_SHUF_DEF_FLET_NAME,dc,&combo_size);
+    gen_filter_internal(file,DSET_SHUF_DEF_FLET_NAME,dc,&combo_size);
 
     /* Clean up objects used for this test */
     ret=H5Pclose(dc);
@@ -1259,13 +1446,12 @@ static void test_filters(hid_t file)
     ret=H5Pset_fletcher32(dc);
     VRFY((ret>=0), "H5Pcreate");
 
-    test_filter_internal(file,DSET_SHUF_DEF_FLET_NAME_2,dc,&combo_size);
+    gen_filter_internal(file,DSET_SHUF_DEF_FLET_NAME_2,dc,&combo_size);
 
     /* Clean up objects used for this test */
     ret=H5Pclose (dc);
     VRFY((ret>=0), "H5Pclose");
 
-#ifdef HAVE_SZIP
     /*----------------------------------------------------------
      * STEP 6: Test shuffle + szip + checksum in any order.
      *----------------------------------------------------------
@@ -1287,7 +1473,7 @@ static void test_filters(hid_t file)
 	ret=H5Pset_szip(dc, szip_options_mask, szip_pixels_per_block);
     VRFY((ret>=0), "H5Pset_szip");
 
-	test_filter_internal(file,DSET_SHUF_SZIP_FLET_NAME,dc,&combo_size);
+	gen_filter_internal(file,DSET_SHUF_SZIP_FLET_NAME,dc,&combo_size);
 
     /* Clean up objects used for this test */
     ret=H5Pclose(dc);
@@ -1309,16 +1495,177 @@ static void test_filters(hid_t file)
 	ret=H5Pset_fletcher32(dc);
     VRFY((ret>=0), "H5Pset_fletcher32");
 
-    test_filter_internal(file,DSET_SHUF_SZIP_FLET_NAME_2,dc,&combo_size);
+    gen_filter_internal(file,DSET_SHUF_SZIP_FLET_NAME_2,dc,&combo_size);
 
 	/* Clean up objects used for this test */
 	ret=H5Pclose(dc);
     VRFY((ret>=0), "H5Pclose");
-
-#endif /* HAVE SZIP */
-
 }
 
+
+/*
+* This function generates a dataset and a group with attributes. 
+*/
+
+static void gen_attr(hid_t fid1)
+{
+    hid_t		dataset;	/* Dataset ID			*/
+    hid_t		group;	    /* Group ID			    */
+    hid_t		sid1,sid2;	/* Dataspace ID			*/
+    hid_t		attr, attr2;	    /* Attribute ID		*/
+    hsize_t             attr_size;  /* storage size for attribute       */
+    ssize_t             attr_name_size; /* size of attribute name       */
+    char                *attr_name=NULL;    /* name of attribute        */
+    hsize_t		dims1[RANK];
+    hsize_t		dims2[] = {ATTR1_DIM1};
+    hsize_t		dims3[] = {ATTR2_DIM1,ATTR2_DIM2};
+    int       read_data1[ATTR1_DIM1]={0}; /* Buffer for reading 1st attribute */
+    int         i;
+    herr_t		ret;		/* Generic return value		*/
+
+    /* define size for dataspace dimensions */
+    for(i=0; i < RANK; i++)
+        dims1[i] = SIZE;
+
+    /* Create dataspace for dataset */
+    sid1 = H5Screate_simple(RANK, dims1, NULL);
+    VRFY((sid1>=0), "H5Screate_simple");
+
+    /* Create a dataset */
+    dataset=H5Dcreate(fid1,DATASET_PREFIX,H5T_NATIVE_UCHAR,sid1,H5P_DEFAULT);
+    VRFY((dataset>=0), "H5Dcreate");
+
+    /* Create dataspace for attribute */
+    sid2 = H5Screate_simple(ATTR1_RANK, dims2, NULL);
+    VRFY((sid2>=0), "H5Screate_simple");
+
+    /* Create an attribute for the dataset */
+    attr=H5Acreate(dataset,ATTR1_NAME,H5T_NATIVE_INT,sid2,H5P_DEFAULT);
+    VRFY((attr>=0), "H5Acreate");
+
+    /* Write attribute information */
+    ret=H5Awrite(attr,H5T_NATIVE_INT,attr_data1);
+    VRFY((ret>=0), "H5Awrite");
+
+    /* Create an another attribute for the dataset */
+    attr2=H5Acreate(dataset,ATTR1A_NAME,H5T_NATIVE_INT,sid2,H5P_DEFAULT);
+    VRFY((attr2>=0), "H5Acreate");
+
+    /* Write attribute information */
+    ret=H5Awrite(attr2,H5T_NATIVE_INT,attr_data1a);
+    VRFY((ret>=0), "H5Awrite");
+
+    /* Close attribute */
+    ret=H5Aclose(attr);
+    VRFY((ret>=0), "H5Aclose");
+
+    /* Close attribute */
+    ret=H5Aclose(attr2);
+    VRFY((ret>=0), "H5Aclose");
+
+    ret = H5Sclose(sid1);
+    VRFY((ret>=0), "H5Sclose");
+
+    ret = H5Sclose(sid2);
+    VRFY((ret>=0), "H5Sclose");
+
+    /* Close Dataset */
+    ret = H5Dclose(dataset);
+    VRFY((ret>=0), "H5Dclose");
+
+    /* Create group */
+    group = H5Gcreate(fid1, GROUP_PREFIX, 0);
+    VRFY((group>=0), "H5Gcreate");
+
+    /* Create dataspace for attribute */
+    sid2 = H5Screate_simple(ATTR2_RANK, dims3, NULL);
+    VRFY((sid2>=0), "H5Screate_simple");
+
+    /* Create an attribute for the group */
+    attr=H5Acreate(group,ATTR2_NAME,H5T_NATIVE_INT,sid2,H5P_DEFAULT);
+    VRFY((attr>=0), "H5Acreate");
+
+    /* Write attribute information */
+    ret=H5Awrite(attr,H5T_NATIVE_INT,attr_data2);
+    VRFY((ret>=0), "H5Awrite");
+
+    /* Close attribute */
+    ret=H5Aclose(attr);
+    VRFY((ret>=0), "H5Aclose");
+
+    /* Close Attribute dataspace */
+    ret = H5Sclose(sid2);
+    VRFY((ret>=0), "H5Sclose");
+
+    /* Close Group */
+    ret = H5Gclose(group);
+    VRFY((ret>=0), "H5Gclose");
+
+}   /* test_attr_basic_write() */
+
+
+/*
+*
+* This function commits several time datatypes and creates a dataset with
+* one of the time datatypes. 
+*/
+
+static void gen_time(hid_t file_id)
+{
+    hid_t       tid, sid, dsid;  /* identifiers */
+    time_t      timenow, timethen;      /* Times */
+    herr_t      status;
+
+    tid = H5Tcopy (H5T_UNIX_D32LE);
+    VRFY((tid>=0), "H5Tcopy");
+    status = H5Tcommit(file_id, "Committed D32LE type", tid);
+    VRFY((status>=0), "H5Tcommit");
+    status = H5Tclose (tid);
+    VRFY((status>=0), "H5Tclose");
+
+    tid = H5Tcopy (H5T_UNIX_D32BE);
+    VRFY((tid>=0), "H5Tcopy");
+    status = H5Tcommit(file_id, "Committed D32BE type", tid);
+    VRFY((status>=0), "H5Tcommit");
+    status = H5Tclose (tid);
+    VRFY((status>=0), "H5Tclose");
+
+    tid = H5Tcopy (H5T_UNIX_D64LE);
+    VRFY((tid>=0), "H5Tcopy");
+    status = H5Tcommit(file_id, "Committed D64LE type", tid);
+    VRFY((status>=0), "H5Tcommit");
+    status = H5Tclose (tid);
+    VRFY((status>=0), "H5Tclose");
+
+    tid = H5Tcopy (H5T_UNIX_D64BE);
+    VRFY((tid>=0), "H5Tcopy");
+    status = H5Tcommit(file_id, "Committed D64BE type", tid);
+    VRFY((status>=0), "H5Tcommit");
+    status = H5Tclose (tid);
+    VRFY((status>=0), "H5Tclose");
+
+    /* Create a scalar dataspace */
+    sid = H5Screate(H5S_SCALAR);
+    VRFY((sid>=0), "H5Screate");
+
+    /* Create a dataset with a time datatype */
+    dsid = H5Dcreate(file_id, DATASET_PREFIX, H5T_UNIX_D32LE, sid, H5P_DEFAULT);
+    VRFY((dsid>=0), "H5Dcreate");
+
+    /* Initialize time data value */
+    timenow = time(NULL);
+
+    /* Write time to dataset */
+    status = H5Dwrite (dsid, H5T_UNIX_D32LE, H5S_ALL, H5S_ALL, H5P_DEFAULT, &timenow);
+    VRFY((status>=0), "H5Dwrite");
+
+    /* Close objects */
+    status = H5Dclose(dsid);
+    VRFY((status>=0), "H5Dclose");
+
+    status = H5Sclose(sid);
+    VRFY((status>=0), "H5Sclose");
+}
 
 
 
@@ -1329,9 +1676,10 @@ int main(int argc, char *argv[])
 
     hid_t fid;
 
-    char *fname[]={"root.h5","linear.h5","hierarchical.h5","multipath.h5","cyclical.h5",
-        "rank_dsets_empty.h5","rank_dsets_full.h5","group_dsets.h5","basic_types.h5",
-        "compound.h5","vl.h5","enum.h5","refer.h5","filters.h5"}; /* file names */
+    char *fname[]={"root","linear","hierarchical","mpath","cyclical",
+        "rank_dsets_empty","rank_dsets_full","group_dsets","basic_types",
+        "compound","vl","enum","refer","filters","stdio","split",
+        "multi","family","log","attr","time"}; /* file names */
 
     unsigned i=0;
 
@@ -1407,7 +1755,42 @@ int main(int argc, char *argv[])
 
     /* create a file with several datasets using different filters */
     fid = create_file(fname[i++], "");
-    test_filters(fid);
+    gen_filters(fid);
+    close_file(fid, "");
+
+    /* create a file using stdio file driver */
+    fid = create_file(fname[i++], "");
+    gen_group_datasets(fid, GROUP_PREFIX, HEIGHT, RIGHT);
+    close_file(fid, "");
+
+    /* create a file using split file driver */
+    fid = create_file(fname[i++], "");
+    gen_group_datasets(fid, GROUP_PREFIX, HEIGHT, RIGHT);
+    close_file(fid, "");
+
+    /* create a file using multi file driver */
+    fid = create_file(fname[i++], "");
+    gen_group_datasets(fid, GROUP_PREFIX, HEIGHT, RIGHT);
+    close_file(fid, "");
+
+    /* create a file using family file driver */
+    fid = create_file(fname[i++], "");
+    gen_group_datasets(fid, GROUP_PREFIX, HEIGHT, RIGHT);
+    close_file(fid, "");
+
+    /* create a file using log file driver */
+    fid = create_file(fname[i++], "");
+    gen_group_datasets(fid, GROUP_PREFIX, HEIGHT, RIGHT);
+    close_file(fid, "");
+
+    /* create a file with several datasets using attributes */
+    fid = create_file(fname[i++], "");
+    gen_attr(fid);
+    close_file(fid, "");
+
+    /* create a file using time datatype*/
+    fid = create_file(fname[i++], "");
+    gen_time(fid);
     close_file(fid, "");
     
     /* successful completion message */
