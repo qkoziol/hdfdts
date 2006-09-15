@@ -1,11 +1,16 @@
 /* need to take care of haddr_t and HADDR_UNDEF */
 /* see H5public.h for definition of haddr_t, H5pubconf.h */
-typedef	unsigned long		haddr_t;
+typedef	unsigned long long		haddr_t;
+
 #define	HADDR_UNDEF		((haddr_t)(-1))
 
+/* need to take care of haddr_t and HADDR_UNDEF */
+/* see H5public.h for definition of hsize_t, H5pubconf.h */
+typedef size_t                  hsize_t;
 
 
-/* 3 defines copied from H5Fpkg.h */
+
+/* defines copied from H5Fpkg.h */
 #define H5F_SIGNATURE     "\211HDF\r\n\032\n"
 #define H5F_SIGNATURE_LEN 8
 #define H5F_SUPERBLOCK_SIZE  256
@@ -48,6 +53,21 @@ typedef	unsigned long		haddr_t;
    case 8: UINT64DECODE(p,l); break;                                          \
    case 2: UINT16DECODE(p,l); break;                                          \
 }
+
+#define INT32DECODE(p, i) {                                                 \
+   (i)  = (          *(p) & 0xff);        (p)++;                            \
+   (i) |= ((int32_t)(*(p) & 0xff) <<  8); (p)++;                            \
+   (i) |= ((int32_t)(*(p) & 0xff) << 16); (p)++;                            \
+   (i) |= ((int32_t)(((*(p) & 0xff) << 24) |                                \
+                   ((*(p) & 0x80) ? ~0xffffffff : 0x0))); (p)++;             \
+}
+
+#define H5_CHECK_OVERFLOW(var,vartype,casttype) \
+{                                               \
+    casttype _tmp_overflow=(casttype)(var);     \
+    assert((var)==(vartype)_tmp_overflow);      \
+}
+
 
 /* copied from H5Fprivate.h */
 #define H5F_addr_defined(X)     (X!=HADDR_UNDEF)
@@ -247,6 +267,529 @@ typedef struct 	H5F_shared_t {
 #define H5O_MTIME_NEW_ID 0x0012         /* Modification time message. (New)  */
 
 
+/* copied from H5Spublic.h */
+#define H5S_MAX_RANK    32
+
+/* copied from H5Spublic.h */
+/* Different types of dataspaces */
+typedef enum H5S_class_t {
+    H5S_NO_CLASS         = -1,  /*error                                      */
+    H5S_SCALAR           = 0,   /*scalar variable                            */
+    H5S_SIMPLE           = 1,   /*simple data space                          */
+    H5S_COMPLEX          = 2    /*complex data space                         */
+} H5S_class_t;
+
+
+/* copied from H5Osdspace.c */
+#define H5O_SDSPACE_VERSION        1
+
+/* copied from H5Spkg.h */
+/* Flags to indicate special dataspace features are active */
+#define H5S_VALID_MAX   0x01
+
+
+/* copied from H5Spkg.h */
+/*
+ * Dataspace extent information
+ */
+/* Extent container */
+typedef struct {
+    H5S_class_t type;   /* Type of extent */
+    hsize_t nelem;      /* Number of elements in extent */
+
+    unsigned rank;      /* Number of dimensions */
+    hsize_t *size;      /* Current size of the dimensions */
+    hsize_t *max;       /* Maximum size of the dimensions */
+} H5S_extent_t;
+
+
+/* copied from H5Odtype.c */
+/* This is the correct version to create all datatypes which don't contain
+ * array datatypes (atomic types, compound datatypes without array fields,
+ * vlen sequences of objects which aren't arrays, etc.) */
+#define H5O_DTYPE_VERSION_COMPAT        1
+
+/* copied from H5Odtype.c */
+/* This is the correct version to create all datatypes which contain H5T_ARRAY
+ * class objects (array definitely, potentially compound & vlen sequences also) */
+#define H5O_DTYPE_VERSION_UPDATED       2
+
+/* copied from H5Tpublic.h */
+/* Opaque information */
+#define H5T_OPAQUE_TAG_MAX      256     /* Maximum length of an opaque tag */
+                                        /* This could be raised without too much difficulty */
+/* copied from H5Spublic.h */
+#define H5S_MAX_RANK    32
+
+/* copied from H5Tpublic.h */
+/* Byte orders */
+typedef enum H5T_order_t {
+    H5T_ORDER_ERROR      = -1,  /*error                                      */
+    H5T_ORDER_LE         = 0,   /*little endian                              */
+    H5T_ORDER_BE         = 1,   /*bit endian                                 */
+    H5T_ORDER_VAX        = 2,   /*VAX mixed endian                           */
+    H5T_ORDER_NONE       = 3    /*no particular order (strings, bits,..)     */
+    /*H5T_ORDER_NONE must be last */
+} H5T_order_t;
+
+/* copied from H5Tpublic.h */
+/* Types of integer sign schemes */
+typedef enum H5T_sign_t {
+    H5T_SGN_ERROR        = -1,  /*error                                      */
+    H5T_SGN_NONE         = 0,   /*this is an unsigned type                   */
+    H5T_SGN_2            = 1,   /*two's complement                           */
+
+    H5T_NSGN             = 2    /*this must be last!                         */
+} H5T_sign_t;
+
+
+/* copied from H5Tpublic.h */
+/* Floating-point normalization schemes */ 
+typedef enum H5T_norm_t {
+    H5T_NORM_ERROR       = -1,  /*error                                      */
+    H5T_NORM_IMPLIED     = 0,   /*msb of mantissa isn't stored, always 1     */
+    H5T_NORM_MSBSET      = 1,   /*msb of mantissa is always 1                */
+    H5T_NORM_NONE        = 2    /*not normalized                             */
+    /*H5T_NORM_NONE must be last */
+} H5T_norm_t;
+
+
+/* copied from H5Tpublic.h */
+/* Type of padding to use in other atomic types */
+typedef enum H5T_pad_t {
+    H5T_PAD_ERROR        = -1,  /*error                                      */
+    H5T_PAD_ZERO         = 0,   /*always set to zero                         */
+    H5T_PAD_ONE          = 1,   /*always set to one                          */
+    H5T_PAD_BACKGROUND   = 2,   /*set to background value                    */
+
+    H5T_NPAD             = 3    /*THIS MUST BE LAST                          */
+} H5T_pad_t;
+
+/* copied from H5Tpublic.h */
+typedef enum H5T_cset_t {
+    H5T_CSET_ERROR       = -1,  /*error                                      */
+    H5T_CSET_ASCII       = 0,   /*US ASCII                                   */
+    H5T_CSET_RESERVED_1  = 1,   /*reserved for later use                     */
+    H5T_CSET_RESERVED_2  = 2,   /*reserved for later use                     */
+    H5T_CSET_RESERVED_3  = 3,   /*reserved for later use                     */
+    H5T_CSET_RESERVED_4  = 4,   /*reserved for later use                     */
+    H5T_CSET_RESERVED_5  = 5,   /*reserved for later use                     */
+    H5T_CSET_RESERVED_6  = 6,   /*reserved for later use                     */
+    H5T_CSET_RESERVED_7  = 7,   /*reserved for later use                     */
+    H5T_CSET_RESERVED_8  = 8,   /*reserved for later use                     */
+    H5T_CSET_RESERVED_9  = 9,   /*reserved for later use                     */
+    H5T_CSET_RESERVED_10 = 10,  /*reserved for later use                     */
+    H5T_CSET_RESERVED_11 = 11,  /*reserved for later use                     */
+    H5T_CSET_RESERVED_12 = 12,  /*reserved for later use                     */
+    H5T_CSET_RESERVED_13 = 13,  /*reserved for later use                     */
+    H5T_CSET_RESERVED_14 = 14,  /*reserved for later use                     */
+    H5T_CSET_RESERVED_15 = 15   /*reserved for later use                     */
+} H5T_cset_t;
+
+
+/* copied from H5Tpublic.h */
+/*
+ * Type of padding to use in character strings.  Do not change these values
+ * since they appear in HDF5 files!
+ */
+typedef enum H5T_str_t {
+    H5T_STR_ERROR        = -1,  /*error                                      */
+    H5T_STR_NULLTERM     = 0,   /*null terminate like in C                   */
+    H5T_STR_NULLPAD      = 1,   /*pad with nulls                             */
+    H5T_STR_SPACEPAD     = 2,   /*pad with spaces like in Fortran            */
+    H5T_STR_RESERVED_3   = 3,   /*reserved for later use                     */
+    H5T_STR_RESERVED_4   = 4,   /*reserved for later use                     */
+    H5T_STR_RESERVED_5   = 5,   /*reserved for later use                     */
+    H5T_STR_RESERVED_6   = 6,   /*reserved for later use                     */
+    H5T_STR_RESERVED_7   = 7,   /*reserved for later use                     */
+    H5T_STR_RESERVED_8   = 8,   /*reserved for later use                     */
+    H5T_STR_RESERVED_9   = 9,   /*reserved for later use                     */
+    H5T_STR_RESERVED_10  = 10,  /*reserved for later use                     */
+    H5T_STR_RESERVED_11  = 11,  /*reserved for later use                     */
+    H5T_STR_RESERVED_12  = 12,  /*reserved for later use                     */
+    H5T_STR_RESERVED_13  = 13,  /*reserved for later use                     */
+    H5T_STR_RESERVED_14  = 14,  /*reserved for later use                     */
+    H5T_STR_RESERVED_15  = 15   /*reserved for later use                     */
+} H5T_str_t;
+
+
+/* copied from H5Rpublic.h */
+/*
+ * Reference types allowed.
+ */
+typedef enum {
+    H5R_BADTYPE     =   (-1),   /*invalid Reference Type                     */
+    H5R_OBJECT,                 /*Object reference                           */
+    H5R_DATASET_REGION,         /*Dataset Region Reference                   */
+    H5R_INTERNAL,               /*Internal Reference                         */
+    H5R_MAXTYPE                 /*highest type (Invalid as true type)        */
+} H5R_type_t;
+
+
+/* copied from H5Tpublic.h */
+/* These are the various classes of datatypes */
+/* If this goes over 16 types (0-15), the file format will need to change) */
+typedef enum H5T_class_t {
+    H5T_NO_CLASS         = -1,  /*error                                      */
+    H5T_INTEGER          = 0,   /*integer types                              */
+    H5T_FLOAT            = 1,   /*floating-point types                       */
+    H5T_TIME             = 2,   /*date and time types                        */
+    H5T_STRING           = 3,   /*character string types                     */
+    H5T_BITFIELD         = 4,   /*bit field types                            */
+    H5T_OPAQUE           = 5,   /*opaque types                               */
+    H5T_COMPOUND         = 6,   /*compound types                             */
+    H5T_REFERENCE        = 7,   /*reference types                            */
+    H5T_ENUM             = 8,   /*enumeration types                          */
+    H5T_VLEN             = 9,   /*Variable-Length types                      */
+    H5T_ARRAY            = 10,  /*Array types                                */
+
+    H5T_NCLASSES                /*this must be last                          */
+} H5T_class_t;
+
+
+
+/* copied from H5Tpkg.h */
+typedef struct H5T_atomic_t {
+    H5T_order_t         order;  /*byte order                                 */
+    size_t              prec;   /*precision in bits                          */
+    size_t              offset; /*bit position of lsb of value               */
+    H5T_pad_t           lsb_pad;/*type of lsb padding                        */
+    H5T_pad_t           msb_pad;/*type of msb padding                        */
+    union {
+        struct {
+            H5T_sign_t  sign;   /*type of integer sign                       */
+        } i;                    /*integer; integer types                     */
+
+        struct {
+            size_t      sign;   /*bit position of sign bit                   */
+            size_t      epos;   /*position of lsb of exponent                */
+            size_t      esize;  /*size of exponent in bits                   */
+            uint64_t    ebias;  /*exponent bias                              */
+            size_t      mpos;   /*position of lsb of mantissa                */
+            size_t      msize;  /*size of mantissa                           */
+            H5T_norm_t  norm;   /*normalization                              */
+            H5T_pad_t   pad;    /*type of padding for internal bits          */
+        } f;                    /*floating-point types                       */
+
+        struct {
+            H5T_cset_t  cset;   /*character set                              */
+            H5T_str_t   pad;    /*space or null padding of extra bytes       */
+        } s;                    /*string types                               */
+
+        struct {
+            H5R_type_t  rtype;  /*type of reference stored                   */
+        } r;                    /*reference types                            */
+    } u;
+} H5T_atomic_t;
+
+/* copied from H5Tpkg.h */
+/* How members are sorted for compound or enum datatypes */
+typedef enum H5T_sort_t {
+    H5T_SORT_NONE       = 0,            /*not sorted                         */
+    H5T_SORT_NAME       = 1,            /*sorted by member name              */
+    H5T_SORT_VALUE      = 2             /*sorted by memb offset or enum value*/
+} H5T_sort_t;
+
+
+/* copied from H5Tpkg.h */
+/* An enumeration datatype */
+typedef struct H5T_enum_t {
+    unsigned    nalloc;         /*num entries allocated              */
+    unsigned    nmembs;         /*number of members defined in enum  */
+    H5T_sort_t  sorted;         /*how are members sorted?            */
+    uint8_t     *value;         /*array of values                    */
+    char        **name;         /*array of symbol names              */
+} H5T_enum_t;
+
+
+/* copied from H5Tpkg.h */
+/* A compound datatype */
+typedef struct H5T_compnd_t {
+    unsigned    nalloc;         /*num entries allocated in MEMB array*/
+    unsigned    nmembs;         /*number of members defined in struct*/
+    H5T_sort_t  sorted;         /*how are members sorted?            */
+    hbool_t     packed;         /*are members packed together?       */
+    struct H5T_cmemb_t  *memb;  /*array of struct members            */
+} H5T_compnd_t;
+
+/* copied from H5Tpkg.h */
+/* VL types */
+typedef enum {
+    H5T_VLEN_BADTYPE =  -1, /* invalid VL Type */
+    H5T_VLEN_SEQUENCE=0,    /* VL sequence */
+    H5T_VLEN_STRING,        /* VL string */
+    H5T_VLEN_MAXTYPE        /* highest type (Invalid as true type) */
+} H5T_vlen_type_t;
+
+/* copied and modified from H5Tpkg.h */
+/* A VL datatype */
+typedef struct H5T_vlen_t {
+    H5T_vlen_type_t     type;   /* Type of VL data in buffer */
+    H5T_cset_t          cset;   /* For VL string. character set */
+    H5T_str_t           pad;    /* For VL string.  space or null padding of
+                                 * extra bytes */
+} H5T_vlen_t;
+
+/* copied from H5Tpkg.h */
+/* An opaque datatype */
+typedef struct H5T_opaque_t {
+    char                *tag;           /*short type description string      */
+} H5T_opaque_t;
+
+
+/* copied from H5Tpkg.h */
+/* An array datatype */
+typedef struct H5T_array_t {
+    size_t      nelem;          /* total number of elements in array */
+    int         ndims;          /* member dimensionality        */
+    size_t      dim[H5S_MAX_RANK];  /* size in each dimension       */
+    int         perm[H5S_MAX_RANK]; /* index permutation            */
+} H5T_array_t;
+
+/* copied and modified from H5Tpkg.h */
+/* ???Fields removed from H5T_shared_t for NOW, deal with it later:
+ * 	H5T_state_t      state;  
+ *	H5F_t            *sh_file;
+        H5T_vlen_t      vlen; 
+ * 	hbool_t          force_conv;
+ */
+/* This struct is shared between all occurances of an open named type */
+typedef struct H5T_shared_t {
+    hsize_t             fo_count; /* number of references to this file object */
+    H5T_class_t         type;   /*which class of type is this?               */
+    size_t              size;   /*total size of an instance of this type     */
+    struct H5T_t        *parent;/*parent type for derived datatypes          */
+    union {
+        H5T_atomic_t    atomic; /* an atomic datatype              */
+        H5T_compnd_t    compnd;
+        H5T_enum_t      enumer;
+        H5T_vlen_t      vlen; 
+        H5T_array_t     array;  /* an array datatype                */
+        H5T_opaque_t    opaque;
+    } u;
+} H5T_shared_t;
+
+/* copied from H5Tprivate.h */
+/* Forward references of package typedefs */
+typedef struct H5T_t H5T_t;
+
+/* copied from H5Tpkg.h */
+struct H5T_t {
+    H5G_entry_t     ent;    /* entry information if the type is a named type */
+    H5T_shared_t   *shared; /* all other information */
+};
+
+/* A compound datatype member */
+typedef struct H5T_cmemb_t {
+    char                *name;          /*name of this member                */
+    size_t              offset;         /*offset from beginning of struct    */
+    size_t              size;           /*total size: dims * type_size       */
+    struct H5T_t        *type;          /*type of this member                */
+} H5T_cmemb_t;
+
+
+
+/* copied from H5Ofill.c */
+#define H5O_FILL_VERSION      1
+#define H5O_FILL_VERSION_2    2
+
+
+/* copied from H5Dpublic.h */
+/* Values for the space allocation time property */
+typedef enum H5D_alloc_time_t {
+    H5D_ALLOC_TIME_ERROR        =-1,
+    H5D_ALLOC_TIME_DEFAULT      =0,
+    H5D_ALLOC_TIME_EARLY        =1,
+    H5D_ALLOC_TIME_LATE =2,
+    H5D_ALLOC_TIME_INCR =3
+} H5D_alloc_time_t;
+
+/* copied from H5Dpublic.h */
+/* Values for time of writing fill value property */
+typedef enum H5D_fill_time_t {
+    H5D_FILL_TIME_ERROR =-1,
+    H5D_FILL_TIME_ALLOC =0,
+    H5D_FILL_TIME_NEVER =1,
+    H5D_FILL_TIME_IFSET =2
+} H5D_fill_time_t;
+
+
+/* copied and modified from H5Oprivate.h */
+/*
+ * New Fill Value Message.  The new fill value message is fill value plus
+ * space allocation time and fill value writing time and whether fill
+ * value is defined.
+ */
+typedef struct H5O_fill_new_t {
+    ssize_t             size;           /*number of bytes in the fill value  */
+    void                *buf;           /*the fill value                     */
+    H5D_alloc_time_t    alloc_time;     /* time to allocate space            */
+    H5D_fill_time_t     fill_time;      /* time to write fill value          */
+    hbool_t             fill_defined;   /* whether fill value is defined     */
+} H5O_fill_new_t;
+
+
+/* copied from H5Olayout.c */
+/* For forward and backward compatibility.  Version is 1 when space is
+ * allocated; 2 when space is delayed for allocation; 3
+ * is revised to just store information needed for each storage type. */
+#define H5O_LAYOUT_VERSION_1    1
+#define H5O_LAYOUT_VERSION_2    2
+#define H5O_LAYOUT_VERSION_3    3
+
+/*
+ * Data Layout Message.
+ * (Data structure in memory)
+ */
+/* copied from H5Oprivate.h */
+#define H5O_LAYOUT_NDIMS        (H5S_MAX_RANK+1)
+
+
+/* copied from H5Dpublic.h */
+/* Values for the H5D_LAYOUT property */
+typedef enum H5D_layout_t {
+    H5D_LAYOUT_ERROR    = -1,
+    H5D_COMPACT         = 0,    /*raw data is very small                     */
+    H5D_CONTIGUOUS      = 1,    /*the default                                */
+    H5D_CHUNKED         = 2,    /*slow and fancy                             */
+    H5D_NLAYOUTS        = 3     /*this one must be last!                     */
+} H5D_layout_t;
+
+
+/* copied from H5Oprivate.h */
+typedef struct H5O_layout_contig_t {
+    haddr_t     addr;                   /* File address of data              */
+    hsize_t     size;                   /* Size of data in bytes             */
+} H5O_layout_contig_t;
+
+
+/* copied from H5Oprivate.h */
+typedef struct H5O_layout_chunk_t {
+    haddr_t     addr;                   /* File address of B-tree            */
+    unsigned    ndims;                  /* Num dimensions in chunk           */
+    size_t      dim[H5O_LAYOUT_NDIMS];  /* Size of chunk in elements         */
+    size_t      size;                   /* Size of chunk in bytes            */
+#if 0
+    H5RC_t     *btree_shared;           /* Ref-counted info for B-tree nodes */
+#endif
+} H5O_layout_chunk_t;
+
+
+/* copied from H5Oprivate.h */
+typedef struct H5O_layout_compact_t {
+    hbool_t     dirty;                  /* Dirty flag for compact dataset    */
+    size_t      size;                   /* Size of buffer in bytes           */
+    void        *buf;                   /* Buffer for compact dataset        */
+} H5O_layout_compact_t;
+
+
+/* copied from H5Oprivate.h */
+typedef struct H5O_layout_t {
+    H5D_layout_t type;                  /* Type of layout                    */
+    unsigned version;                   /* Version of message                */
+    /* Structure for "unused" dimension information */
+    struct {
+        unsigned ndims;                 /*num dimensions in stored data      */
+        hsize_t dim[H5O_LAYOUT_NDIMS];  /*size of data or chunk in bytes     */
+    } unused;
+    union {
+        H5O_layout_contig_t contig;     /* Information for contiguous layout */
+        H5O_layout_chunk_t chunk;       /* Information for chunked layout    */
+        H5O_layout_compact_t compact;   /* Information for compact layout    */
+    } u;
+} H5O_layout_t;
+
+/* This is the initial version, which does not have support for shared datatypes */
+#define H5O_ATTR_VERSION        1
+
+/* This version allows support for shared datatypes */
+#define H5O_ATTR_VERSION_NEW    2
+
+/* Flags for attribute flag encoding */
+#define H5O_ATTR_FLAG_TYPE_SHARED       0x01
+
+/* Main dataspace structure (typedef'd in H5Sprivate.h) */
+struct H5S_t {
+    H5S_extent_t extent;                /* Dataspace extent */
+    void 	 *select;               /* DELETED for now: Dataspace selection */
+};
+
+
+
+/* Forward references of package typedefs */
+typedef struct H5S_t H5S_t;
+
+/* Forward references of package typedefs */
+typedef struct H5A_t H5A_t;
+
+/* copied and modified from H5Apkg.h */
+struct H5A_t {
+    char        *name;      /* Attribute's name */
+    H5T_t       *dt;        /* Attribute's datatype */
+    size_t      dt_size;    /* Size of datatype on disk */
+    H5S_t       *ds;        /* Attribute's dataspace */
+    size_t      ds_size;    /* Size of dataspace on disk */
+    void        *data;      /* Attribute data (on a temporary basis) */
+    size_t      data_size;  /* Size of data on disk */
+};
+
+
+
+/* copied and modified from H5Oprivate.h */
+typedef struct H5O_name_t {
+    char        *s;                     /*ptr to malloc'd memory             */
+} H5O_name_t;
+
+
+/* Information to locate object in global heap */
+typedef struct H5HG_t {
+    haddr_t             addr;           /*address of collection         */
+    size_t              idx;            /*object ID within collection   */
+} H5HG_t;
+
+
+
+/* copied from H5Oprivate.h */
+/* Flags which are part of a message */
+#define H5O_FLAG_SHARED         0x02u
+
+
+/* copied from H5Oshared.c */
+/* Old version, with full symbol table entry as link for object header sharing */
+#define H5O_SHARED_VERSION_1    1
+/* New version, with just address of object as link for object header sharing */
+#define H5O_SHARED_VERSION      2
+
+/* copied from H5Oprivate.h */
+/*
+ * Shared object message.  This message ID never really appears in an object
+ * header.  Instead, bit 2 of the `Flags' field will be set and the ID field
+ * will be the ID of the pointed-to message.
+ */
+typedef struct H5O_shared_t {
+    hbool_t             in_gh;          /*shared by global heap?             */
+    union {
+        H5HG_t          gh;             /*global heap info                   */
+        H5G_entry_t     ent;            /*symbol table entry info            */
+    } u;
+} H5O_shared_t;
+
+
+
+/* copied and modified from H5Oprivate.h */
+/*
+ * Object header continuation message.
+ * (Data structure in memory)
+ */
+typedef struct H5O_cont_t {
+    haddr_t     addr;                   /*address of continuation block      */
+    size_t      size;                   /*size of continuation block         */
+
+    /* the following field(s) do not appear on disk */
+    unsigned    chunkno;                /*chunk this mesg refers to          */
+} H5O_cont_t;
+
+
 /* copied and modified from H5Oprivate.h */
 /*
  * Symbol table message.
@@ -257,20 +800,9 @@ typedef struct H5O_stab_t {
     haddr_t     heap_addr;              /*address of name heap               */
 } H5O_stab_t;
 
-
-/* copied and modified from H5Oprivate.h */
-/*
- * Object header continuation message.
- * (Data structure in memory)
- */
-
-typedef struct H5O_cont_t {
-    haddr_t     addr;                   /*address of continuation block      */
-    size_t      size;                   /*size of continuation block         */
-
-    /* the following field(s) do not appear on disk */
-    unsigned    chunkno;                /*chunk this mesg refers to          */
-} H5O_cont_t;
+/* copied from H5Omtime.c */
+/* Current version of new mtime information */
+#define H5O_MTIME_VERSION       1
 
 
 /* copied and modified from H5Opkg.h */
@@ -280,6 +812,46 @@ typedef struct H5O_class_t {
     size_t      native_size;            /*size of native message    */
     void        *(*decode)(const uint8_t*);
 } H5O_class_t;
+
+
+/* copied and modified from H5Opkg.h */
+typedef struct H5O_mesg_t {
+    const H5O_class_t   *type;          /*type of message                    */
+    hbool_t             dirty;          /*raw out of date wrt native         */
+    uint8_t             flags;          /*message flags                      */
+    unsigned            chunkno;        /*chunk number for this mesg         */
+    void                *native;        /*native format message              */
+    uint8_t             *raw;           /*ptr to raw data                    */
+    size_t              raw_size;       /*size with alignment                */
+} H5O_mesg_t;
+
+
+/* copied and modified from H5Opkg.h */
+typedef struct H5O_chunk_t {
+    hbool_t     dirty;                  /*dirty flag                         */
+    haddr_t     addr;                   /*chunk file address                 */
+    size_t      size;                   /*chunk size                         */
+    uint8_t     *image;                 /*image of file                      */
+} H5O_chunk_t;
+
+
+/* copied and modified from H5Opkg.h */
+typedef struct H5O_t {
+    int         version;                /*version number                     */
+    int         nlink;                  /*link count                         */
+    unsigned 	nmesgs;                 /*number of messages                 */
+    unsigned    alloc_nmesgs;           /*number of message slots            */
+    H5O_mesg_t  *mesg;                  /*array of messages                  */
+    unsigned    nchunks;                /*number of chunks                   */
+    unsigned    alloc_nchunks;          /*chunks allocated                   */
+    H5O_chunk_t *chunk;                 /*array of chunks                    */
+} H5O_t;
+
+
+/* copied from H5Opkg.h */
+#define H5O_VERSION     1
+#define H5O_NMESGS     	32      /*initial number of messages         */
+#define H5O_NCHUNKS    	8       /*initial number of chunks           */
 
 
 /* copied H5Bprivate.h */
@@ -324,4 +896,21 @@ typedef struct H5O_class_t {
                H5F_SIZEOF_SIZE (F) +    /*data size                     */    \
                H5F_SIZEOF_SIZE (F) +    /*free list head                */    \
                H5F_SIZEOF_ADDR (F))     /*data address                  */
+
+
+/* copied and modified from H5private.h */
+/*
+ * There were two versions depending on whether NDEBUG is defined or not. 
+ * I just copied the one for #ifndef NDEBUG
+ */
+/*
+ * A macro for detecting over/under-flow when assigning between types
+ */
+#define H5_ASSIGN_OVERFLOW(var,expr,exprtype,vartype)   \
+{                                                       \
+    exprtype _tmp_overflow=(exprtype)(expr);              \
+    vartype _tmp_overflow2=(vartype)(_tmp_overflow);  \
+    assert((vartype)_tmp_overflow==_tmp_overflow2);    \
+    (var)=_tmp_overflow2;                               \
+}
 
