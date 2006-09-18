@@ -1613,7 +1613,7 @@ static void gen_attr(hid_t fid1)
     ret = H5Gclose(group);
     VRFY((ret>=0), "H5Gclose");
 
-}   /* test_attr_basic_write() */
+}   /* gen_attr */
 
 
 /*
