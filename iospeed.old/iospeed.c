@@ -1,23 +1,23 @@
-
 #include "iospeed.h"
 
 #define READWRITE_TEST 0
 #define WRITE_TEST  1
 #define READ_TEST   2
-#define iospeed_min (1 * MB)
+#define iospeed_min (1 * KB)
 #define DEFAULT_FILE_NAME "./test_temp_file.dat"
+#define FBSIZE	(4*KB)
 
 /* memory page size needed for the Direct IO option. */
 size_t mem_page_size;
 
-char* initBuffer(size_t bsize)
+unsigned char* initBuffer(size_t bsize)
 {
-    char *buffer, *p;
+    unsigned char *buffer, *p;
     int  ret;
     size_t i;
 
     /* mem_page_size is set in main. */
-    if (posix_memalign(&buffer, mem_page_size, bsize) != 0) {
+    if (posix_memalign(&(void*)buffer, mem_page_size, bsize) != 0) {
         printf("\n Error unable to reserve memory\n\n");
         return NULL;
     }
@@ -25,7 +25,7 @@ char* initBuffer(size_t bsize)
     /*Initialize the buffer*/
     p = buffer;
     for(i=0; i<bsize; i++, p++)
-	*p = (char)i;
+	*p = (unsigned char)i;
 
     return buffer;
 }
@@ -72,7 +72,7 @@ double testPosixIO(int operation_type, size_t fsize, size_t bsize, char *fname)
     size_t written = 0,read_data = 0;    
     size_t op_size;    
     struct timeval timeval_start;    
-    char* buffer;
+    unsigned char* buffer;
 
     if ((buffer = initBuffer(bsize)) == NULL)
         return IOERR;
@@ -91,7 +91,7 @@ double testPosixIO(int operation_type, size_t fsize, size_t bsize, char *fname)
             
     while(written < fsize)
     {
-        if ((op_size = fwrite(buffer,sizeof(char), bsize,file)) == 0)
+        if ((op_size = fwrite(buffer,sizeof(unsigned char), bsize,file)) == 0)
         {
             printf(" unable to write sufficent data to file \n");
             return IOERR;
@@ -143,7 +143,7 @@ double testPosixIO(int operation_type, size_t fsize, size_t bsize, char *fname)
 
     while(read_data < fsize)
     {
-        if ((op_size = fread(buffer,sizeof(char), bsize,file)) == 0)
+        if ((op_size = fread(buffer,sizeof(unsigned char), bsize,file)) == 0)
         {
             printf(" unable to read sufficent data from file \n");
             return IOERR;
@@ -178,14 +178,23 @@ double testPosixIO(int operation_type, size_t fsize, size_t bsize, char *fname)
 double testUnixIO(int operation_type, int type, size_t fsize, size_t bsize, char *fname)
 {
     int file, flag;
-    size_t written = 0,read_data = 0;    
+    size_t written = 0,read_data = 0; 
+    size_t eoa=0, alloc_size=0;   
     ssize_t op_size;    
     struct timeval timeval_start,timeval_stop;
     struct timeval timeval_diff;
-    char* buffer;
+    unsigned char *data_buf, *copy_buf, *p;
 
-    if ((buffer = initBuffer(bsize)) == NULL)
+    if ((data_buf = initBuffer(bsize)) == NULL)
         return IOERR;
+
+    if(bsize % FBSIZE != 0) {
+    	alloc_size = (bsize / FBSIZE + 1) * FBSIZE + FBSIZE;
+    	if (posix_memalign(&(void*)copy_buf, mem_page_size, alloc_size) != 0) {
+            printf("\n Error unable to reserve memory\n\n");
+            return NULL;
+    	}
+    }
 
     /*start timing*/
     if (operation_type != READ_TEST)
@@ -194,11 +203,13 @@ double testUnixIO(int operation_type, int type, size_t fsize, size_t bsize, char
     }    
     /* create file*/
     if(type == UNIX_DIRECTIO)    
-        flag = O_CREAT|O_TRUNC|O_WRONLY|O_DIRECT;
+        flag = O_CREAT|O_TRUNC|O_RDWR|O_DIRECT;
     else if (type == UNIX_NONBLOCK)
-        flag = O_CREAT|O_TRUNC|O_WRONLY|O_NONBLOCK;
+        flag = O_CREAT|O_TRUNC|O_RDWR|O_NONBLOCK;
+    else if (type == UNIX_SYNC)
+        flag = O_CREAT|O_TRUNC|O_RDWR|O_SYNC;
     else
-        flag = O_CREAT|O_TRUNC|O_WRONLY;
+        flag = O_CREAT|O_TRUNC|O_RDWR;
 
     if ((file=open(fname,flag,S_IRWXU))== -1)
     {
@@ -206,19 +217,44 @@ double testUnixIO(int operation_type, int type, size_t fsize, size_t bsize, char
         return IOERR;
     }    
             
-    while(written < fsize)
+    while(eoa < fsize)
     {
-        op_size = write(file, buffer,bsize);
-        if (op_size < 0)
-        {
-            printf(" Error in writing data to file because %s \n", strerror(errno));
-            return IOERR;
-        }
-        else if (op_size == 0)
-        {
-            printf(" unable to write sufficent data to file because %s \n", strerror(errno));
-            return IOERR;
-        }
+	if(bsize % FBSIZE == 0) {
+	    if((op_size = write(file, data_buf, bsize)) <= 0) {
+            	printf(" Error in writing data to file because %s \n", strerror(errno));
+            	return IOERR;
+            }
+	} else { /*if buffer size isn't a multiple of file block size*/
+	    memset(copy_buf, 0, alloc_size);
+
+	    /*first, read in the unaligned data at the end of the file*/
+	    if(eoa && (eoa%FBSIZE!=0) && (lseek(file, eoa - eoa % FBSIZE, SEEK_SET) < 0)) {
+            	printf(" Error in lseek because %s \n", strerror(errno));
+            	return IOERR;
+            }
+			
+            if (eoa && (eoa%FBSIZE!=0) && (read(file, copy_buf, (size_t)FBSIZE) <= 0)) {
+            	printf(" unable to read data from file because %s \n", strerror(errno));
+            	return IOERR;
+            }
+
+	    /*append the data to be written*/
+	    p = copy_buf + eoa % FBSIZE;
+	    memcpy(p, data_buf, bsize);
+
+	    /*write the data*/
+ 	    if(eoa && (lseek(file, eoa - eoa % FBSIZE, SEEK_SET) < 0)) {
+            	printf(" Error in lseek because %s \n", strerror(errno));
+            	return IOERR;
+            }  		
+            
+	    if((op_size = write(file, copy_buf, alloc_size)) <= 0) {
+            	printf(" Error in writing data to file because %s \n", strerror(errno));
+            	return IOERR;
+            }
+	}
+	eoa += bsize;
+
         if(operation_type != READ_TEST)
         {
             if ((fsize/ reportTime(timeval_start)) < iospeed_min)
@@ -227,10 +263,10 @@ double testUnixIO(int operation_type, int type, size_t fsize, size_t bsize, char
                 return IOSLOW;
             }
         }
-        written += op_size;
+
 #if 0
 	/* check is not needed any more? */
-        if (written < 0)
+        if (eoa < 0)
         {
 	    /* integer overflow detected. */
             printf( "Error: Integer overflow during write\n");
@@ -239,8 +275,14 @@ double testUnixIO(int operation_type, int type, size_t fsize, size_t bsize, char
 #endif
     }
 #ifndef NDEBUG
-	showiosize("Data written=", written, "\n");
+	showiosize("Data written=", eoa, "\n");
 #endif
+
+    /*At the end, truncate the file size*/
+    if(ftruncate(file, fsize)<0) {
+        printf(" unable to truncate the file\n");
+        return IOERR;
+    }
 
     if (close(file) < 0)
     {
@@ -262,6 +304,8 @@ double testUnixIO(int operation_type, int type, size_t fsize, size_t bsize, char
         flag = O_RDONLY | O_DIRECT;
     else if (type == UNIX_NONBLOCK)
         flag = O_RDONLY | O_NONBLOCK;
+    else if (type == UNIX_SYNC)
+        flag = O_RDONLY | O_SYNC;
     else
         flag = O_RDONLY;
 
@@ -271,22 +315,41 @@ double testUnixIO(int operation_type, int type, size_t fsize, size_t bsize, char
         return IOERR;
     }    
 
-    while(read_data < fsize)
+    eoa = 0;
+    while(eoa < fsize)
     {
-        if ((op_size = read(file, buffer, bsize)) <= 0)
-        {
-            printf(" unable to read sufficent data from file \n");
-            return IOERR;
-        }    
+	if(bsize % FBSIZE == 0) {
+            if((op_size = read(file, data_buf, bsize)) <= 0) {
+            	printf(" unable to read data from file because %s \n", strerror(errno));
+            	return IOERR;
+            }
+	} else { /*if the buffer size isn't a multiple of file block size*/
+	    /*first, read in the aligned data*/
+	    if(eoa && (eoa%FBSIZE!=0) && (lseek(file, eoa - eoa % FBSIZE, SEEK_SET) < 0)) {
+            	printf(" Error in lseek because %s \n", strerror(errno));
+            	return IOERR;
+            }
+
+            if((op_size = read(file, copy_buf, (size_t)alloc_size)) <= 0) {
+            	printf(" unable to read data from file because %s \n", strerror(errno));
+            	return IOERR;
+            }
+
+	    /*look for the right position to copy the data*/
+	    p = copy_buf + eoa % FBSIZE;
+	    memcpy(data_buf, p, bsize);
+	}
+        eoa += bsize;        
+
         if (( fsize/ reportTime(timeval_start)) < iospeed_min)
         {
 	    /* IO speed too slow. Abort. */
             return IOSLOW;
         }        
-        read_data += op_size;        
+
 #if 0
 	/* check is not needed any more? */
-        if (read_data < 0)
+        if (eoa < 0)
         {
 	    /* integer overflow detected. */
             printf( "Error: Integer overflow during read\n");
@@ -295,11 +358,14 @@ double testUnixIO(int operation_type, int type, size_t fsize, size_t bsize, char
 #endif
     }
 #ifndef NDEBUG
-	showiosize("Data read=", read_data, "\n");
+	showiosize("Data read=", eoa, "\n");
 #endif
 
     close(file);
-    free(buffer);
+    if(data_buf)
+        free(data_buf);
+    if(bsize % FBSIZE != 0)
+        free(copy_buf);
 
     return reportTime(timeval_start);
 }
@@ -311,7 +377,7 @@ double testMMAP(int operation_type, int type, size_t fsize, size_t bsize, char *
     ssize_t op_size;    
     struct timeval timeval_start,timeval_stop;
     struct timeval timeval_diff;
-    char *buffer, *pmap, *p;
+    unsigned char *buffer, *pmap, *p;
     size_t interval, i, batch=4;
    
     if(bsize > fsize) {
@@ -348,7 +414,7 @@ double testMMAP(int operation_type, int type, size_t fsize, size_t bsize, char *
 
     if(fsize<(size_t)2*1024*MB) {
         /* if the file is smaller than 2GB, map the whole file into memory using mmap */
-        if((pmap = (char*)mmap(0, fsize, PROT_WRITE | PROT_READ, MAP_SHARED, file, 0))<0) {
+        if((pmap = (unsigned char*)mmap(0, fsize, PROT_WRITE | PROT_READ, MAP_SHARED, file, 0))<0) {
             printf(" Error in mmap because %s.\n", strerror(errno));
        	    return IOERR;
         }
@@ -389,7 +455,7 @@ double testMMAP(int operation_type, int type, size_t fsize, size_t bsize, char *
         interval = fsize / (bsize*batch);
 
         for(i=0; i<interval; i++) {
-	    if((pmap = (char*)mmap(0, bsize*batch, PROT_WRITE | PROT_READ, MAP_SHARED, file, 
+	    if((pmap = (unsigned char*)mmap(0, bsize*batch, PROT_WRITE | PROT_READ, MAP_SHARED, file, 
 		i*bsize*batch))<0) {
                 printf(" Error in mmap because %s.\n", strerror(errno));
        	        return IOERR;
@@ -462,7 +528,7 @@ double testMMAP(int operation_type, int type, size_t fsize, size_t bsize, char *
 
     if(fsize<(size_t)2*1024*MB) {
         /* if the file is smaller than 2GB, map the whole file into memory using mmap */
-        if((pmap = (char*)mmap(0, fsize, PROT_READ, MAP_SHARED, file, 0))<0) {
+        if((pmap = (unsigned char*)mmap(0, fsize, PROT_READ, MAP_SHARED, file, 0))<0) {
             printf(" Error in mmap because %s.\n", strerror(errno));
        	    return IOERR;
         }
@@ -498,7 +564,7 @@ double testMMAP(int operation_type, int type, size_t fsize, size_t bsize, char *
     } else if (fsize >= (bsize*batch) && ((fsize % (bsize*batch))==0)) {
 	/* if the file is bigger, map the file a few times into memory. */
         for(i=0; i<interval; i++) {
-	    if((pmap = (char*)mmap(0, bsize*batch, PROT_READ, MAP_SHARED, file, i*bsize*batch))<0) {
+	    if((pmap = (unsigned char*)mmap(0, bsize*batch, PROT_READ, MAP_SHARED, file, i*bsize*batch))<0) {
                 printf(" Error in mmap because %s.\n", strerror(errno));
        	        return IOERR;
             }
@@ -554,7 +620,7 @@ double testFFIO(int operation_type, size_t fsize, size_t bsize, char *fname)
     ssize_t op_size;    
     struct timeval timeval_start,timeval_stop;
     struct timeval timeval_diff;
-    char* buffer;
+    unsigned char* buffer;
 
     if ((buffer = initBuffer(bsize)) == NULL)
         return IOERR;
@@ -673,6 +739,7 @@ void printInfo()
         "                5 for Unix I/O with O_NONBlOCK\n"
         "                6 for mmap I/O\n"
         "                7 for Direct I/O with mmap\n"
+        "                8 for Synchronous Unix I/O\n"
         "    -r          read only\n"
         "    -w          write only (default to do both read and write)\n"
         "    -b <bsize>  data transfer block size (default 1KB=1024B)\n"
@@ -828,6 +895,14 @@ main (int argc, char **argv)
                     printf(" Mode=Direct I/O with mmap");      
                 }
             }
+            else if (*ptr == '8')
+            {
+                mode = UNIX_SYNC;
+                if (header)
+                {
+                    printf(" Mode=Unix I/O with O_SYNC");      
+                }
+            }
             else
             {
                 printf("Error: Unknown mode(%c)\n", *ptr);
@@ -966,6 +1041,9 @@ main (int argc, char **argv)
       break;
     case 7:
       elapsed_time = testMMAP(input_operation, UNIX_DIRECTIO, file_size, block_size, filename);
+      break;
+    case UNIX_SYNC:
+      elapsed_time = testUnixIO(input_operation,UNIX_SYNC,file_size, block_size, filename);
       break;
     default:
         printInfo();

@@ -25,6 +25,7 @@
 #define	UNIX_DIRECTIO	3	/* Direct IO */
 #define	FFIO		4	/* basic write */
 #define	UNIX_NONBLOCK	5	/* Non-blocking IO */
+#define UNIX_SYNC	8	/* Synchronous IO */
 
 /* IO Error Code */
 #define IOERR		-1	/* IO error occured */
