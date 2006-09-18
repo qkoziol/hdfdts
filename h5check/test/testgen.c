@@ -198,7 +198,7 @@ void UNUSED **buf)
 
 
 /*
-* This function provides the appropriate file driver based on the name of the file.
+* This function assigns a file driver based on the name of the file.
 */
 
 hid_t h5_fileaccess(char *name)
@@ -1680,84 +1680,6 @@ static void gen_time(hid_t file_id)
 }
 
 
-/*
-* This function creates 2 datasets using external files for raw data.
-*/
-
-static int gen_external(hid_t file)
-{
-    hid_t	dcpl=-1;		/*dataset creation properties	*/
-    hid_t	space=-1;		/*data space			*/
-    hid_t	dset=-1;		/*dataset			*/
-    hsize_t	cur_size[1];		/*data space current size	*/
-    hsize_t	max_size[1];		/*data space maximum size	*/
-    int		n;			/*number of external files	*/
-    char	name[256];		/*external file name		*/
-    off_t	file_offset;		/*external file offset		*/
-    hsize_t	file_size;		/*sizeof external file segment	*/
-    herr_t  ret;
-
-
-    /* Create dataset */
-    dcpl=H5Pcreate(H5P_DATASET_CREATE);
-    VRFY((dcpl>=0), "H5Pcreate");
-
-    ret=H5Pset_external(dcpl, "ext0.data", (off_t)0, H5F_UNLIMITED);
-    VRFY((ret>=0), "H5Pset_external");
-
-    cur_size[0] = 100;
-    max_size[0] = H5S_UNLIMITED;
-
-    space=H5Screate_simple(1, cur_size, max_size);
-    VRFY((space>=0), "H5Screate_simple");
-
-    dset=H5Dcreate(file, "dset5", H5T_NATIVE_INT, space, dcpl);
-    VRFY((dset>=0), "H5Dcreate");
-
-	ret=H5Dclose(dset);
-    VRFY((ret>=0), "H5Dclose");
-
-    ret=H5Sclose(space);
-    VRFY((ret>=0), "H5Sclose");
-
-    ret=H5Pclose(dcpl);
-    VRFY((ret>=0), "H5Pclose");
-
-
-
-    dcpl=H5Pcreate(H5P_DATASET_CREATE);
-    VRFY((dcpl>=0), "H5Pcreate");
-
-    cur_size[0] = max_size[0] = 100;
-
-    if ((H5Pset_external(dcpl, "ext1.data", (off_t)0,
-	    (hsize_t)(max_size[0]*sizeof(int)/4))<0) ||
-        (H5Pset_external(dcpl, "ext2.data", (off_t)0,
-	    (hsize_t)(max_size[0]*sizeof(int)/4))<0) ||
-        (H5Pset_external(dcpl, "ext3.data", (off_t)0,
-	    (hsize_t)(max_size[0]*sizeof(int)/4))<0) ||
-        (H5Pset_external(dcpl, "ext4.data", (off_t)0,
-	    (hsize_t)(max_size[0]*sizeof(int)/4))<0))
-        VRFY(FALSE, "H5Pset_external");
-    
-    space=H5Screate_simple(1, cur_size, max_size);
-    VRFY((space>=0), "H5Screate_simple");
-
-    dset=H5Dcreate(file, "dset6", H5T_NATIVE_INT, space, dcpl);
-    VRFY((dset>=0), "H5Dcreate");
-
-    ret=H5Dclose(dset);
-    VRFY((ret>=0), "H5Dclose");
-
-    ret=H5Sclose(space);
-    VRFY((ret>=0), "H5Sclose");
-
-    ret=H5Pclose(dcpl);
-    VRFY((ret>=0), "H5Pclose");
-
-}
-
-
 
 /* main function of test generator */
 
@@ -1769,7 +1691,7 @@ int main(int argc, char *argv[])
     char *fname[]={"root","linear","hierarchical","mpath","cyclical",
         "rank_dsets_empty","rank_dsets_full","group_dsets","basic_types",
         "compound","vl","enum","refer","filters","stdio","split",
-        "multi","family","log","attr","time","external"}; /* file names */
+        "multi","family","log","attr","time"}; /* file names */
 
     unsigned i=0;
 
@@ -1881,11 +1803,6 @@ int main(int argc, char *argv[])
     /* create a file using time datatype */
     fid = create_file(fname[i++], "");
     gen_time(fid);
-    close_file(fid, "");
-
-    /* create an external file */
-    fid = create_file(fname[i++], "");
-    gen_external(fid);
     close_file(fid, "");
     
     /* successful completion message */
