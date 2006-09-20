@@ -174,8 +174,136 @@ double testPosixIO(int operation_type, size_t fsize, size_t bsize, char *fname)
     return reportTime(timeval_start);
 }
 
-
 double testUnixIO(int operation_type, int type, size_t fsize, size_t bsize, char *fname)
+{
+    int file, flag;
+    size_t written = 0,read_data = 0;    
+    ssize_t op_size;    
+    struct timeval timeval_start,timeval_stop;
+    struct timeval timeval_diff;
+    unsigned char* buffer;
+
+    if ((buffer = initBuffer(bsize)) == NULL)
+        return IOERR;
+
+    /*start timing*/
+    if (operation_type != READ_TEST)
+    {
+        gettimeofday(&timeval_start,NULL);
+    }    
+    /* create file*/
+    if(type == UNIX_SYNC)    
+        flag = O_CREAT|O_TRUNC|O_WRONLY|O_SYNC;
+    else if (type == UNIX_NONBLOCK)
+        flag = O_CREAT|O_TRUNC|O_WRONLY|O_NONBLOCK;
+    else
+        flag = O_CREAT|O_TRUNC|O_WRONLY;
+
+    if ((file=open(fname,flag,S_IRWXU))== -1)
+    {
+        printf(" unable to create the file\n");
+        return IOERR;
+    }    
+            
+    while(written < fsize)
+    {
+        op_size = write(file, buffer,bsize);
+        if (op_size < 0)
+        {
+            printf(" Error in writing data to file because %s \n", strerror(errno));
+            return IOERR;
+        }
+        else if (op_size == 0)
+        {
+            printf(" unable to write sufficent data to file because %s \n", strerror(errno));
+            return IOERR;
+        }
+        if(operation_type != READ_TEST)
+        {
+            if ((fsize/ reportTime(timeval_start)) < iospeed_min)
+            {
+		/* IO speed too slow. Abort. */
+                return IOSLOW;
+            }
+        }
+        written += op_size;
+#if 0
+	/* check is not needed any more? */
+        if (written < 0)
+        {
+	    /* integer overflow detected. */
+            printf( "Error: Integer overflow during write\n");
+            return IOERR;
+        }
+#endif
+    }
+#ifndef NDEBUG
+	showiosize("Data written=", written, "\n");
+#endif
+
+    if (close(file) < 0)
+    {
+        printf(" unable to close the file\n");
+        return IOERR;
+    }
+    
+    if (operation_type == WRITE_TEST)
+    {
+        return reportTime(timeval_start);    
+    }
+    else if (operation_type == READ_TEST)
+    {
+        /*start timing*/
+        gettimeofday(&timeval_start,NULL);
+    }
+ 
+    if(type == UNIX_SYNC)    
+        flag = O_RDONLY | O_SYNC;
+    else if (type == UNIX_NONBLOCK)
+        flag = O_RDONLY | O_NONBLOCK;
+    else
+        flag = O_RDONLY;
+
+    if ((file=open(fname,flag))== -1)
+    {
+        printf(" unable to open the file because %s \n", strerror(errno));
+        return IOERR;
+    }    
+
+    while(read_data < fsize)
+    {
+        if ((op_size = read(file, buffer, bsize)) <= 0)
+        {
+            printf(" unable to read sufficent data from file \n");
+            return IOERR;
+        }    
+        if (( fsize/ reportTime(timeval_start)) < iospeed_min)
+        {
+	    /* IO speed too slow. Abort. */
+            return IOSLOW;
+        }        
+        read_data += op_size;        
+#if 0
+	/* check is not needed any more? */
+        if (read_data < 0)
+        {
+	    /* integer overflow detected. */
+            printf( "Error: Integer overflow during read\n");
+            return IOERR;
+        }
+#endif
+    }
+#ifndef NDEBUG
+	showiosize("Data read=", read_data, "\n");
+#endif
+
+    close(file);
+    free(buffer);
+
+    return reportTime(timeval_start);
+}
+
+double test_UnixIO_aligned(int operation_type, int type, size_t fsize, size_t bsize, char *fname)
 {
     int file, flag;
     size_t written = 0,read_data = 0; 
@@ -745,6 +873,7 @@ void printInfo()
         "    -b <bsize>  data transfer block size (default 1KB=1024B)\n"
         "    -s <fsize>  total file size in MB=1024*1024B (default 128)\n"
         "    -f <fname>  temporary data file name (default current directory)\n"
+        "    -a		 force I/O to align the data by file block size\n"
         "    help        prints this message\n"
     );
 }
@@ -768,6 +897,7 @@ main (int argc, char **argv)
     char shortopt;
     unsigned int i, mode = 1;
     int input_operation=READWRITE_TEST;
+    int aligned = 0;
     gopt_t goptreturn;
     void *options;
     const char *ptr;
@@ -798,6 +928,7 @@ main (int argc, char **argv)
     validOptions[3][0]='b';
     validOptions[4][0]='s';
     validOptions[5][0]='f';
+    validOptions[6][0]='a';
 
     /* information mode*/
     if ((argc >=2) &&  (strcmp(argv[1],"help") == 0))
@@ -952,13 +1083,13 @@ main (int argc, char **argv)
         switch(input_operation)
         {
             case READ_TEST:
-                printf("Read \n");      
+                printf("Read.  ");      
                 break;
             case WRITE_TEST:
-                printf ("Write \n");
+                printf ("Write.  ");
                 break;
             case READWRITE_TEST:
-                printf("Read Write \n");
+                printf("Read Write.  ");
                 break;
             default:
                 printInfo();
@@ -966,7 +1097,26 @@ main (int argc, char **argv)
                 break;
         }
     }
-            
+
+    /* data alignment */
+    goptreturn=gopt(options,'a',0,&ptr);       
+    printf("Data is ");
+    switch(goptreturn){
+    case GOPT_NOTPRESENT:      
+      break;
+    case GOPT_PRESENT_NOARG:
+        aligned = 1;
+      break;
+    case GOPT_PRESENT_WITHARG:
+      printInfo();
+      return 1;
+      break;
+    }
+    if(aligned)
+	printf("forced to be aligned (only meaningful for Unix, Direct, Synchronous, and Non-block I/O).\n");
+    else
+	printf("not aligned (only meaningful for Unix, Direct, Synchronous, and Non-block I/O).\n");
+           
     /*file size*/
     goptreturn=gopt(options,'s',0,&ptr);    
     switch(goptreturn){
@@ -1017,16 +1167,26 @@ main (int argc, char **argv)
     printf("filename=%s\n",filename);
 
     /*run*/    
- 
   switch(mode){
     case UNIX_BASIC:
-      elapsed_time = testUnixIO(input_operation,UNIX_BASIC,file_size, block_size, filename);
+      if(aligned)
+      	elapsed_time = test_UnixIO_aligned(input_operation,UNIX_BASIC,file_size, 
+				block_size, filename);
+      else
+      	elapsed_time = testUnixIO(input_operation,UNIX_BASIC,file_size, 
+				block_size, filename);
       break;
-    case Posix_IO:      
+    case Posix_IO:
       elapsed_time = testPosixIO(input_operation,file_size, block_size, filename);
       break;
     case UNIX_DIRECTIO:
-      elapsed_time = testUnixIO(input_operation,UNIX_DIRECTIO,file_size, block_size, filename);
+      if(aligned)
+      	elapsed_time = test_UnixIO_aligned(input_operation,UNIX_DIRECTIO,file_size, 
+				block_size, filename);
+      else {
+	printf("Data has to be aligned for Direct I/O.\n");
+	elapsed_time = IOERR;
+      }
       break;
 #ifdef FFIO_MACHINE
     case FFIO:
@@ -1034,7 +1194,12 @@ main (int argc, char **argv)
       break;
 #endif
     case UNIX_NONBLOCK:
-      elapsed_time = testUnixIO(input_operation,UNIX_NONBLOCK,file_size, block_size, filename);
+      if(aligned)
+        elapsed_time = test_UnixIO_aligned(input_operation,UNIX_NONBLOCK,file_size, 
+				block_size, filename);
+      else
+        elapsed_time = testUnixIO(input_operation,UNIX_NONBLOCK,file_size, 
+				block_size, filename);
       break;
     case 6:
       elapsed_time = testMMAP(input_operation, UNIX_BASIC, file_size, block_size, filename);
@@ -1043,7 +1208,12 @@ main (int argc, char **argv)
       elapsed_time = testMMAP(input_operation, UNIX_DIRECTIO, file_size, block_size, filename);
       break;
     case UNIX_SYNC:
-      elapsed_time = testUnixIO(input_operation,UNIX_SYNC,file_size, block_size, filename);
+      if(aligned)
+        elapsed_time = test_UnixIO_aligned(input_operation,UNIX_SYNC,file_size, 
+				block_size, filename);
+      else
+        elapsed_time = testUnixIO(input_operation,UNIX_SYNC,file_size, 
+				block_size, filename);
       break;
     default:
         printInfo();

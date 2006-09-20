@@ -31,4 +31,4 @@
 #define IOERR		-1	/* IO error occured */
 #define IOSLOW		-2	/* IO speed too slow */
 
-#define NUMOPTIONS	6	/* number of options */
+#define NUMOPTIONS	7	/* number of options */
