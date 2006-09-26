@@ -6,20 +6,22 @@
 #include <time.h>
 #include "h5_check.h"
 
-#define	INPUTFILE	"/mnt/sdt/vchoi/work/STEP/READ_STEP/NARA/indexing/STEP/allspline.h5"
+
 #if 0
 #define	INPUTFILE	"./STUDY/eegroup.h5"
 #define	INPUTFILE	"./STUDY/tryout.h5"
-#define	INPUTFILE	"./STUDY/eegroup.h5"
 #define	INPUTFILE	"./example1.h5"
 #define	INPUTFILE	"/mnt/sdt/vchoi/work/STEP/READ_STEP/NARA/indexing/STEP/allspline.h5"
+#define	INPUTFILE	"/mnt/sdt/vchoi/work/STEP/READ_STEP/NARA/indexing/STEP/combine.h5"
 #define	INPUTFILE	"./STUDY/ee.h5"
 /* couldn't use this one for the time being....need to put in user block */
 #define	INPUTFILE	"./DOQ.h5"
 #endif
 
 /* test files from the testsuites */
+#define	INPUTFILE	"/mnt/sdt/vchoi/work/H5CHECKER/TEST/h5check/test/basic_types.h5"
 #if 0
+#define	INPUTFILE	"/home1/chilan/h5check/external.h5"
 #define	INPUTFILE	"/mnt/sdt/vchoi/work/H5CHECKER/TEST/h5check/test/basic_types.h5"
 #define	INPUTFILE	"/mnt/sdt/vchoi/work/H5CHECKER/TEST/h5check/test/compound.h5"
 #define	INPUTFILE	"/mnt/sdt/vchoi/work/H5CHECKER/TEST/h5check/test/cyclical.h5"
@@ -35,9 +37,9 @@
 #define	INPUTFILE	"/mnt/sdt/vchoi/work/H5CHECKER/TEST/h5check/test/refer.h5"
 #define	INPUTFILE	"/mnt/sdt/vchoi/work/H5CHECKER/TEST/h5check/test/root.h5"
 #define	INPUTFILE	"/mnt/sdt/vchoi/work/H5CHECKER/TEST/h5check/test/vl.h5"
+#define	INPUTFILE	"/mnt/sdt/vchoi/work/H5CHECKER/TEST/h5check/test/filters.h5"
 /* NOT WORKING YET */
 #define	INPUTFILE	"/mnt/sdt/vchoi/work/H5CHECKER/TEST/h5check/test/cyclical.h5"
-#define	INPUTFILE	"/mnt/sdt/vchoi/work/H5CHECKER/TEST/h5check/test/filters.h5"
 /* this one working but not sure whether so ...if cyclical.h5 is not working */
 #define	INPUTFILE	"/mnt/sdt/vchoi/work/H5CHECKER/TEST/h5check/test/multipath.h5"
 #endif
@@ -61,9 +63,9 @@ H5G_entry_t 	root_ent;
 herr_t  check_superblock(FILE *);
 herr_t 	check_obj_header(FILE *, haddr_t, int, const H5O_class_t *);
 herr_t  decode_validate_messages(FILE *, H5O_t *);
-herr_t 	check_btree(FILE *, haddr_t);
+herr_t 	check_btree(FILE *, haddr_t, unsigned);
 herr_t 	check_sym(FILE *, haddr_t);
-herr_t 	check_lheap(FILE *, haddr_t);
+herr_t 	check_lheap(FILE *, haddr_t, uint8_t **);
 herr_t 	check_gheap(FILE *, haddr_t);
 
 
@@ -122,6 +124,17 @@ const H5O_class_t H5O_FILL_NEW[1] = {{
     "fill_new",                 /*message name for debugging            */
     sizeof(H5O_fill_new_t),     /*native message size                   */
     H5O_fill_new_decode         /*decode message                        */
+}};
+
+static void *H5O_efl_decode(const uint8_t *p);
+
+/* copied and modified from H5Oefl.c */
+/* This message derives from H5O */
+const H5O_class_t H5O_EFL[1] = {{
+    H5O_EFL_ID,                 /*message id number             */
+    "external file list",       /*message name for debugging    */
+    sizeof(H5O_efl_t),          /*native message size           */
+    H5O_efl_decode,             /*decode message                */
 }};
 
 
@@ -238,7 +251,7 @@ static const H5O_class_t *const message_type_g[] = {
     NULL,           	/*0x0004 Old data storage -- fill value         */
     H5O_FILL_NEW,      	/*0x0005 New Data storage -- fill value         */
     NULL,               /*0x0006 Data storage -- compact object         */
-    NULL,            	/*0x0007 Data storage -- external data files    */
+    H5O_EFL,           	/*0x0007 Data storage -- external data files    */
     H5O_LAYOUT,        	/*0x0008 Data Layout                            */
     NULL,               /*0x0008 "Bogus"                                */
     NULL,               /*0x000A Not assigned                           */
@@ -251,6 +264,39 @@ static const H5O_class_t *const message_type_g[] = {
     H5O_STAB,           /*0x0011 Symbol table                           */
     H5O_MTIME_NEW	/*0x0012 New Object modification date and time  */
 };
+
+
+/* copied and modified from H5Gnode.c */
+static size_t H5G_node_sizeof_rkey(H5F_shared_t, unsigned);
+static void *H5G_node_decode_key(H5F_shared_t, unsigned, const uint8_t **);
+
+/* copied and modified from H5Gnode.c */
+/* H5G inherits B-tree like properties from H5B */
+H5B_class_t H5B_SNODE[1] = {
+    H5B_SNODE_ID,               /*id                    */
+    sizeof(H5G_node_key_t),     /*sizeof_nkey           */
+    H5G_node_sizeof_rkey,       /*get_sizeof_rkey       */
+    H5G_node_decode_key,        /*decode                */
+};
+
+/* copied and modified from H5Distore.c */
+static size_t H5D_istore_sizeof_rkey(H5F_shared_t, unsigned);
+static void *H5D_istore_decode_key(H5F_shared_t, unsigned, const uint8_t **);
+
+/* copied and modified from H5Distore.c */
+/* inherits B-tree like properties from H5B */
+H5B_class_t H5B_ISTORE[1] = {
+    H5B_ISTORE_ID,              /*id                    */
+    sizeof(H5D_istore_key_t),   /*sizeof_nkey           */
+    H5D_istore_sizeof_rkey,     /*get_sizeof_rkey       */
+    H5D_istore_decode_key,      /*decode                */
+};
+
+static const H5B_class_t *const node_key_g[] = {
+    	H5B_SNODE,  	/* group node: symbol table */
+	H5B_ISTORE	/* raw data chunk node */
+};
+
 
 /* copied and modified from H5Osdspace.c */
 /*--------------------------------------------------------------------------
@@ -394,7 +440,6 @@ H5O_dtype_decode_helper(const uint8_t **pp, H5T_t *dt)
     	/* decode */
     	UINT32DECODE(*pp, flags);
     	version = (flags>>4) & 0x0f;
-printf("Version for dtype_Decode_helper=%d\n", version);
     	if (version != H5O_DTYPE_VERSION_COMPAT && version != H5O_DTYPE_VERSION_UPDATED) {
 		H5E_push("H5O_dtype_decode_helper", "Bad version number for datatype message.\n", -1);
 		ret++;
@@ -614,7 +659,6 @@ printf("MEMBERNAME=%s\n", dt->shared->u.compnd.memb[i].name);
 	        if(version==H5O_DTYPE_VERSION_COMPAT) {
                     /* Decode the number of dimensions */
                     ndims = *(*pp)++;
-printf("ndims=%d\n", ndims);
                     assert(ndims <= 4);
                     *pp += 3;           /*reserved bytes */
 
@@ -998,6 +1042,273 @@ H5O_fill_new_decode(const uint8_t *p)
 
 }
 
+/*-------------------------------------------------------------------------
+ * Function:    H5O_efl_decode
+ *
+ * Purpose:     Decode an external file list message and return a pointer to
+ *              the message (and some other data).
+ *
+ * Return:      Success:        Ptr to a new message struct.
+ *
+ *              Failure:        NULL
+ *
+ * Programmer:  Robb Matzke
+ *              Tuesday, November 25, 1997
+ *
+ * Modifications:
+ *      Robb Matzke, 1998-07-20
+ *      Rearranged the message to add a version number near the beginning.
+ *
+ *-------------------------------------------------------------------------
+ */
+static void *
+H5O_efl_decode(const uint8_t *p)
+{
+    	H5O_efl_t       *mesg = NULL;
+    	int             version, ret;
+    	const char      *s = NULL;
+    	size_t          u;      	/* Local index variable */
+    	void 		*ret_value;     /* Return value */
+
+    	/* Check args */
+    	assert(p);
+	ret = SUCCEED;
+
+    	if ((mesg = calloc(1, sizeof(H5O_efl_t)))==NULL) {
+		H5E_push("H5O_efl_decode", "Couldn't malloc() H5O_efl_t.", -1);
+		return(ret_value=NULL);
+	}
+
+    	/* Version */
+    	version = *p++;
+    	if (version != H5O_EFL_VERSION) {
+		H5E_push("H5O_efl_decode", "Bad version number for External Data Files message.", -1);
+		ret++;
+	}
+
+    	/* Reserved */
+    	p += 3;
+
+    	/* Number of slots */
+    	UINT16DECODE(p, mesg->nalloc);
+    	assert(mesg->nalloc>0);
+    	UINT16DECODE(p, mesg->nused);
+    	assert(mesg->nused <= mesg->nalloc);
+
+	if (!(mesg->nalloc >= mesg->nused)) {
+		H5E_push("H5O_efl_decode", "Inconsistent number of allocated slots.", -1);
+		return(ret_value=NULL);
+	}
+
+    	/* Heap address */
+    	H5F_addr_decode(shared_info, &p, &(mesg->heap_addr));
+    	assert(H5F_addr_defined(mesg->heap_addr));
+
+    	/* Decode the file list */
+    	mesg->slot = calloc(mesg->nalloc, sizeof(H5O_efl_entry_t));
+    	if (NULL == mesg->slot) {
+		H5E_push("H5O_efl_decode", "Couldn't malloc() H5O_efl_entry_t.", -1);
+		return(ret_value=NULL);
+	}
+
+    	for (u = 0; u < mesg->nused; u++) {
+        	/* Name offset */
+        	H5F_DECODE_LENGTH (shared_info, p, mesg->slot[u].name_offset);
+        	/* File offset */
+        	H5F_DECODE_LENGTH (shared_info, p, mesg->slot[u].offset);
+        	/* Size */
+        	H5F_DECODE_LENGTH (shared_info, p, mesg->slot[u].size);
+        	assert (mesg->slot[u].size>0);
+    	}
+
+	if (ret)
+		mesg = NULL;
+    	/* Set return value */
+    	ret_value = mesg;
+    	return(ret_value);
+}
+
+
+
+
+
+
+/* copied and modified from H5Olayout.c */
+/*-------------------------------------------------------------------------
+ * Function:    H5O_layout_decode
+ *
+ * Purpose:     Decode an data layout message and return a pointer to a
+ *              new one created with malloc().
+ *
+ * Return:      Success:        Ptr to new message in native order.
+ *
+ *              Failure:        NULL
+ *
+ * Programmer:  Robb Matzke
+ *              Wednesday, October  8, 1997
+ *
+ * Modifications:
+ *      Robb Matzke, 1998-07-20
+ *      Rearranged the message to add a version number at the beginning.
+ *
+ *      Raymond Lu, 2002-2-26
+ *      Added version number 2 case depends on if space has been allocated
+ *      at the moment when layout header message is updated.
+ *
+ *-------------------------------------------------------------------------
+ */
+static void *
+H5O_layout_decode(const uint8_t *p)
+{
+    	H5O_layout_t    *mesg = NULL;
+    	unsigned        u;
+    	void            *ret_value;          /* Return value */
+	int		ret;
+
+
+    	/* check args */
+    	assert(p);
+	ret = SUCCEED;
+
+
+    	/* decode */
+	if ((mesg=calloc(1, sizeof(H5O_layout_t)))==NULL) {
+		H5E_push("H5O_layout_decode", "Couldn't malloc() H5O_layout_t.", -1);
+		return(ret_value=NULL);
+	}
+
+    	/* Version. 1 when space allocated; 2 when space allocation is delayed */
+    	mesg->version = *p++;
+    	if (mesg->version<H5O_LAYOUT_VERSION_1 || mesg->version>H5O_LAYOUT_VERSION_3) {
+		H5E_push("H5O_layout_decode", "Bad version number for layout message.", -1);
+		ret++;  /* ?????SHOULD I LET IT CONTINUE */
+	}
+
+    	if(mesg->version < H5O_LAYOUT_VERSION_3) {  /* version 1 & 2 */
+        	unsigned        ndims;    /* Num dimensions in chunk           */
+
+        	/* Dimensionality */
+        	ndims = *p++;
+		/* this is not specified in the format specification ??? */
+        	if (ndims > H5O_LAYOUT_NDIMS) {
+			H5E_push("H5O_layout_decode", "Dimensionality is too large.", -1);
+			ret++;
+		}
+
+        	/* Layout class */
+        	mesg->type = (H5D_layout_t)*p++;
+        	assert(H5D_CONTIGUOUS == mesg->type || H5D_CHUNKED == mesg->type || H5D_COMPACT == mesg->type);
+
+        	/* Reserved bytes */
+        	p += 5;
+
+        	/* Address */
+        	if(mesg->type==H5D_CONTIGUOUS) {
+printf("CONTIGUOUS storage\n");
+            		H5F_addr_decode(shared_info, &p, &(mesg->u.contig.addr));
+        	} else if(mesg->type==H5D_CHUNKED) {
+            		H5F_addr_decode(shared_info, &p, &(mesg->u.chunk.addr));
+printf("CHUNKED_STORAGE:btree address=%d\n", mesg->u.chunk.addr);
+		}
+
+        	/* Read the size */
+        	if(mesg->type!=H5D_CHUNKED) {
+            		mesg->unused.ndims=ndims;
+
+            		for (u = 0; u < ndims; u++)
+                		UINT32DECODE(p, mesg->unused.dim[u]);
+
+            	/* Don't compute size of contiguous storage here, due to possible
+             	 * truncation of the dimension sizes when they were stored in this
+             	 * version of the layout message.  Compute the contiguous storage
+             	 * size in the dataset code, where we've got the dataspace
+             	 * information available also.  - QAK 5/26/04
+             	 */
+        	} else {
+            		mesg->u.chunk.ndims=ndims;
+            		for (u = 0; u < ndims; u++) {
+                		UINT32DECODE(p, mesg->u.chunk.dim[u]);
+printf("LAYOUT_DECODE: dim[%d]=%d,", u,mesg->u.chunk.dim[u]);
+			}
+
+            		/* Compute chunk size */
+            		for (u=1, mesg->u.chunk.size=mesg->u.chunk.dim[0]; u<ndims; u++)
+                		mesg->u.chunk.size *= mesg->u.chunk.dim[u];
+
+#ifdef DEBUG
+printf("CHUNKED_STORAGE:btree address=%lld, chunk size=%d, ndims=%d\n", 
+	mesg->u.chunk.addr, mesg->u.chunk.size, mesg->u.chunk.ndims);
+#endif
+        	}
+
+        	if(mesg->type == H5D_COMPACT) {
+            		UINT32DECODE(p, mesg->u.compact.size);
+            		if(mesg->u.compact.size > 0) {
+                		if(NULL==(mesg->u.compact.buf=malloc(mesg->u.compact.size))) {
+					H5E_push("H5O_layout_decode", "Couldn't malloc() compact storage buffer.", -1);
+					return(ret_value=NULL);
+				}
+
+                		memcpy(mesg->u.compact.buf, p, mesg->u.compact.size);
+                		p += mesg->u.compact.size;
+            		}
+        	}
+    	} else {  /* version 3 */
+        	/* Layout class */
+        	mesg->type = (H5D_layout_t)*p++;
+
+        	/* Interpret the rest of the message according to the layout class */
+        	switch(mesg->type) {
+            	  case H5D_CONTIGUOUS:
+                  	H5F_addr_decode(shared_info, &p, &(mesg->u.contig.addr));
+                	H5F_DECODE_LENGTH(shared_info, p, mesg->u.contig.size);
+                	break;
+
+               	  case H5D_CHUNKED:
+                   	/* Dimensionality */
+                    	mesg->u.chunk.ndims = *p++;
+                	if (mesg->u.chunk.ndims>H5O_LAYOUT_NDIMS) {
+				H5E_push("H5O_layout_decode", "Dimensionality is too large.", -1);
+				ret++;
+			}
+
+                	/* B-tree address */
+                	H5F_addr_decode(shared_info, &p, &(mesg->u.chunk.addr));
+
+                	/* Chunk dimensions */
+                	for (u = 0; u < mesg->u.chunk.ndims; u++)
+                    		UINT32DECODE(p, mesg->u.chunk.dim[u]);
+
+                	/* Compute chunk size */
+                	for (u=1, mesg->u.chunk.size=mesg->u.chunk.dim[0]; u<mesg->u.chunk.ndims; u++)
+                    		mesg->u.chunk.size *= mesg->u.chunk.dim[u];
+                	break;
+
+            	  case H5D_COMPACT:
+                	UINT16DECODE(p, mesg->u.compact.size);
+                	if(mesg->u.compact.size > 0) {
+                    		if(NULL==(mesg->u.compact.buf=malloc(mesg->u.compact.size))) {
+					H5E_push("H5O_layout_decode", "Couldn't malloc() compact storage buffer.", -1);
+					return(ret_value=NULL);
+				}
+                    		memcpy(mesg->u.compact.buf, p, mesg->u.compact.size);
+                    		p += mesg->u.compact.size;
+                	} /* end if */
+                	break;
+
+            	  default:
+			H5E_push("H5O_layout_decode", "Invalid layout class.", -1);
+			ret++;
+        	} /* end switch */
+    	} /* version 3 */
+
+	if (ret)
+		mesg = NULL;
+    	/* Set return value */
+    	ret_value=mesg;
+    	return(ret_value);
+}
+
 
 
 /* copied and modified from H5Oattr.c */
@@ -1092,6 +1403,8 @@ H5O_attr_decode(const uint8_t *p)
         p += H5O_ALIGN(name_len);    /* advance the memory pointer */
 
 
+
+
         if((attr->dt=(H5O_DTYPE->decode)(p))==NULL) {
 		H5E_push("H5O_attr_decode", "Can't decode attribute datatype.", -1);
 		return(ret_value=NULL);
@@ -1114,7 +1427,7 @@ H5O_attr_decode(const uint8_t *p)
     	/* Copy the extent information */
     	memcpy(&(attr->ds->extent),extent, sizeof(H5S_extent_t));
 
- 	/* Release temporary extent information */
+ 	/* Release temporary extent information */ 
 	if (extent)
     		free(extent);
 
@@ -1246,10 +1559,12 @@ H5O_shared_decode (const uint8_t *buf)
     	flags = *buf++;
     	mesg->in_gh = (flags & 0x01);
 
+#ifdef DEBUG
 if (mesg->in_gh)
 	printf("IN GLOBAL HEAP\n");
 else
 	printf("NOT IN GLOBAL HEAP\n");
+#endif
 
 	if ((flags>>1) != 0) {  /* should be reserved(zero) */
 		H5E_push("H5O_shared_decode", "Bits 1-7 should be 0 for shared Object flags.", -1);
@@ -1276,11 +1591,11 @@ else
             		H5F_addr_decode(shared_info, &buf, &(mesg->u.ent.header));
 			if ((mesg->u.ent.header == HADDR_UNDEF) || (mesg->u.ent.header >= shared_info.stored_eoa)) {
 				H5E_push("H5O_shared_decode", "Invalid object header address.", -1);
-				ret++;
+				return(ret_value=NULL);
 			}
-			printf("header =%d\n", mesg->u.ent.header);
-			/* delete for now */
-            		/* mesg->u.ent.file=f; */
+#ifdef DEBUG
+			printf("header =%lld\n", mesg->u.ent.header);
+#endif
         	} /* end else */
     	}
 
@@ -1407,171 +1722,6 @@ H5O_stab_decode(const uint8_t *p)
 }
 
 
-/* copied and modified from H5Olayout.c */
-/*-------------------------------------------------------------------------
- * Function:    H5O_layout_decode
- *
- * Purpose:     Decode an data layout message and return a pointer to a
- *              new one created with malloc().
- *
- * Return:      Success:        Ptr to new message in native order.
- *
- *              Failure:        NULL
- *
- * Programmer:  Robb Matzke
- *              Wednesday, October  8, 1997
- *
- * Modifications:
- *      Robb Matzke, 1998-07-20
- *      Rearranged the message to add a version number at the beginning.
- *
- *      Raymond Lu, 2002-2-26
- *      Added version number 2 case depends on if space has been allocated
- *      at the moment when layout header message is updated.
- *
- *-------------------------------------------------------------------------
- */
-static void *
-H5O_layout_decode(const uint8_t *p)
-{
-    	H5O_layout_t    *mesg = NULL;
-    	unsigned        u;
-    	void            *ret_value;          /* Return value */
-	int		ret;
-
-
-    	/* check args */
-    	assert(p);
-	ret = SUCCEED;
-
-
-    	/* decode */
-	if ((mesg=calloc(1, sizeof(H5O_layout_t)))==NULL) {
-		H5E_push("H5O_layout_decode", "Couldn't malloc() H5O_layout_t.", -1);
-		return(ret_value=NULL);
-	}
-
-    	/* Version. 1 when space allocated; 2 when space allocation is delayed */
-    	mesg->version = *p++;
-    	if (mesg->version<H5O_LAYOUT_VERSION_1 || mesg->version>H5O_LAYOUT_VERSION_3) {
-		H5E_push("H5O_layout_decode", "Bad version number for layout message.", -1);
-		ret++;  /* ?????SHOULD I LET IT CONTINUE */
-	}
-
-    	if(mesg->version < H5O_LAYOUT_VERSION_3) {  /* version 1 & 2 */
-        	unsigned        ndims;    /* Num dimensions in chunk           */
-
-        	/* Dimensionality */
-        	ndims = *p++;
-		/* this is not specified in the format specification ??? */
-        	if (ndims > H5O_LAYOUT_NDIMS) {
-			H5E_push("H5O_layout_decode", "Dimensionality is too large.", -1);
-			ret++;
-		}
-
-        	/* Layout class */
-        	mesg->type = (H5D_layout_t)*p++;
-        	assert(H5D_CONTIGUOUS == mesg->type || H5D_CHUNKED == mesg->type || H5D_COMPACT == mesg->type);
-
-        	/* Reserved bytes */
-        	p += 5;
-
-        	/* Address */
-        	if(mesg->type==H5D_CONTIGUOUS)
-            		H5F_addr_decode(shared_info, &p, &(mesg->u.contig.addr));
-        	else if(mesg->type==H5D_CHUNKED)
-            		H5F_addr_decode(shared_info, &p, &(mesg->u.chunk.addr));
-
-        	/* Read the size */
-        	if(mesg->type!=H5D_CHUNKED) {
-            		mesg->unused.ndims=ndims;
-
-            		for (u = 0; u < ndims; u++)
-                		UINT32DECODE(p, mesg->unused.dim[u]);
-
-            	/* Don't compute size of contiguous storage here, due to possible
-             	 * truncation of the dimension sizes when they were stored in this
-             	 * version of the layout message.  Compute the contiguous storage
-             	 * size in the dataset code, where we've got the dataspace
-             	 * information available also.  - QAK 5/26/04
-             	 */
-        	} else {
-            		mesg->u.chunk.ndims=ndims;
-            		for (u = 0; u < ndims; u++)
-                		UINT32DECODE(p, mesg->u.chunk.dim[u]);
-
-            		/* Compute chunk size */
-            		for (u=1, mesg->u.chunk.size=mesg->u.chunk.dim[0]; u<ndims; u++)
-                		mesg->u.chunk.size *= mesg->u.chunk.dim[u];
-        	}
-
-        	if(mesg->type == H5D_COMPACT) {
-            		UINT32DECODE(p, mesg->u.compact.size);
-            		if(mesg->u.compact.size > 0) {
-                		if(NULL==(mesg->u.compact.buf=malloc(mesg->u.compact.size))) {
-					H5E_push("H5O_layout_decode", "Couldn't malloc() compact storage buffer.", -1);
-					return(ret_value=NULL);
-				}
-
-                		memcpy(mesg->u.compact.buf, p, mesg->u.compact.size);
-                		p += mesg->u.compact.size;
-            		}
-        	}
-    	} else {  /* version 3 */
-        	/* Layout class */
-        	mesg->type = (H5D_layout_t)*p++;
-
-        	/* Interpret the rest of the message according to the layout class */
-        	switch(mesg->type) {
-            	  case H5D_CONTIGUOUS:
-                  	H5F_addr_decode(shared_info, &p, &(mesg->u.contig.addr));
-                	H5F_DECODE_LENGTH(shared_info, p, mesg->u.contig.size);
-                	break;
-
-               	  case H5D_CHUNKED:
-                   	/* Dimensionality */
-                    	mesg->u.chunk.ndims = *p++;
-                	if (mesg->u.chunk.ndims>H5O_LAYOUT_NDIMS) {
-				H5E_push("H5O_layout_decode", "Dimensionality is too large.", -1);
-				ret++;
-			}
-
-                	/* B-tree address */
-                	H5F_addr_decode(shared_info, &p, &(mesg->u.chunk.addr));
-
-                	/* Chunk dimensions */
-                	for (u = 0; u < mesg->u.chunk.ndims; u++)
-                    		UINT32DECODE(p, mesg->u.chunk.dim[u]);
-
-                	/* Compute chunk size */
-                	for (u=1, mesg->u.chunk.size=mesg->u.chunk.dim[0]; u<mesg->u.chunk.ndims; u++)
-                    		mesg->u.chunk.size *= mesg->u.chunk.dim[u];
-                	break;
-
-            	  case H5D_COMPACT:
-                	UINT16DECODE(p, mesg->u.compact.size);
-                	if(mesg->u.compact.size > 0) {
-                    		if(NULL==(mesg->u.compact.buf=malloc(mesg->u.compact.size))) {
-					H5E_push("H5O_layout_decode", "Couldn't malloc() compact storage buffer.", -1);
-					return(ret_value=NULL);
-				}
-                    		memcpy(mesg->u.compact.buf, p, mesg->u.compact.size);
-                    		p += mesg->u.compact.size;
-                	} /* end if */
-                	break;
-
-            	  default:
-			H5E_push("H5O_layout_decode", "Invalid layout class.", -1);
-			ret++;
-        	} /* end switch */
-    	} /* version 3 */
-
-	if (ret)
-		mesg = NULL;
-    	/* Set return value */
-    	ret_value=mesg;
-    	return(ret_value);
-}
 
 
 
@@ -1872,9 +2022,7 @@ locate_super_signature(FILE *inputfd)
 		}
 		ret = memcmp(buf, H5F_SIGNATURE, (size_t)H5F_SIGNATURE_LEN);
 		if (ret == 0) {
-#ifdef DEBUG
 			printf("FOUND super block signature\n");
-#endif
             		break;
 		}
     	}
@@ -1942,6 +2090,172 @@ H5F_addr_decode(H5F_shared_t shared_info, const uint8_t **pp/*in,out*/, haddr_t 
 }
 
 
+/* copied and modified from H5Gnode.c */
+/*-------------------------------------------------------------------------
+ * Function:    H5G_node_sizeof_rkey
+ *
+ * Purpose:     Returns the size of a raw B-link tree key for the specified
+ *              file.
+ *
+ * Return:      Success:        Size of the key.
+ *
+ *              Failure:        never fails
+ *
+ * Programmer:  Robb Matzke
+ *              matzke@llnl.gov
+ *              Jul 14 1997
+ *
+ * Modifications:
+ *
+ *-------------------------------------------------------------------------
+ */
+static size_t
+H5G_node_sizeof_rkey(H5F_shared_t shared_info, unsigned UNUSED)
+{
+
+    return (H5F_SIZEOF_SIZE(shared_info));       /*the name offset */
+}
+
+/*-------------------------------------------------------------------------
+ * Function:    H5G_node_decode_key
+ *
+ * Purpose:     Decodes a raw key into a native key.
+ *
+ * Return:      Non-negative on success/Negative on failure
+ *
+ * Programmer:  Robb Matzke
+ *              matzke@llnl.gov
+ *              Jul  8 1997
+ *
+ * Modifications:
+ *
+ *-------------------------------------------------------------------------
+ */
+static void *
+H5G_node_decode_key(H5F_shared_t shared_info, unsigned UNUSED, const uint8_t **p/*in,out*/)
+{
+	H5G_node_key_t	*key;
+	void		*ret_value;
+	int		ret;
+
+    	assert(p);
+	assert(*p);
+	ret = 0;
+
+    	/* decode */
+    	key = calloc(1, sizeof(H5G_node_key_t));
+	if (key == NULL) {
+		ret++;  /* ??? No use */
+		H5E_push("H5G_node_decode_key", "Couldn't malloc() H5G_node_key_t.", -1);
+		return(ret_value=NULL);
+	}
+
+    	H5F_DECODE_LENGTH(shared_info, *p, key->offset);
+
+	/* no use ??? */
+	if (ret) {
+		key = NULL;
+	}
+    	/* Set return value */
+    	ret_value = (void*)key;    /*success*/
+    	return(ret_value);
+}
+
+/*-------------------------------------------------------------------------
+ * Function:    H5D_istore_decode_key
+ *
+ * Purpose:     Decodes a raw key into a native key for the B-tree
+ *
+ * Return:      Non-negative on success/Negative on failure
+ *
+ * Programmer:  Robb Matzke
+ *              Friday, October 10, 1997
+ *
+ * Modifications:
+ *
+ *-------------------------------------------------------------------------
+ */
+static void *
+H5D_istore_decode_key(H5F_shared_t shared_info, size_t ndims, const uint8_t **p)
+{
+
+    	H5D_istore_key_t    	*key = NULL;
+    	unsigned            	u;
+	void			*ret_value;
+	int			ret;
+
+    	/* check args */
+    	assert(p);
+	assert(*p);
+	assert(ndims>0);
+    	assert(ndims<=H5O_LAYOUT_NDIMS);
+	ret = 0;
+
+    	/* decode */
+    	key = calloc(1, sizeof(H5D_istore_key_t));
+	if (key == NULL) {
+		ret++;  /* ??? No use */
+		H5E_push("H5G_node_decode_key", "Couldn't malloc() H5G_istore_key_t.", -1);
+		return(ret_value=NULL);
+	}
+
+    	UINT32DECODE(*p, key->nbytes);
+    	UINT32DECODE(*p, key->filter_mask);
+    	for (u=0; u<ndims; u++)
+        	UINT64DECODE(*p, key->offset[u]);
+
+	/* ??? no use */
+	if (ret) {
+		key = NULL;
+	}
+    	/* Set return value */
+    	ret_value = (void*)key;    /*success*/
+    	return(ret_value);
+}
+
+
+
+
+
+/* copied and modified from H5Distore.c */
+/*-------------------------------------------------------------------------
+ * Function:    H5D_istore_sizeof_rkey
+ *
+ * Purpose:     Returns the size of a raw key for the specified UDATA.  The
+ *              size of the key is dependent on the number of dimensions for
+ *              the object to which this B-tree points.  The dimensionality
+ *              of the UDATA is the only portion that's referenced here.
+ *
+ * Return:      Success:        Size of raw key in bytes.
+ *
+ *              Failure:        abort()
+ *
+ * Programmer:  Robb Matzke
+ *              Wednesday, October  8, 1997
+ *
+ * Modifications:
+ *
+ *-------------------------------------------------------------------------
+ */
+/* ARGSUSED */
+static size_t
+H5D_istore_sizeof_rkey(H5F_shared_t shared_data, unsigned ndims)
+{
+	
+    	size_t 	nbytes;
+
+	assert(ndims>0 && ndims<=H5O_LAYOUT_NDIMS);
+
+    	nbytes = 4 +           /*storage size          */
+             	 4 +           /*filter mask           */
+             	 ndims*8;      /*dimension indices     */
+
+	return(nbytes);
+}
+
+
+
+
 
 /* Based on H5F_read_superblock() in H5Fsuper.c */
 /*
@@ -1981,7 +2295,7 @@ check_superblock(FILE *inputfd)
 		ret++;
 	}
 	
-	printf("Validating the super block at %d...\n", shared_info.super_addr);
+	printf("Validating the super block at %lld...\n", shared_info.super_addr);
 
 	fseek(inputfd, shared_info.super_addr, SEEK_SET);
 	fread(buf, 1, fixed_size, inputfd);
@@ -2050,6 +2364,7 @@ check_superblock(FILE *inputfd)
 
 	}  /* DONE WITH SCANNING and STORING OF SUPERBLOCK INFO */
 
+#ifdef DEBUG
 	printf("super_addr = %lld\n", shared_info.super_addr);
 	printf("super_vers=%d, freespace_vers=%d, root_sym_vers=%d\n",	
 		super_vers, freespace_vers, root_sym_vers);
@@ -2061,11 +2376,12 @@ check_superblock(FILE *inputfd)
 		shared_info.base_addr, shared_info.freespace_addr, shared_info.stored_eoa, shared_info.driver_addr);
 
 	/* print root group table entry */
-	printf("name0ffset=%d, header_address=%d\n", 
+	printf("name0ffset=%d, header_address=%lld\n", 
 		shared_info.root_grp->name_off, shared_info.root_grp->header);
-	printf("btree_addr=%d, heap_addr=%d\n", 
+	printf("btree_addr=%lld, heap_addr=%lld\n", 
 		shared_info.root_grp->cache.stab.btree_addr, 
 		shared_info.root_grp->cache.stab.heap_addr);
+#endif
 
 	/* 
 	 * superblock signature is already checked
@@ -2282,8 +2598,10 @@ check_sym(FILE *inputfd, haddr_t sym_addr)
 
 	/* validate symbol table group entries here  */
     	for (u=0, ent = sym->entry; u < sym->nsyms; u++, ent++) {
-		printf("ent->type=%d, ent->name_off=%d, ent->header=%d\n",
+#ifdef DEBUG
+		printf("ent->type=%d, ent->name_off=%d, ent->header=%lld\n",
 			ent->type, ent->name_off, ent->header);
+#endif
 
 		/* validate ent->name_off??? to be within size of local heap */
 
@@ -2315,9 +2633,8 @@ check_sym(FILE *inputfd, haddr_t sym_addr)
 	return(ret);
 }
 
-/* Based on H5B_load() in H5B.c */
 herr_t
-check_btree(FILE *inputfd, haddr_t btree_addr)
+check_btree(FILE *inputfd, haddr_t btree_addr, unsigned ndims)
 {
 	uint8_t		*buf=NULL, *buffer=NULL;
 	uint8_t		*p, nodetype;
@@ -2325,8 +2642,10 @@ check_btree(FILE *inputfd, haddr_t btree_addr)
 	haddr_t         left_sib;   /*address of left sibling */
 	haddr_t         right_sib;  /*address of left sibling */
 	size_t		hdr_size, name_offset, key_ptr_size;
+	size_t		key_size, new_key_ptr_size;
 	int		ret, status;
 	haddr_t		child;
+	void 		*key;
 
 
 
@@ -2334,11 +2653,7 @@ check_btree(FILE *inputfd, haddr_t btree_addr)
     	hdr_size = H5B_SIZEOF_HDR(shared_info);
 	ret = SUCCEED;
 
-	printf("Validating the btree at %d...\n", btree_addr);
-
-#ifdef DEBUG
-	printf("btree_addr=%d, hdr_size=%d\n", btree_addr, hdr_size);
-#endif
+	printf("Validating the btree at %lld...\n", btree_addr);
 
 	buf = malloc(hdr_size);
 	if (buf == NULL) {
@@ -2372,9 +2687,11 @@ check_btree(FILE *inputfd, haddr_t btree_addr)
 	H5F_addr_decode(shared_info, (const uint8_t **)&p, &left_sib/*out*/);
 	H5F_addr_decode(shared_info, (const uint8_t **)&p, &right_sib/*out*/);
 
+#ifdef DEBUG
 	printf("nodeytpe=%d, nodelev=%d, entries=%d\n",
 		nodetype, nodelev, entries);
 	printf("left_sib=%d, right_sib=%d\n", left_sib, right_sib);
+#endif
 
 	if ((nodetype != 0) && (nodetype !=1)) {
 		H5E_push("check_btree", "Incorrect node type.", btree_addr);
@@ -2403,11 +2720,17 @@ check_btree(FILE *inputfd, haddr_t btree_addr)
 
 	fseek(inputfd, btree_addr+hdr_size, SEEK_SET);
 
+#if 0
+	key_size = node_key_g[nodetype]->get_sizeof_rkey(shared_info);
 	if (nodetype == 0) {
 		/* the remaining node size: key + child pointer */
 		/* probably should put that in a macro */
 		key_ptr_size = (2*shared_info.gr_int_node_k)*H5F_SIZEOF_ADDR(shared_info) +
 			(2*(shared_info.gr_int_node_k+1))*H5F_SIZEOF_SIZE(shared_info);
+
+	new_key_ptr_size = (2*shared_info.gr_int_node_k)*H5F_SIZEOF_ADDR(shared_info) +
+			   (2*(shared_info.gr_int_node_k+1))*key_size;
+	printf("key_ptr_size=%d, new_key_ptr_size=%d\n", key_ptr_size, new_key_ptr_size);
 
 		buffer = malloc(key_ptr_size);
 		if (buffer == NULL) {
@@ -2423,18 +2746,17 @@ check_btree(FILE *inputfd, haddr_t btree_addr)
 		p = buffer;
 		
 		for (u = 0; u < entries; u++) {
+			node_key_g[nodetype]->decode(shared_info, (const uint8_t **)&p, (size_t *)&name_offset);
+/*
 			H5F_DECODE_LENGTH(shared_info, p, name_offset);
-#ifdef DEBUG
+*/
 			printf("name_offset=%d\n", name_offset);
-#endif
 
 			/* NEED TO VALIDATE name_offset to be within the local heap's size??HOW */
 
         		/* Decode address value */
   			H5F_addr_decode(shared_info, (const uint8_t **)&p, &child/*out*/);
-#ifdef DEBUG
-			printf("child=%d\n", child);
-#endif
+			printf("child=%lld\n", child);
 
 			if ((child != HADDR_UNDEF) && (child >= shared_info.stored_eoa)) {
 				H5E_push("check_btree", "Invalid child address.", btree_addr);
@@ -2443,11 +2765,9 @@ check_btree(FILE *inputfd, haddr_t btree_addr)
 			}
 
 			if (nodelev > 0) {
-#ifdef DEBUG
 				printf("Internal node pointing to sub-trees\n");	
 				printf("name_offset=%d\n", name_offset);
-				printf("child=%d\n", child);
-#endif
+				printf("child=%ld\n", child);
 				check_btree(inputfd, child);
 			} else {
 				status = check_sym(inputfd, child);
@@ -2462,9 +2782,7 @@ check_btree(FILE *inputfd, haddr_t btree_addr)
 		/* decode final key */
 		if (entries > 0) {
 			H5F_DECODE_LENGTH(shared_info, p, name_offset);
-#ifdef DEBUG
 			printf("final name_offset=%d\n", name_offset);
-#endif
 		}
 
 	} else if ((nodelev == 0) && (nodetype == 1)) {  /* this tree points to raw data chunks */
@@ -2472,6 +2790,77 @@ check_btree(FILE *inputfd, haddr_t btree_addr)
 	} else { 
 		H5E_push("check_btree", "Inconsistent node level and type.", btree_addr);
 		ret++;
+	}
+#endif
+	/* the remaining node size: key + child pointer */
+	key_size = node_key_g[nodetype]->get_sizeof_rkey(shared_info, ndims);
+	key_ptr_size = (2*shared_info.gr_int_node_k)*H5F_SIZEOF_ADDR(shared_info) +
+		       (2*(shared_info.gr_int_node_k+1))*key_size;
+#ifdef DEBUG
+	printf("key_size=%d, key_ptr_size=%d\n", key_size, key_ptr_size);
+#endif
+
+	buffer = malloc(key_ptr_size);
+	if (buffer == NULL) {
+		H5E_push("check_btree", "Unable to malloc() key+child.", btree_addr);
+		ret++;
+		return(ret);
+	}
+       	if (fread(buffer, 1, key_ptr_size, inputfd)<0) {
+		H5E_push("check_btree", "Unable to read key+child.", btree_addr);
+		ret++;
+		return(ret);
+	}
+	p = buffer;
+		
+	for (u = 0; u < entries; u++) {
+		key = node_key_g[nodetype]->decode(shared_info, ndims, (const uint8_t **)&p);
+
+#ifdef DEBUG
+		if (nodetype == 0)
+		printf("key's offset=%d\n", ((H5G_node_key_t *)key)->offset);
+		else if (nodetype == 1)
+		printf("size of chunk =%d\n", ((H5D_istore_key_t *)key)->nbytes);
+#endif
+		
+		/* NEED TO VALIDATE name_offset to be within the local heap's size??HOW */
+
+        	/* Decode address value */
+  		H5F_addr_decode(shared_info, (const uint8_t **)&p, &child/*out*/);
+		printf("child=%lld\n", child);
+
+		if ((child != HADDR_UNDEF) && (child >= shared_info.stored_eoa)) {
+			H5E_push("check_btree", "Invalid child address.", btree_addr);
+			ret++;
+			continue;
+		}
+
+		if (nodelev > 0) {
+			printf("Internal node pointing to sub-trees\n");	
+			check_btree(inputfd, child, 0);
+		} else {
+			if (nodetype == 0) {
+				printf("Leaf node pointing to group node: symbol table\n");
+				status = check_sym(inputfd, child);
+				if (status != SUCCEED) {
+					H5E_print(stderr);
+					H5E_clear();
+					ret = SUCCEED;
+					continue;
+				}
+			} else if (nodetype == 1) {
+				printf("Leaf node pointing to raw data chunk\n");
+				/* check_chunk_data() for btree */
+			}
+		}
+	}  /* end for */
+	/* decode final key */
+	if (entries > 0) {
+		key = node_key_g[nodetype]->decode(shared_info, ndims, (const uint8_t **)&p);
+		if (nodetype == 0)
+		printf("Final key's offset=%d\n", ((H5G_node_key_t *)key)->offset);
+		else if (nodetype == 1)
+		printf("Final size of key data=%d\n", ((H5D_istore_key_t *)key)->nbytes);
 	}
 
 	if (buf)
@@ -2485,7 +2874,7 @@ check_btree(FILE *inputfd, haddr_t btree_addr)
 
 /* copied and modified from H5HL_load() of H5HL.c */
 herr_t
-check_lheap(FILE *inputfd, haddr_t lheap_addr)
+check_lheap(FILE *inputfd, haddr_t lheap_addr, uint8_t **ret_heap_chunk)
 {
 	uint8_t		hdr[52];
 	size_t		hdr_size, data_seg_size;
@@ -2607,8 +2996,11 @@ check_lheap(FILE *inputfd, haddr_t lheap_addr)
 		}
 	}
 
-	if (heap_chunk)
+	if (ret_heap_chunk) {
+		*ret_heap_chunk = heap_chunk;
+	} else if (heap_chunk) {
 		free(heap_chunk);
+	}
 	return(ret);
 }
 
@@ -2619,6 +3011,9 @@ decode_validate_messages(FILE *inputfd, H5O_t *oh)
 	unsigned	id, u;
 	struct tm *mtm;
 	void		*mesg;
+	uint8_t		*heap_chunk;
+	size_t		k;
+    	const char      *s = NULL;
 
 	ret = SUCCEED;
 
@@ -2685,6 +3080,33 @@ decode_validate_messages(FILE *inputfd, H5O_t *oh)
 			printf("Done with decode/validate for Fill Value message id=%d\n", id);
 			printf("END H5O_FILL_NEW_ID=%d.\n", id);
 			break;
+    		case H5O_EFL_ID:
+			printf("Done with decode/validate for External Data Files message id=%d\n", id);
+			printf("Going to validate the local heap at efl->heap_addr=%lld\n",
+				((H5O_efl_t *)mesg)->heap_addr);
+			status = check_lheap(inputfd, ((H5O_efl_t *)mesg)->heap_addr, &heap_chunk);
+			if (status != SUCCEED) {
+				if (heap_chunk) free(heap_chunk);
+				H5E_print(stderr);
+				H5E_clear();
+				ret = SUCCEED;
+			}
+#if 0
+        assert(mesg->slot[u].name);
+#endif
+    			for (k = 0; k < ((H5O_efl_t *)mesg)->nused; k++) {
+			
+				s = heap_chunk+H5HL_SIZEOF_HDR(shared_info)+((H5O_efl_t *)mesg)->slot[k].name_offset;
+        			assert (s && *s);
+#ifdef DEBUG
+				printf("External name_offset:%d\n", 
+					((H5O_efl_t *)mesg)->slot[k].name_offset);
+				printf("Externalfile:%s\n", s);
+#endif
+			}
+			if (heap_chunk) free(heap_chunk);
+			printf("END H5O_EFL_ID=%d.\n", id);
+			break;
 		case H5O_LAYOUT_ID:
 			printf("Done with decode/validate for Data Storage-Layout message id=%d\n",id);
 #ifdef DEBUG
@@ -2694,7 +3116,18 @@ decode_validate_messages(FILE *inputfd, H5O_t *oh)
 			for (u = 0; u < ((H5O_layout_t *)mesg)->unused.ndims; u++)
 				printf("dim=%d\n", ((H5O_layout_t *)mesg)->unused.dim[u]);
 #endif
+			if (((H5O_layout_t *)mesg)->type == H5D_CHUNKED) {
+				unsigned	ndims;
+				haddr_t		btree_addr;
+				
+				ndims = ((H5O_layout_t *)mesg)->u.chunk.ndims;
+				btree_addr = ((H5O_layout_t *)mesg)->u.chunk.addr;
+				printf("Validating the btree at %lld for raw chunk data\n",
+					btree_addr);
+				status = check_btree(inputfd, btree_addr, ndims);
+			}
 			printf("END H5O_LAYOUT_ID=%d.\n", id);
+
 			break;
     		case H5O_ATTR_ID:
 			printf("Done with decode/validate for Attribute message id=%d\n",id);
@@ -2717,15 +3150,15 @@ decode_validate_messages(FILE *inputfd, H5O_t *oh)
 			break;
 		case H5O_STAB_ID:
 			printf("Done with decode/validate for Group message id=%d\n", id);
-			printf("stab->btree_addr=%d,stab->heap_addr=%d\n",
+			printf("stab->btree_addr=%lld,stab->heap_addr=%lld\n",
 				((H5O_stab_t *)mesg)->btree_addr, ((H5O_stab_t *)mesg)->heap_addr);
-			status = check_btree(inputfd, ((H5O_stab_t *)mesg)->btree_addr);
+			status = check_btree(inputfd, ((H5O_stab_t *)mesg)->btree_addr, 0);
 			if (status != SUCCEED) {
 				H5E_print(stderr);
 				H5E_clear();
 				ret = SUCCEED;
 			}
-			status = check_lheap(inputfd, ((H5O_stab_t *)mesg)->heap_addr);
+			status = check_lheap(inputfd, ((H5O_stab_t *)mesg)->heap_addr, NULL);
 			if (status != SUCCEED) {
 				H5E_print(stderr);
 				H5E_clear();
@@ -2919,7 +3352,7 @@ check_obj_header(FILE *inputfd, haddr_t obj_head_addr, int search, const H5O_cla
     	hdr_size = H5O_SIZEOF_HDR(shared_info);
     	assert(hdr_size<=sizeof(buf));
 
-	printf("Validating the object header at %d...\n", obj_head_addr);
+	printf("Validating the object header at %lld...\n", obj_head_addr);
 	ret = SUCCEED;
 
 #ifdef DEBUG
@@ -2954,6 +3387,7 @@ check_obj_header(FILE *inputfd, haddr_t obj_head_addr, int search, const H5O_cla
 	}
 
 	UINT32DECODE(p, oh->nlink);
+printf("Object header link count=%d\n", oh->nlink);
 	/* DON'T KNOW HOW TO VADIATE object reference count yet */
 	
 
