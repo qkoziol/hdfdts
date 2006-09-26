@@ -629,6 +629,35 @@ typedef struct H5O_fill_new_t {
 } H5O_fill_new_t;
 
 
+/* copied from H5Oefl.c */
+#define H5O_EFL_VERSION         1
+
+/* copied and modified from H5Oprivate.h */
+/*
+ * External File List Message
+ * (Data structure in memory)
+ */
+#define H5O_EFL_ALLOC           16      /*number of slots to alloc at once   */
+#define H5O_EFL_UNLIMITED       H5F_UNLIMITED /*max possible file size       */
+
+/* copied and modified from H5Oprivate.h */
+typedef struct H5O_efl_entry_t {
+    size_t      name_offset;            /*offset of name within heap         */
+    char        *name;                  /*malloc'd name                      */
+    off_t       offset;                 /*offset of data within file         */
+    hsize_t     size;                   /*size allocated within file         */
+} H5O_efl_entry_t;
+
+/* copied and modified from H5Oprivate.h */
+typedef struct H5O_efl_t {
+    haddr_t     heap_addr;              /*address of name heap               */
+    size_t      nalloc;                 /*number of slots allocated          */
+    size_t      nused;                  /*number of slots used               */
+    H5O_efl_entry_t *slot;              /*array of external file entries     */
+} H5O_efl_t;
+
+
+
 /* copied from H5Olayout.c */
 /* For forward and backward compatibility.  Version is 1 when space is
  * allocated; 2 when space is delayed for allocation; 3
@@ -914,3 +943,61 @@ typedef struct H5O_t {
     (var)=_tmp_overflow2;                               \
 }
 
+/* copied from H5Bpublic.h */
+/* B-tree IDs for various internal things. */
+/* Not really a "public" symbol, but that should be OK -QAK */
+/* Note - if more of these are added, any 'K' values (for internal or leaf
+ * nodes) they use will need to be stored in the file somewhere. -QAK
+ */
+typedef enum H5B_subid_t {
+    H5B_SNODE_ID         = 0,   /*B-tree is for symbol table nodes           */
+    H5B_ISTORE_ID        = 1,   /*B-tree is for indexed object storage       */
+    H5B_NUM_BTREE_ID            /* Number of B-tree key IDs (must be last)   */
+} H5B_subid_t;
+
+
+/* copied and modified from H5Bprivate.h */
+/*
+ * Each class of object that can be pointed to by a B-link tree has a
+ * variable of this type that contains class variables and methods.  Each
+ * tree has a K (1/2 rank) value on a per-file basis.  The file_create_parms
+ * has an array of K values indexed by the `id' class field below.  The
+ * array is initialized with the HDF5_BTREE_K_DEFAULT macro.
+ */
+typedef struct H5B_class_t {
+    H5B_subid_t id;                                     /*id as found in file*/
+    size_t      sizeof_nkey;                    /*size of native (memory) key*/
+    size_t      (*get_sizeof_rkey)(H5F_shared_t, unsigned);    /*raw key size   */
+    /* encode, decode, debug key values */
+    void *	(*decode)(H5F_shared_t, unsigned, const uint8_t **);
+} H5B_class_t;
+
+/* copied from H5Gnode.c */
+/*
+ * Each key field of the B-link tree that points to symbol table
+ * nodes consists of this structure...
+ */
+typedef struct H5G_node_key_t {
+    size_t      offset;                 /*offset into heap for name          */
+} H5G_node_key_t;
+
+/* copied from H5Distore.c */
+/*
+ * B-tree key.  A key contains the minimum logical N-dimensional address and
+ * the logical size of the chunk to which this key refers.  The
+ * fastest-varying dimension is assumed to reference individual bytes of the
+ * array, so a 100-element 1-d array of 4-byte integers would really be a 2-d
+ * array with the slow varying dimension of size 100 and the fast varying
+ * dimension of size 4 (the storage dimensionality has very little to do with
+ * the real dimensionality).
+ *
+ * Only the first few values of the OFFSET and SIZE fields are actually
+ * stored on disk, depending on the dimensionality.
+ *
+ * The chunk's file address is part of the B-tree and not part of the key.
+ */
+typedef struct H5D_istore_key_t {
+    size_t      nbytes;                         /*size of stored data   */
+    hsize_t     offset[H5O_LAYOUT_NDIMS];       /*logical offset to start*/
+    unsigned    filter_mask;                    /*excluded filters      */
+} H5D_istore_key_t;
