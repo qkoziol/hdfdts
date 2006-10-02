@@ -12,17 +12,19 @@ DEBUGMODE=""		# change to -debug for debug mode
 # Setup
 HOSTNAME=`hostname | cut -f1 -d.`       # no domain part
 TODAY=`date +%y%m%d`
-H5VER=			# default to current CVS version
-H5VERSTR=		# default to current CVS version
-TITLE="HDF5 Tests on $TODAY"
+SW=HDF5			# Name of Software.
+sw=hdf5			# Name of Software in lower cases.
+SWVER=			# Software version, default to current CVS version.
+SWVERSTR=		# Software version string.
+TITLE="${SW} Tests on $TODAY"
 errcode=0		# error code so far
 
 # Parse command options
 while [ $# -gt 0 ]; do
     case "$1" in
 	-r*)
-	    H5VER="$1"
-	    H5VERSTR=_`echo $H5VER | sed -e s/-r// -e s/\\\./_/g`
+	    SWVER="$1"
+	    SWVERSTR=_`echo $SWVER | sed -e s/-r// -e s/\\\./_/g`
 	    ;;
 	-debug*)
 	    DEBUGMODE="$1"
@@ -44,12 +46,12 @@ if [ -n "$DEBUGMODE" ]; then
     TOWHOM_PASSED=acheng
     TOWHOM_FAILED=acheng
 else
-    TOWHOM_PASSED=hdf5cvs@ncsa.uiuc.edu
+    TOWHOM_PASSED="hdf5cvs@ncsa.uiuc.edu hdf5svn@ncsa.uiuc.edu"
     TOWHOM_FAILED=hdf5lib@ncsa.uiuc.edu
 fi
 
 # Setup test directories
-LOGDIR=$HOME/snapshots-hdf5${H5VERSTR}/log
+LOGDIR=$HOME/snapshots-${sw}${SWVERSTR}/log
 LOGDIRLOCK=${LOGDIR}/.lock-${HOSTNAME}
 LOGFILE=${LOGDIR}/${PROGRAMNAME}-${HOSTNAME}_${TODAY}
 FAILEDLOG=${LOGDIR}/FAILED_LOG_${TODAY}
@@ -65,15 +67,15 @@ RELEASE_ALWAYS=${LOGDIR}/../release_always	# always release
 RELEASE_NOT=${LOGDIR}/../release_not		# Do not release
 RELEASED=${LOGDIR}/RELEASED_${TODAY}
 WATCHERFILE=${LOGDIR}/../watchers		# List of platform watchers
-CMD="bin/runtest $DEBUGMODE ${H5VER}"
+CMD="bin/runtest $DEBUGMODE ${SWVER}"
 
 # Setup Mailing command and Report title
 if [ $HOSTNAME = gondolin ]; then
     MAIL=Mail
-    TEST_TITLE="$HOSTNAME HDF5${H5VERSTR}_Daily_Tests"
+    TEST_TITLE="$HOSTNAME ${SW}${SWVERSTR}_Daily_Tests"
 else
     MAIL=mail
-    TEST_TITLE="HDF5${H5VERSTR}_Daily_Tests"
+    TEST_TITLE="${SW}${SWVERSTR}_Daily_Tests"
 fi
 
 # set up auto-cleanup
@@ -89,7 +91,7 @@ if [ $HOSTNAME != gondolin ]; then
 # The second tier is OLDER which could be in HDF's own NFS space which has
 # much bigger capacity but not as widely available.
 (   
-    nold=7
+    nold=6
     nolder=31
     echo cleaning $LOGDIR by moving all old logfiles to OLD
     cd $LOGDIR
@@ -131,10 +133,10 @@ if [ -n "$DEBUGMODE" ]; then
 fi
 
 # setup from which version of source to launch test
-if [ -z "$H5VERSTR" ]; then
-    H5SRC_VER=current
+if [ -z "$SWVERSTR" ]; then
+    SWSRC_VER=current
 else
-    H5SRC_VER=v$H5VERSTR
+    SWSRC_VER=v$SWVERSTR
 fi
 
 # Make sure daily test has an mpich2 daemon running in echo of the following hosts.
@@ -143,9 +145,9 @@ for h in heping colonelk; do
 done
 
 if [ $HOSTNAME != gondolin ]; then
-    (cd $HOME/HDF5/${H5SRC_VER}/hdf5; $CMD -all) > $LOGFILE 2>&1
+    (cd $HOME/${SW}/${SWSRC_VER}/${sw}; $CMD -all) > $LOGFILE 2>&1
 else
-    (cd $HOME/HDF5/${H5SRC_VER}/hdf5; $CMD -nocvs) > $LOGFILE 2>&1
+    (cd $HOME/${SW}/${SWSRC_VER}/${sw}; $CMD -nocvs) > $LOGFILE 2>&1
 fi
 
 # Verify test script did complete by checking the last lines
@@ -233,7 +235,7 @@ rm $LOGDIRLOCK
 if [ $HOSTNAME != gondolin ]; then
 # do a snapshot release if
 #   test-passed && 
-#   release-not-is-not-present &&
+#   release_not-is-not-present &&
 #   ( today-is-Sunday || release_asap-is-present || release_always-is-present)
 # The difference between release_asap and release_always is that release_asap
 # is a one time deal and needs to be set again if desire; while release_always
@@ -242,13 +244,13 @@ if [ $errcode -eq 0 -a \
     ! -f $RELEASE_NOT -a \
     \( `date +%a` = Sun -o -f $RELEASE_ASAP -o -f $RELEASE_ALWAYS \) ]; then
     # do a snapshot.
-    H5DIR=$HOME/HDF5/v${H5VERSTR:-dev}/hdf5
+    SWDIR=$HOME/${SW}/v${SWVERSTR:-dev}/${sw}
     if [ -f $RELEASE_ASAP ]; then
-	RELEASE_MESG="Special snapshot release launched for HDF5${H5VERSTR}."
+	RELEASE_MESG="Special snapshot release launched for ${SW}${SWVERSTR}."
     elif [ -f $RELEASE_ALWAYS ]; then
-	RELEASE_MESG="Snapshot release launched for HDF5${H5VERSTR}."
+	RELEASE_MESG="Snapshot release launched for ${SW}${SWVERSTR}."
     else
-	RELEASE_MESG="Weekly snapshot release launched for HDF5${H5VERSTR}."
+	RELEASE_MESG="Weekly snapshot release launched for ${SW}${SWVERSTR}."
     fi
 
     # Before doing the release, check if there are some daily tests in progress.
@@ -262,7 +264,7 @@ if [ $errcode -eq 0 -a \
 	lockfiles=`ls $LOGDIR/.lock-* 2>/dev/null`
     done
     (
-	cd $H5DIR
+	cd $SWDIR
 	bin/snapshot
     ) >> $SNAPSHOTLOG 2>&1
     errcode=$?
@@ -288,7 +290,7 @@ if [ $errcode -eq 0 -a \
      echo "Complete output is stored in"
      echo "    $SNAPSHOTLOG"
     ) |
-    mail -s "HDF5${H5VERSTR}_snapshot:$RELEASE_Result" $TOWHOM
+    mail -s "${SW}${SWVERSTR}_snapshot:$RELEASE_Result" $TOWHOM
 fi
 fi
 

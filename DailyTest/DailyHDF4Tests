@@ -12,17 +12,19 @@ DEBUGMODE=""		# change to -debug for debug mode
 # Setup
 HOSTNAME=`hostname | cut -f1 -d.`       # no domain part
 TODAY=`date +%y%m%d`
-H4VER=			# default to current CVS version
-H4VERSTR=		# default to current CVS version
-TITLE="HDF4 Tests on $TODAY"
+SW=HDF4			# Name of Software.
+sw=hdf4			# Name of Software in lower cases.
+SWVER=			# Software version, default to current CVS version.
+SWVERSTR=		# Software version string.
+TITLE="${SW} Tests on $TODAY"
 errcode=0		# error code so far
 
 # Parse command options
 while [ $# -gt 0 ]; do
     case "$1" in
 	-r*)
-	    H4VER="$1"
-	    H4VERSTR=_`echo $H4VER | sed -e s/-r// -e s/\\\./_/g`
+	    SWVER="$1"
+	    SWVERSTR=_`echo $SWVER | sed -e s/-r// -e s/\\\./_/g`
 	    ;;
 	-debug*)
 	    DEBUGMODE="$1"
@@ -44,12 +46,12 @@ if [ -n "$DEBUGMODE" ]; then
     TOWHOM_PASSED=acheng
     TOWHOM_FAILED=acheng
 else
-    TOWHOM_PASSED=hdf-cvs@ncsa.uiuc.edu
+    TOWHOM_PASSED="hdf-cvs@ncsa.uiuc.edu hdf5svn@ncsa.uiuc.edu"
     TOWHOM_FAILED=hdf4lib@ncsa.uiuc.edu
 fi
 
 # Setup test directories
-LOGDIR=$HOME/snapshots-hdf4${H4VERSTR}/log
+LOGDIR=$HOME/snapshots-${sw}${SWVERSTR}/log
 LOGDIRLOCK=${LOGDIR}/.lock-${HOSTNAME}
 LOGFILE=${LOGDIR}/${PROGRAMNAME}-${HOSTNAME}_${TODAY}
 FAILEDLOG=${LOGDIR}/FAILED_LOG_${TODAY}
@@ -64,15 +66,15 @@ RELEASE_ALWAYS=${LOGDIR}/../release_always	# always release
 RELEASE_NOT=${LOGDIR}/../release_not		# Do not release
 RELEASED=${LOGDIR}/RELEASED_${TODAY}
 WATCHERFILE=${LOGDIR}/../watchers		# List of platform watchers
-CMD="bin/runtest $DEBUGMODE ${H4VER}"
+CMD="bin/runtest $DEBUGMODE ${SWVER}"
 
 # Setup Mailing command and Report title
 if [ $HOSTNAME = gondolin ]; then
     MAIL=Mail
-    TEST_TITLE="$HOSTNAME HDF4${H4VERSTR}_Daily_Tests"
+    TEST_TITLE="$HOSTNAME ${SW}${SWVERSTR}_Daily_Tests"
 else
     MAIL=mail
-    TEST_TITLE="HDF4${H4VERSTR}_Daily_Tests"
+    TEST_TITLE="${SW}${SWVERSTR}_Daily_Tests"
 fi
 
 # set up auto-cleanup
@@ -88,7 +90,7 @@ if [ $HOSTNAME != gondolin ]; then
 # The second tier is OLDER which could be in HDF's own NFS space which has
 # much bigger capacity but not as widely available.
 (   
-    nold=7
+    nold=6
     nolder=31
     echo cleaning $LOGDIR by moving all old logfiles to OLD
     cd $LOGDIR
@@ -130,16 +132,16 @@ if [ -n "$DEBUGMODE" ]; then
 fi
 
 # setup from which version of source to launch test
-if [ -z "$H4VERSTR" ]; then
-    H4SRC_VER=current
+if [ -z "$SWVERSTR" ]; then
+    SWSRC_VER=current
 else
-    H4SRC_VER=v$H4VERSTR
+    SWSRC_VER=v$SWVERSTR
 fi
 
 if [ $HOSTNAME != gondolin ]; then
-    (cd $HOME/HDF4/${H4SRC_VER}/hdf4; $CMD -all) > $LOGFILE 2>&1
+    (cd $HOME/${SW}/${SWSRC_VER}/${sw}; $CMD -all) > $LOGFILE 2>&1
 else
-    (cd $HOME/HDF4/${H4SRC_VER}/hdf4; $CMD -nocvs) > $LOGFILE 2>&1
+    (cd $HOME/${SW}/${SWSRC_VER}/${sw}; $CMD -nocvs) > $LOGFILE 2>&1
 fi
 
 # Verify test script did complete by checking the last lines
@@ -231,13 +233,13 @@ if [ $errcode -eq 0 -a x-$tests_done != x-none -a \
     ! -f $RELEASE_NOT -a \
     \( `date +%a` = Sun -o -f $RELEASE_ASAP -o -f $RELEASE_ALWAYS \) ]; then
     # do a snapshot.
-    H4DIR=$HOME/HDF4/current/hdf4
+    SWDIR=$HOME/${SW}/current/${sw}
     if [ -f $RELEASE_ASAP ]; then
-	RELEASE_MESG="Special snapshot release launched for HDF4${H4VERSTR}."
+	RELEASE_MESG="Special snapshot release launched for ${SW}${SWVERSTR}."
     elif [ -f $RELEASE_ALWAYS ]; then
-	RELEASE_MESG="Snapshot release launched for HDF4${H4VERSTR}."
+	RELEASE_MESG="Snapshot release launched for ${SW}${SWVERSTR}."
     else
-	RELEASE_MESG="Weekly snapshot release launched for HDF4${H4VERSTR}."
+	RELEASE_MESG="Weekly snapshot release launched for ${SW}${SWVERSTR}."
     fi
 
     # Before doing the release, check if there are some daily tests in progress.
@@ -251,7 +253,7 @@ if [ $errcode -eq 0 -a x-$tests_done != x-none -a \
 	lockfiles=`ls $LOGDIR/.lock-* 2>/dev/null`
     done
     (
-	cd $H4DIR
+	cd $SWDIR
 	bin/snapshot
     ) >> $SNAPSHOTLOG 2>&1
     errcode=$?
@@ -277,7 +279,7 @@ if [ $errcode -eq 0 -a x-$tests_done != x-none -a \
      echo "Complete output is stored in"
      echo "    $SNAPSHOTLOG"
     ) |
-    mail -s "HDF4${H4VERSTR}_snapshot:$RELEASE_Result" $TOWHOM
+    mail -s "${SW}${SWVERSTR}_snapshot:$RELEASE_Result" $TOWHOM
 fi
 fi
 
