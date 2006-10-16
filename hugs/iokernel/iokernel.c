@@ -797,9 +797,9 @@ printf("meta_main[%d].cols=%d\n",i,meta_main[i].cols);
 
       for(i=0;i<numStreams;i++) {
          total_stream_wtime[i] = raw_stream_wtime[i] + meta_stream_wtime[i];
-         printf("stream %d raw data writing time =%8.3f\n",i,((float)raw_stream_wtime[i])/1000000);
-         printf("stream %d meta data writing time=%8.3f\n",i,((float)meta_stream_wtime[i])/1000000);
-         printf("stream %d total data writing time=%8.3f\n",i,((float)total_stream_wtime[i])/1000000);
+         printf("stream %d raw data writing time =%8.3f seconds\n",i,((float)raw_stream_wtime[i])/1000000);
+         printf("stream %d meta data writing time=%8.3f seconds\n",i,((float)meta_stream_wtime[i])/1000000);
+         printf("stream %d total data writing time=%8.3f seconds\n",i,((float)total_stream_wtime[i])/1000000);
       }
 
 
