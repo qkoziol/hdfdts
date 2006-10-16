@@ -1,0 +1,10 @@
+# Stream Simulation Input file
+# Format:
+# Stream number - integer range 0 to 33
+# Row Dimension - integer
+# Col Dimension - integer
+   
+# Sample Scenario
+0 64 64
+2 2048 2048
+3 2048 2048
