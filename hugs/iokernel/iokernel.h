@@ -46,3 +46,9 @@ typedef struct {
 
 } Metadata_2048;
 
+typedef struct {
+        char pad1[256];
+        char pad2[256];
+        char pad3[2048];
+}Metadata_all;
+

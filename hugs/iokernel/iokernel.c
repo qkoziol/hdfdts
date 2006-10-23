@@ -24,8 +24,11 @@
 #include <hdf5.h>
 #include "iokernel.h"
 
-void usage();
 #define _XOPEN_SOURCE 600
+
+void usage();
+static hid_t
+mkstr(size_t len, H5T_str_t strpad);
 
 /********************************************************************************************
  * Create a dataset in the HDF5 file
@@ -258,13 +261,11 @@ int iokernelWriteH5Data(hid_t dataset_id, hid_t type, ...) {
        return -1;
     }
 
-#if 0
     /*-- Garbage collection to free internal resources --*/
     if(H5garbage_collect()<0) {
       printf("Can't free unused memory.\n");
       return -1;
     }
-#endif
 	
     return 0;
 }
@@ -278,6 +279,9 @@ int main(int argc, char **argv) {
 	int i, j, k,iclean;
 	int num_iter;
 	int page_size;
+    char vfd[4];
+    char meta_option[4];
+    short multi_meta;
 
 	/* Variables to read simulation file */
 	FILE *simFP;
@@ -305,19 +309,37 @@ int main(int argc, char **argv) {
 	unsigned int h5flags;
 	hid_t frameDatastream[MAXSTREAMS], meta1Dataset[MAXSTREAMS], meta2Dataset[MAXSTREAMS], meta3Dataset[MAXSTREAMS];
 	hid_t meta256_type_id, meta2048_type_id;
+        hid_t metacom_type_id,str_256_id,str_2048_id;
 	unsigned int frame_count[MAXSTREAMS];
+    long int rawData_xfer[MAXSTREAMS];
+    long int metadata_xfer[MAXSTREAMS];
+    long int total_xfer=0;
 
+    
         /*timing variables */
         struct timeval start_time, end_time;
-        int    total_wtime, raw_wtime, meta_wtime;
+        int    total_wtime=0, raw_wtime, meta_wtime;
         int*   total_stream_wtime, *raw_stream_wtime,*meta_stream_wtime;
         int    total_bwidth,raw_bwidth,meta_bwidth; 
         int*   total_stream_bwidth,*raw_stream_bwidth,*meta_stream_bwidth;
+        int    pre_wtime, post_wtime;
+       
 
-	if(argc!=5){
+	if(argc!=7){
 	   usage();
-           return 0;
-        }
+       return 0;
+    }
+
+    strcpy(vfd, argv[5]);
+    strcpy(meta_option, argv[6]);       
+
+    if ( atol(argv[2])<=0 || atol(argv[3])<=0 || atol(argv[4])<=0
+        || (strcmp(vfd,"s") && strcmp(vfd,"d")) || (strcmp(meta_option,"m") && strcmp(meta_option,"c"))){
+ 		usage();
+        return 0;
+    }
+
+    multi_meta = (!strcmp(meta_option, "m"))?1:0;
 
 	sprintf(hdf5_name, "%s", argv[1]); 
 	num_iter      = atol(argv[2]);
@@ -390,6 +412,10 @@ printf("meta memory size is %llu\n",metaShmSize);
 		/* Set the frame counter to zero */
 		frame_count[i] = 0;
 
+        rawData_xfer[i] = 0;
+        metadata_xfer[i] = 0;
+
+
 		/* Fill in the number of contiguous frames to write based on frame size */
 		switch (row) {
 			
@@ -425,7 +451,6 @@ printf("meta memory size is %llu\n",metaShmSize);
     * Set up simulated raw and metadata shared memory buffers
     ***********************************************************************************/
 	page_size = getpagesize();
-        printf("page_size = %d\n",page_size);
 /*	rawShmSize = 2*1024L*1024L*1024L;
 	metaShmSize = 500*1024L*1024L;
 */
@@ -494,6 +519,16 @@ printf("meta memory size is %llu\n",metaShmSize);
 		exit (-1);
 	}
 
+    /*-- Set the DIRECT I/O VFD --*/
+    if (!strcmp(vfd,"d"))
+        if ( (H5Pset_fapl_direct(file_access_properties, 0, 0, 0)) < 0){
+            printf("Failed to set the DIRECT I/O VFD.");
+            exit (-1);
+        }
+
+      /*Start measuring the time */
+      gettimeofday(&start_time,NULL);
+
 	/*-- Open the file --*/
 	if ( (file_id = H5Fcreate(hdf5_name, h5flags, file_creation_properties, file_access_properties)) < 0 )
 	{
@@ -554,6 +589,59 @@ printf("meta memory size is %llu\n",metaShmSize);
            exit(-1);
         }
 
+        str_256_id = mkstr(256,H5T_STR_NULLTERM);
+        str_2048_id = mkstr(2048,H5T_STR_NULLTERM);
+
+        if((metacom_type_id = H5Tcreate(H5T_COMPOUND,sizeof(Metadata_all)))<0) {
+           printf("Cannot create HDF5 datatype at line %d\n",__LINE__);
+           H5Tclose(meta256_type_id);
+           H5Tclose(meta2048_type_id);
+           H5Pclose(file_creation_properties);
+           H5Pclose(file_access_properties);
+           H5Fclose(file_id);
+           exit(-1);
+        }
+
+        if((H5Tinsert(metacom_type_id, "Meta 1", HOFFSET(Metadata_all,pad1), str_256_id))<0) {
+           printf("Cannot insert HDF5 datatype at line %d\n",__LINE__);
+           H5Tclose(str_256_id);
+           H5Tclose(str_2048_id);
+           H5Tclose(metacom_type_id);
+           H5Tclose(meta256_type_id);
+           H5Tclose(meta2048_type_id);
+           H5Pclose(file_creation_properties);
+           H5Pclose(file_access_properties);
+           H5Fclose(file_id);
+           exit(-1);
+        }
+
+        if((H5Tinsert(metacom_type_id, "Meta 2", HOFFSET(Metadata_all,pad2), str_256_id))<0) {
+           printf("Cannot insert HDF5 datatype at line %d\n",__LINE__);
+           H5Tclose(str_256_id);
+           H5Tclose(str_2048_id);
+           H5Tclose(metacom_type_id);
+           H5Tclose(meta256_type_id);
+           H5Tclose(meta2048_type_id);
+           H5Pclose(file_creation_properties);
+           H5Pclose(file_access_properties);
+           H5Fclose(file_id);
+           exit(-1);
+        }
+        
+        if((H5Tinsert(metacom_type_id, "Meta 3", HOFFSET(Metadata_all,pad3), str_2048_id))<0) {
+           printf("Cannot insert HDF5 datatype at line %d\n",__LINE__);
+           H5Tclose(str_256_id);
+           H5Tclose(str_2048_id);
+           H5Tclose(metacom_type_id);
+           H5Tclose(meta256_type_id);
+           H5Tclose(meta2048_type_id);
+           H5Pclose(file_creation_properties);
+           H5Pclose(file_access_properties);
+           H5Fclose(file_id);
+           exit(-1);
+        }
+
+
 	for (i=0; i<numStreams; i++) {
 
 		/* Create the Datastream group */
@@ -588,44 +676,64 @@ printf("meta_main[%d].cols=%d\n",i,meta_main[i].cols);
  		   exit (-1);
 		}
 
-		/* Create the 256 byte Metadata 1 dataset, make it extensible */
-		if ( (meta1Dataset[meta_main[i].datastream] = iokernelCreateH5Dataset(group_id[meta_main[i].datastream], "Metadata1", meta256_type_id,
-			 1, 0, meta_main[i].num_contiguous)) <= 0) { 
+#if 1
+/*        if (!strcmp(meta_option, "m")){*/
+        if (multi_meta){
 
-         	   printf("Failed to create the metadata 1 dataset.\n");
- 	           H5Tclose(meta256_type_id);
-                   H5Tclose(meta2048_type_id);
-                   H5Pclose(file_creation_properties);
-                   H5Pclose(file_access_properties);
-                   H5Fclose(file_id);
-                   exit (-1);
-		}
+		    /* Create the 256 byte Metadata 1 dataset, make it extensible */
+		    if ( (meta1Dataset[meta_main[i].datastream] = iokernelCreateH5Dataset(group_id[meta_main[i].datastream], "Metadata1", meta256_type_id,
+			     1, 0, meta_main[i].num_contiguous)) <= 0) { 
 
-		/* Create the 256 byte Metadata 2 dataset, make it extensible */
-		if ( (meta2Dataset[meta_main[i].datastream] = iokernelCreateH5Dataset(group_id[meta_main[i].datastream], "Metadata2", meta256_type_id,
-			 1, 0, meta_main[i].num_contiguous)) <= 0) { 
+         	       printf("Failed to create the metadata 1 dataset.\n");
+ 	               H5Tclose(meta256_type_id);
+                       H5Tclose(meta2048_type_id);
+                       H5Pclose(file_creation_properties);
+                       H5Pclose(file_access_properties);
+                       H5Fclose(file_id);
+                       exit (-1);
+		    }
 
-        	   printf("Failed to create the metadata 2 dataset.\n");
-		   H5Tclose(meta256_type_id);
-                   H5Tclose(meta2048_type_id);
-                   H5Pclose(file_creation_properties);
-                   H5Pclose(file_access_properties);
-                   H5Fclose(file_id);
- 		   exit (-1);
-		}
+		    /* Create the 256 byte Metadata 2 dataset, make it extensible */
+		    if ( (meta2Dataset[meta_main[i].datastream] = iokernelCreateH5Dataset(group_id[meta_main[i].datastream], "Metadata2", meta256_type_id,
+			     1, 0, meta_main[i].num_contiguous)) <= 0) { 
 
-		/* Create the 2048 byte Metadata 3 dataset, make it extensible */
-		if ( (meta3Dataset[meta_main[i].datastream] = iokernelCreateH5Dataset(group_id[meta_main[i].datastream], "Metadata3", meta2048_type_id,
-																				 1, 0, meta_main[i].num_contiguous)) <= 0) { 
+        	       printf("Failed to create the metadata 2 dataset.\n");
+		       H5Tclose(meta256_type_id);
+                       H5Tclose(meta2048_type_id);
+                       H5Pclose(file_creation_properties);
+                       H5Pclose(file_access_properties);
+                       H5Fclose(file_id);
+ 		       exit (-1);
+		    }
 
-		   printf("Failed to create the metadata 3 dataset.\n");
-	           H5Tclose(meta256_type_id);
-                   H5Tclose(meta2048_type_id);
-                   H5Pclose(file_creation_properties);
-                   H5Pclose(file_access_properties);
-                   H5Fclose(file_id);
- 		   exit (-1);
-		}
+		    /* Create the 2048 byte Metadata 3 dataset, make it extensible */
+		    if ( (meta3Dataset[meta_main[i].datastream] = iokernelCreateH5Dataset(group_id[meta_main[i].datastream], "Metadata3", meta2048_type_id,
+																				     1, 0, meta_main[i].num_contiguous)) <= 0) { 
+
+		       printf("Failed to create the metadata 3 dataset.\n");
+	               H5Tclose(meta256_type_id);
+                       H5Tclose(meta2048_type_id);
+                       H5Pclose(file_creation_properties);
+                       H5Pclose(file_access_properties);
+                       H5Fclose(file_id);
+ 		       exit (-1);
+		    }
+        }
+        else{
+#endif
+		    /* Create the compound metadata byte Metadata 1 dataset, make it extensible */
+		    if ( (meta1Dataset[meta_main[i].datastream] = iokernelCreateH5Dataset(group_id[meta_main[i].datastream], "Metadata1", metacom_type_id,
+			     1, 0, meta_main[i].num_contiguous)) <= 0) { 
+
+         	       printf("Failed to create the metadata 1 dataset.\n");
+ 	               H5Tclose(meta256_type_id);
+                       H5Tclose(meta2048_type_id);
+                       H5Pclose(file_creation_properties);
+                       H5Pclose(file_access_properties);
+                       H5Fclose(file_id);
+                       exit (-1);
+		    }
+        }
 	}
 
 	/**********************************************************************************
@@ -639,14 +747,20 @@ printf("meta_main[%d].cols=%d\n",i,meta_main[i].cols);
         total_stream_wtime = (int*)calloc((size_t)numStreams,sizeof(int));
         raw_stream_wtime   = (int*)calloc((size_t)numStreams,sizeof(int));
         meta_stream_wtime  = (int*)calloc((size_t)numStreams,sizeof(int));
-         
+
+      /*End measuring the time */
+      gettimeofday(&end_time,NULL);
+        pre_wtime = (end_time.tv_sec-start_time.tv_sec)*1000000 +
+                               (end_time.tv_usec-start_time.tv_usec);
+
+        
 
 	for (i=0; i<num_iter; i++) {
 
 		for (j=0; j<numStreams; j++) {
 
               /*Start measuring the time */
-              gettimeofday(&start_time,(struct timeval*)0);
+              gettimeofday(&start_time,NULL);
 
 
 			/* Extend the frame dataset */
@@ -674,9 +788,9 @@ printf("meta_main[%d].cols=%d\n",i,meta_main[i].cols);
  	           exit (-1);
 		   }
 
-                gettimeofday(&end_time,(struct timeval*)0);
+                gettimeofday(&end_time,NULL);
 
-                raw_stream_wtime[i] += (end_time.tv_sec-start_time.tv_sec)*1000000 +
+                raw_stream_wtime[j] += (end_time.tv_sec-start_time.tv_sec)*1000000 +
                                        (end_time.tv_usec-start_time.tv_usec);
 
 			/* Update the raw data shared memory pointer to the next shared memory location (and aligned to a page size boundary) */
@@ -685,127 +799,209 @@ printf("meta_main[%d].cols=%d\n",i,meta_main[i].cols);
 			if (rawDataShmPtr >= rawDataShm + rawShmSize)
 				rawDataShmPtr = rawDataShm;
 
-                 gettimeofday(&start_time,(struct timeval*)0);
-			/* Extend the 256 byte metadata 1 dataset */
-			if( iokernelExtendH5Dataset(meta1Dataset[meta_main[j].datastream], frame_count[j] + meta_main[j].num_contiguous) < 0) {
 
-				printf("Failed to extend meta 1 dataset.\n");
-	        	        H5Tclose(meta256_type_id);
-                                H5Tclose(meta2048_type_id);
-                                H5Pclose(file_creation_properties);
-                                H5Pclose(file_access_properties);
-                                H5Fclose(file_id);
- 	                        exit (-1);
-			}
+             /* Update the frame count for this datastream */
+                        frame_count[j] += meta_main[j].num_contiguous;
+           }
 
-			/* Write some metadata 1 blocks to the metadata 1 dataset */
-			if( iokernelWriteH5Data(meta1Dataset[meta_main[j].datastream], meta256_type_id, frame_count[j], meta_main[j].num_contiguous,
-									(void *)metadataShmPtr) < 0) {
+          }
 
-				printf("Failed to write to meta 1 dataset.\n");
-			        H5Tclose(meta256_type_id);
-                                H5Tclose(meta2048_type_id);
-                                H5Pclose(file_creation_properties);
-                                H5Pclose(file_access_properties);
-                                H5Fclose(file_id);
- 	                        exit (-1);
-			}
+          for (i=0; i<numStreams; i++) {
+              rawData_xfer[i] = frame_count[i]*meta_main[i].rows*meta_main[i].cols*sizeof(short);
 
-			/* Update the metadata shared memory pointer to the next shared memory location (and aligned to a page size boundary) */
-			metadataShmPtr += (meta_main[j].num_contiguous*sizeof(Metadata_256));
-
-			if (metadataShmPtr >= metadataShm + metaShmSize)
-				metadataShmPtr = metadataShm;
+           printf("i= %d close rawdata\n",i);
+           if(H5Dclose(frameDatastream[meta_main[i].datastream])<0){
+             printf("Failed to close the raw data dataset id.\n");
+             exit(-1);
+           }
+         }
 
 
-			/* Extend the 256 byte metadata 2 dataset */
-			if( iokernelExtendH5Dataset(meta2Dataset[meta_main[j].datastream], frame_count[j] + meta_main[j].num_contiguous) < 0) {
+        for(j=0;j<numStreams;j++)
+             frame_count[j] = 0;
 
-				printf("Failed to extend meta 2 dataset.\n");
-			        H5Tclose(meta256_type_id);
-                                H5Tclose(meta2048_type_id);
-                                H5Pclose(file_creation_properties);
-                                H5Pclose(file_access_properties);
-                                H5Fclose(file_id);
- 	                        exit (-1);
-			}
+	for (i=0; i<num_iter; i++) {
 
-			/* Write some metadata 2 blocks to the metadata 1 dataset */
-			if( iokernelWriteH5Data(meta2Dataset[meta_main[j].datastream], meta256_type_id, frame_count[j], meta_main[j].num_contiguous,
-									(void *)metadataShmPtr) < 0) {
+		for (j=0; j<numStreams; j++) {
 
-				printf("Failed to write to meta 2 dataset.\n");
-				H5Tclose(meta256_type_id);
-                                H5Tclose(meta2048_type_id);
-                                H5Pclose(file_creation_properties);
-                                H5Pclose(file_access_properties);
-                                H5Fclose(file_id);
- 	                        exit (-1);
-			}
+            gettimeofday(&start_time,NULL);
+#if 1
+            /*if (!strcmp(meta_option, "m")){ */
+            if (multi_meta){
+			    /* Extend the 256 byte metadata 1 dataset */
+			    if( iokernelExtendH5Dataset(meta1Dataset[meta_main[j].datastream], frame_count[j] + meta_main[j].num_contiguous) < 0) {
 
-			/* Update the metadata shared memory pointer to the next shared memory location (and aligned to a page size boundary) */
-			metadataShmPtr += (meta_main[j].num_contiguous*sizeof(Metadata_256));
+				    printf("Failed to extend meta 1 dataset.\n");
+	        	            H5Tclose(meta256_type_id);
+                                    H5Tclose(meta2048_type_id);
+                                    H5Pclose(file_creation_properties);
+                                    H5Pclose(file_access_properties);
+                                    H5Fclose(file_id);
+ 	                            exit (-1);
+			    }
 
-			if (metadataShmPtr >= metadataShm + metaShmSize)
-				metadataShmPtr = metadataShm;
+			    /* Write some metadata 1 blocks to the metadata 1 dataset */
+			    if( iokernelWriteH5Data(meta1Dataset[meta_main[j].datastream], meta256_type_id, frame_count[j], meta_main[j].num_contiguous,
+									    (void *)metadataShmPtr) < 0) {
 
+				    printf("Failed to write to meta 1 dataset.\n");
+			            H5Tclose(meta256_type_id);
+                                    H5Tclose(meta2048_type_id);
+                                    H5Pclose(file_creation_properties);
+                                    H5Pclose(file_access_properties);
+                                    H5Fclose(file_id);
+ 	                            exit (-1);
+			    }
 
-			/* Extend the 2048 bytes metadata 3 dataset */
-			if( iokernelExtendH5Dataset(meta3Dataset[meta_main[j].datastream], frame_count[j] + meta_main[j].num_contiguous) < 0) {
+			    /* Update the metadata shared memory pointer to the next shared memory location (and aligned to a page size boundary) */
+			    metadataShmPtr += (meta_main[j].num_contiguous*sizeof(Metadata_256));
 
-				printf("Failed to extend frame dataset.\n");
-			        H5Tclose(meta256_type_id);
-                                H5Tclose(meta2048_type_id);
-                                H5Pclose(file_creation_properties);
-                                H5Pclose(file_access_properties);
-                                H5Fclose(file_id);
- 	                        exit (-1);
-			}
-
-			/* Write some metadata 3 blocks to the metadata 1 dataset */
-			if( iokernelWriteH5Data(meta3Dataset[meta_main[j].datastream], meta2048_type_id, frame_count[j], meta_main[j].num_contiguous,
-									(void *)metadataShmPtr) < 0) {
-
-				printf("Failed to write to meta 3 dataset.\n");
-			        H5Tclose(meta256_type_id);
-                                H5Tclose(meta2048_type_id);
-                                H5Pclose(file_creation_properties);
-                                H5Pclose(file_access_properties);
-                                H5Fclose(file_id);
- 	                        exit (-1);
-			}
-
-                       gettimeofday(&end_time,(struct timeval*)0);
-                       meta_stream_wtime[i] += (end_time.tv_sec-start_time.tv_sec)*1000000 +
-                                              (end_time.tv_usec-start_time.tv_usec);
+			    if (metadataShmPtr >= metadataShm + metaShmSize)
+				    metadataShmPtr = metadataShm;
 
 
-			/* Update the metadata shared memory pointer to the next shared memory location (and aligned to a page size boundary) */
-			metadataShmPtr += (meta_main[j].num_contiguous*sizeof(Metadata_2048));
+			    /* Extend the 256 byte metadata 2 dataset */
+			    if( iokernelExtendH5Dataset(meta2Dataset[meta_main[j].datastream], frame_count[j] + meta_main[j].num_contiguous) < 0) {
 
-			if (metadataShmPtr >= metadataShm + metaShmSize)
-				metadataShmPtr = metadataShm;
+				    printf("Failed to extend meta 2 dataset.\n");
+			            H5Tclose(meta256_type_id);
+                                    H5Tclose(meta2048_type_id);
+                                    H5Pclose(file_creation_properties);
+                                    H5Pclose(file_access_properties);
+                                    H5Fclose(file_id);
+ 	                            exit (-1);
+			    }
+
+			    /* Write some metadata 2 blocks to the metadata 1 dataset */
+			    if( iokernelWriteH5Data(meta2Dataset[meta_main[j].datastream], meta256_type_id, frame_count[j], meta_main[j].num_contiguous,
+									    (void *)metadataShmPtr) < 0) {
+
+				    printf("Failed to write to meta 2 dataset.\n");
+				    H5Tclose(meta256_type_id);
+                                    H5Tclose(meta2048_type_id);
+                                    H5Pclose(file_creation_properties);
+                                    H5Pclose(file_access_properties);
+                                    H5Fclose(file_id);
+ 	                            exit (-1);
+			    }
+
+			    /* Update the metadata shared memory pointer to the next shared memory location (and aligned to a page size boundary) */
+			    metadataShmPtr += (meta_main[j].num_contiguous*sizeof(Metadata_256));
+
+			    if (metadataShmPtr >= metadataShm + metaShmSize)
+				    metadataShmPtr = metadataShm;
 
 
-			/* Update the frame count for this datastream */
-			frame_count[j] += meta_main[j].num_contiguous;
+			    /* Extend the 2048 bytes metadata 3 dataset */
+			    if( iokernelExtendH5Dataset(meta3Dataset[meta_main[j].datastream], frame_count[j] + meta_main[j].num_contiguous) < 0) {
+
+				    printf("Failed to extend frame dataset.\n");
+			            H5Tclose(meta256_type_id);
+                                    H5Tclose(meta2048_type_id);
+                                    H5Pclose(file_creation_properties);
+                                    H5Pclose(file_access_properties);
+                                    H5Fclose(file_id);
+ 	                            exit (-1);
+			    }
+
+			    /* Write some metadata 3 blocks to the metadata 1 dataset */
+			    if( iokernelWriteH5Data(meta3Dataset[meta_main[j].datastream], meta2048_type_id, frame_count[j], meta_main[j].num_contiguous,
+									    (void *)metadataShmPtr) < 0) {
+
+				    printf("Failed to write to meta 3 dataset.\n");
+			            H5Tclose(meta256_type_id);
+                                    H5Tclose(meta2048_type_id);
+                                    H5Pclose(file_creation_properties);
+                                    H5Pclose(file_access_properties);
+                                    H5Fclose(file_id);
+ 	                            exit (-1);
+			    }
+
+                           gettimeofday(&end_time,NULL);
+                           meta_stream_wtime[j] += (end_time.tv_sec-start_time.tv_sec)*1000000 +
+                                                  (end_time.tv_usec-start_time.tv_usec);
+
+
+			    /* Update the metadata shared memory pointer to the next shared memory location (and aligned to a page size boundary) */
+			    metadataShmPtr += (meta_main[j].num_contiguous*sizeof(Metadata_2048));
+
+			    if (metadataShmPtr >= metadataShm + metaShmSize)
+				    metadataShmPtr = metadataShm;
+            }
+            else {
+#endif
+			    /* Extend the 256 byte metadata 1 dataset */
+			    if( iokernelExtendH5Dataset(meta1Dataset[meta_main[j].datastream], frame_count[j] + meta_main[j].num_contiguous) < 0) {
+
+				    printf("Failed to extend meta 1 dataset.\n");
+	        	            H5Tclose(meta256_type_id);
+                                    H5Tclose(meta2048_type_id);
+                                    H5Pclose(file_creation_properties);
+                                    H5Pclose(file_access_properties);
+                                    H5Fclose(file_id);
+ 	                            exit (-1);
+			    }
+
+			    /* Write some metadata 1 blocks to the metadata 1 dataset */
+			    if( iokernelWriteH5Data(meta1Dataset[meta_main[j].datastream], metacom_type_id, frame_count[j], meta_main[j].num_contiguous,
+									    (void *)metadataShmPtr) < 0) {
+
+				    printf("Failed to write to meta 1 dataset.\n");
+			            H5Tclose(meta256_type_id);
+                                    H5Tclose(meta2048_type_id);
+                                    H5Pclose(file_creation_properties);
+                                    H5Pclose(file_access_properties);
+                                    H5Fclose(file_id);
+ 	                            exit (-1);
+			    }
+
+			    /* Update the metadata shared memory pointer to the next shared memory location (and aligned to a page size boundary) */
+			    metadataShmPtr += (meta_main[j].num_contiguous*sizeof(Metadata_all));
+
+			    if (metadataShmPtr >= metadataShm + metaShmSize)
+				    metadataShmPtr = metadataShm;
+
+                           gettimeofday(&end_time,NULL);
+                           meta_stream_wtime[j] += (end_time.tv_sec-start_time.tv_sec)*1000000 +
+                                                  (end_time.tv_usec-start_time.tv_usec);
+
+
+            }
+			    /* Update the frame count for this datastream */
+			    frame_count[j] += meta_main[j].num_contiguous;
 
 		}		
 	}
 
 /* Obtain the time for writing the total data for each stream */
 
-      for(i=0;i<numStreams;i++) {
+      /*for(i=0;i<numStreams;i++) {
+
+          if (multi_meta)
+                metadata_xfer[i] = frame_count[i]*(2*sizeof(Metadata_256)+sizeof(Metadata_2048));
+          else
+                metadata_xfer[i] = frame_count[i]*(sizeof(Metadata_all));
+
          total_stream_wtime[i] = raw_stream_wtime[i] + meta_stream_wtime[i];
-         printf("stream %d raw data writing time =%8.3f seconds\n",i,((float)raw_stream_wtime[i])/1000000);
-         printf("stream %d meta data writing time=%8.3f seconds\n",i,((float)meta_stream_wtime[i])/1000000);
-         printf("stream %d total data writing time=%8.3f seconds\n",i,((float)total_stream_wtime[i])/1000000);
-      }
+         printf("stream %d raw data writing time =%8.3f\n",i,((float)raw_stream_wtime[i])/1000000);
+         printf("stream %d meta data writing time=%8.3f\n",i,((float)meta_stream_wtime[i])/1000000);
+         printf("stream %d total data writing time=%8.3f\n",i,((float)total_stream_wtime[i])/1000000);
+
+         printf("stream %d raw data size =%8.3f MB\n",i,rawData_xfer[i]*MBpB);
+         printf("stream %d raw data bandwidth =%8.3f MB/s\n",i,rawData_xfer[i]*MBpB/(((float)raw_stream_wtime[i])/1000000));
+         printf("stream %d meta data size =%8.3f MB\n",i,metadata_xfer[i]*MBpB);
+         printf("stream %d meta data bandwidth =%8.3f MB/s\n",i,metadata_xfer[i]*MBpB/(((float)meta_stream_wtime[i])/1000000));
+
+      }*/
 
 
 	/**********************************************************************************
     * Close the HDF5 file and free allocated data
     ***********************************************************************************/
+          /*Start measuring the time */
+          gettimeofday(&start_time,NULL);
+
+
         if(H5Tclose(meta256_type_id)<0) {
            printf("Failed to close the datatype id.\n");
            exit(-1);
@@ -815,6 +1011,12 @@ printf("meta_main[%d].cols=%d\n",i,meta_main[i].cols);
            printf("Failed to close the datatype id.\n");
            exit(-1);
         }
+
+        if(H5Tclose(metacom_type_id)<0) {
+           printf("Failed to close the datatype id.\n");
+           exit(-1);
+        }
+
 
         if(H5Pclose(file_creation_properties)<0) {
           printf("Failed to close the file creation property list.\n");
@@ -830,11 +1032,12 @@ printf("meta_main[%d].cols=%d\n",i,meta_main[i].cols);
 
 	for (i=0; i<numStreams; i++) {
 
-           printf("i= %d close rawdata\n",i);
+         /*  printf("i= %d close rawdata\n",i);
 	   if(H5Dclose(frameDatastream[meta_main[i].datastream])<0){
 	     printf("Failed to close the raw data dataset id.\n");
 	     exit(-1);
            }
+         */
 
            
            printf("i= %d close meta1data\n",i);
@@ -843,18 +1046,23 @@ printf("meta_main[%d].cols=%d\n",i,meta_main[i].cols);
 	     exit(-1);
            }
 
-           printf("i= %d close meta2data\n",i);
-	   if(H5Dclose(meta2Dataset[meta_main[i].datastream])<0){
-	     printf("Failed to close the raw data dataset id.\n");
-	     exit(-1);
-           }
+#if 1
+       /*if (!strcmp(meta_option, "m")){*/
+       if (multi_meta){
+               printf("i= %d close meta2data\n",i);
+	       if(H5Dclose(meta2Dataset[meta_main[i].datastream])<0){
+	         printf("Failed to close the raw data dataset id.\n");
+	         exit(-1);
+               }
 
-           printf("i= %d close meta3data\n",i);
-           printf("dataset id=%d\n",meta3Dataset[meta_main[i].datastream]);
-	   if(H5Dclose(meta3Dataset[meta_main[i].datastream])<0){
-	     printf("Failed to close the raw data dataset id.\n");
-	     exit(-1);
-           }
+               printf("i= %d close meta3data\n",i);
+               printf("dataset id=%d\n",meta3Dataset[meta_main[i].datastream]);
+	       if(H5Dclose(meta3Dataset[meta_main[i].datastream])<0){
+	         printf("Failed to close the raw data dataset id.\n");
+	         exit(-1);
+               }
+       }
+#endif
 
 
            printf("i= %d close groupdata\n",i);
@@ -872,14 +1080,58 @@ printf("meta_main[%d].cols=%d\n",i,meta_main[i].cols);
 	    exit (-1);
 	}
 
+      /*End measuring the time */
+      gettimeofday(&end_time,NULL);
+
+        post_wtime = (end_time.tv_sec-start_time.tv_sec)*1000000 +
+                               (end_time.tv_usec-start_time.tv_usec);
+
+
+
+
+      /* Obtain the time for writing the total data for each stream */
+      for(i=0;i<numStreams;i++) {
+
+          if (multi_meta)
+                metadata_xfer[i] = frame_count[i]*(2*sizeof(Metadata_256)+sizeof(Metadata_2048));
+          else
+                metadata_xfer[i] = frame_count[i]*(sizeof(Metadata_all));
+
+         total_stream_wtime[i] = raw_stream_wtime[i] + meta_stream_wtime[i];
+         printf("stream %d raw data writing time =%8.3f\n",i,((float)raw_stream_wtime[i])/1000000);
+         printf("stream %d meta data writing time=%8.3f\n",i,((float)meta_stream_wtime[i])/1000000);
+         printf("stream %d total data writing time=%8.3f\n",i,((float)total_stream_wtime[i])/1000000);
+
+         printf("stream %d raw data size =%8.3f MB\n",i,rawData_xfer[i]*MBpB);
+         printf("stream %d raw data bandwidth =%8.3f MB/s\n",i,rawData_xfer[i]*MBpB/(((float)raw_stream_wtime[i])/1000000));
+         printf("stream %d meta data size =%8.3f MB\n",i,metadata_xfer[i]*MBpB);
+         printf("stream %d meta data bandwidth =%8.3f MB/s\n",i,metadata_xfer[i]*MBpB/(((float)meta_stream_wtime[i])/1000000));
+
+         total_xfer += rawData_xfer[i] + metadata_xfer[i];
+         total_wtime += total_stream_wtime[i];
+
+      }
+
+         total_wtime += pre_wtime + post_wtime;
+
+         printf("Total data size =%8.3f MB\n",total_xfer*MBpB);
+         printf("Total data bandwidth (open_close) =%8.3f MB/s\n",total_xfer*MBpB/(((float)total_wtime)/1000000));
+
+
 
 	/* Free memory */
-	free(meta_main);
-	free(metadataShm);
-	free(rawDataShm);
-        free(total_stream_wtime);
-        free(meta_stream_wtime);
-        free(raw_stream_wtime);
+        if(meta_main) 
+	  free(meta_main);
+        if(metadataShm)
+	  free(metadataShm);
+        if(rawDataShm)
+	  free(rawDataShm);
+        if(total_stream_wtime)
+          free(total_stream_wtime);
+        if(meta_stream_wtime)
+          free(meta_stream_wtime);
+        if(raw_stream_wtime)
+          free(raw_stream_wtime);
 
 	return (0);
 
@@ -894,3 +1146,31 @@ void usage() {
    printf("The fourth argument is the metadata memory size in MB. \n");
   
 }
+
+/*-------------------------------------------------------------------------
+ * Function:    mkstr
+ *
+ * Purpose:     Create a new string data type
+ *
+ * Return:      Success:        New type
+ *
+ *              Failure:        -1
+ *
+ * Programmer:  Robb Matzke
+ *              Monday, August 10, 1998
+ *
+ * Modifications:
+ *
+ *-------------------------------------------------------------------------
+ */
+static hid_t
+mkstr(size_t len, H5T_str_t strpad)
+{
+    hid_t       t;
+
+    if ((t=H5Tcopy(H5T_C_S1))<0) return -1;
+    if (H5Tset_size(t, len)<0) return -1;
+    if (H5Tset_strpad(t, strpad)<0) return -1;
+    return t;
+}
+
