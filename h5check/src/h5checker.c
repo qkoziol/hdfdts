@@ -7,41 +7,41 @@
 #include "h5_check.h"
 
 
+#define	INPUTFILE	"/mnt/hdf/vchoi/work/H5CHECKER/TEST/h5check/test/cyclical.h5"
 #if 0
 #define	INPUTFILE	"./STUDY/eegroup.h5"
 #define	INPUTFILE	"./STUDY/tryout.h5"
 #define	INPUTFILE	"./example1.h5"
-#define	INPUTFILE	"/mnt/sdt/vchoi/work/STEP/READ_STEP/NARA/indexing/STEP/allspline.h5"
-#define	INPUTFILE	"/mnt/sdt/vchoi/work/STEP/READ_STEP/NARA/indexing/STEP/combine.h5"
+#define	INPUTFILE	"/mnt/hdf/vchoi/work/STEP/READ_STEP/NARA/indexing/STEP/allspline.h5"
+#define	INPUTFILE	"/mnt/hdf/vchoi/work/STEP/READ_STEP/NARA/indexing/STEP/combine.h5"
 #define	INPUTFILE	"./STUDY/ee.h5"
 /* couldn't use this one for the time being....need to put in user block */
 #define	INPUTFILE	"./DOQ.h5"
 #endif
 
 /* test files from the testsuites */
-#define	INPUTFILE	"/mnt/sdt/vchoi/work/H5CHECKER/TEST/h5check/test/basic_types.h5"
 #if 0
 #define	INPUTFILE	"/home1/chilan/h5check/external.h5"
-#define	INPUTFILE	"/mnt/sdt/vchoi/work/H5CHECKER/TEST/h5check/test/basic_types.h5"
-#define	INPUTFILE	"/mnt/sdt/vchoi/work/H5CHECKER/TEST/h5check/test/compound.h5"
-#define	INPUTFILE	"/mnt/sdt/vchoi/work/H5CHECKER/TEST/h5check/test/cyclical.h5"
-#define	INPUTFILE	"/mnt/sdt/vchoi/work/H5CHECKER/TEST/h5check/test/dset_empty.h5"
-#define	INPUTFILE	"/mnt/sdt/vchoi/work/H5CHECKER/TEST/h5check/test/dset_full.h5"
-#define	INPUTFILE	"/mnt/sdt/vchoi/work/H5CHECKER/TEST/h5check/test/enum.h5"
-#define	INPUTFILE	"/mnt/sdt/vchoi/work/H5CHECKER/TEST/h5check/test/filters.h5"
-#define	INPUTFILE	"/mnt/sdt/vchoi/work/H5CHECKER/TEST/h5check/test/group_dsets.h5"
-#define	INPUTFILE	"/mnt/sdt/vchoi/work/H5CHECKER/TEST/h5check/test/hierarchical.h5"
-#define	INPUTFILE	"/mnt/sdt/vchoi/work/H5CHECKER/TEST/h5check/test/multipath.h5"
-#define	INPUTFILE	"/mnt/sdt/vchoi/work/H5CHECKER/TEST/h5check/test/rank_dsets_empty.h5"
-#define	INPUTFILE	"/mnt/sdt/vchoi/work/H5CHECKER/TEST/h5check/test/rank_dsets_full.h5"
-#define	INPUTFILE	"/mnt/sdt/vchoi/work/H5CHECKER/TEST/h5check/test/refer.h5"
-#define	INPUTFILE	"/mnt/sdt/vchoi/work/H5CHECKER/TEST/h5check/test/root.h5"
-#define	INPUTFILE	"/mnt/sdt/vchoi/work/H5CHECKER/TEST/h5check/test/vl.h5"
-#define	INPUTFILE	"/mnt/sdt/vchoi/work/H5CHECKER/TEST/h5check/test/filters.h5"
+#define	INPUTFILE	"/mnt/hdf/vchoi/work/H5CHECKER/TEST/h5check/test/basic_types.h5"
+#define	INPUTFILE	"/mnt/hdf/vchoi/work/H5CHECKER/TEST/h5check/test/compound.h5"
+#define	INPUTFILE	"/mnt/hdf/vchoi/work/H5CHECKER/TEST/h5check/test/cyclical.h5"
+#define	INPUTFILE	"/mnt/hdf/vchoi/work/H5CHECKER/TEST/h5check/test/dset_empty.h5"
+#define	INPUTFILE	"/mnt/hdf/vchoi/work/H5CHECKER/TEST/h5check/test/dset_full.h5"
+#define	INPUTFILE	"/mnt/hdf/vchoi/work/H5CHECKER/TEST/h5check/test/enum.h5"
+#define	INPUTFILE	"/mnt/hdf/vchoi/work/H5CHECKER/TEST/h5check/test/filters.h5"
+#define	INPUTFILE	"/mnt/hdf/vchoi/work/H5CHECKER/TEST/h5check/test/group_dsets.h5"
+#define	INPUTFILE	"/mnt/hdf/vchoi/work/H5CHECKER/TEST/h5check/test/hierarchical.h5"
+#define	INPUTFILE	"/mnt/hdf/vchoi/work/H5CHECKER/TEST/h5check/test/multipath.h5"
+#define	INPUTFILE	"/mnt/hdf/vchoi/work/H5CHECKER/TEST/h5check/test/rank_dsets_empty.h5"
+#define	INPUTFILE	"/mnt/hdf/vchoi/work/H5CHECKER/TEST/h5check/test/rank_dsets_full.h5"
+#define	INPUTFILE	"/mnt/hdf/vchoi/work/H5CHECKER/TEST/h5check/test/refer.h5"
+#define	INPUTFILE	"/mnt/hdf/vchoi/work/H5CHECKER/TEST/h5check/test/root.h5"
+#define	INPUTFILE	"/mnt/hdf/vchoi/work/H5CHECKER/TEST/h5check/test/vl.h5"
+#define	INPUTFILE	"/mnt/hdf/vchoi/work/H5CHECKER/TEST/h5check/test/filters.h5"
 /* NOT WORKING YET */
-#define	INPUTFILE	"/mnt/sdt/vchoi/work/H5CHECKER/TEST/h5check/test/cyclical.h5"
+#define	INPUTFILE	"/mnt/hdf/vchoi/work/H5CHECKER/TEST/h5check/test/cyclical.h5"
 /* this one working but not sure whether so ...if cyclical.h5 is not working */
-#define	INPUTFILE	"/mnt/sdt/vchoi/work/H5CHECKER/TEST/h5check/test/multipath.h5"
+#define	INPUTFILE	"/mnt/hdf/vchoi/work/H5CHECKER/TEST/h5check/test/multipath.h5"
 #endif
 
 
@@ -59,14 +59,14 @@
 
 H5F_shared_t	shared_info;
 H5G_entry_t 	root_ent;
+table_t		*obj_table;
 
-herr_t  check_superblock(FILE *);
-herr_t 	check_obj_header(FILE *, haddr_t, int, const H5O_class_t *);
-herr_t  decode_validate_messages(FILE *, H5O_t *);
-herr_t 	check_btree(FILE *, haddr_t, unsigned);
-herr_t 	check_sym(FILE *, haddr_t);
-herr_t 	check_lheap(FILE *, haddr_t, uint8_t **);
-herr_t 	check_gheap(FILE *, haddr_t);
+herr_t  check_superblock(FILE *, H5F_shared_t *);
+herr_t 	check_obj_header(FILE *, H5F_shared_t, haddr_t, int, const H5O_class_t *);
+herr_t 	check_btree(FILE *, H5F_shared_t, haddr_t, unsigned);
+herr_t 	check_sym(FILE *, H5F_shared_t, haddr_t);
+herr_t 	check_lheap(FILE *, H5F_shared_t, haddr_t, uint8_t **);
+herr_t 	check_gheap(FILE *, H5F_shared_t, haddr_t, uint8_t **);
 
 
 haddr_t locate_super_signature(FILE *);
@@ -74,8 +74,15 @@ void H5F_addr_decode(H5F_shared_t, const uint8_t **, haddr_t *);
 herr_t H5G_ent_decode(H5F_shared_t, const uint8_t **, H5G_entry_t *);
 herr_t H5G_ent_decode_vec(H5F_shared_t, const uint8_t **, H5G_entry_t *, unsigned);
 H5T_t *H5T_alloc(void);
+
 static unsigned H5O_find_in_ohdr(FILE *, H5O_t *, const H5O_class_t **, int);
 herr_t H5O_shared_read(FILE *, H5O_shared_t *, const H5O_class_t *);
+herr_t  decode_validate_messages(FILE *, H5O_t *);
+
+/* for handling hard links */
+int	table_init(table_t **);
+int	table_search(haddr_t);
+void	table_insert(haddr_t, int);
 
 
 /* copied and modified from H5Onull.c */
@@ -297,6 +304,63 @@ static const H5B_class_t *const node_key_g[] = {
 	H5B_ISTORE	/* raw data chunk node */
 };
 
+int
+table_init(table_t **obj_table)
+{
+	int 	i;
+	table_t	*tb;
+
+	tb = malloc(sizeof(table_t));
+	if (tb == NULL) {
+		H5E_push("table_init", "Couldn't malloc() table_t.", -1);
+		return(FAIL);
+	}
+	tb->size = 20;
+	tb->nobjs = 0;
+	tb->objs = malloc(tb->size*sizeof(obj_t));
+	for (i = 0; i < tb->size; i++) {
+		tb->objs[i].objno = 0;
+		tb->objs[i].nlink = 0;
+	}
+	*obj_table = tb;
+	return(SUCCEED);
+}
+
+/* copied and modified from tool/lib/h5trav_table.c */
+int
+table_search(haddr_t obj_id)
+{
+	int	i;
+
+	if (obj_table == NULL)
+		return(FAIL);
+	for (i = 0; i < obj_table->nobjs; i++) {
+		if (obj_table->objs[i].objno == obj_id) /* FOUND */
+			return(i);
+	}
+	return(FAIL);
+}
+
+/* copied and modified from tool/lib/h5trav_table.c */
+void
+table_insert(haddr_t objno, int nlink)
+{
+	int	i;
+
+	if (obj_table == NULL)
+		return;
+	if (obj_table->nobjs == obj_table->size) {
+		obj_table->size *= 2;
+		obj_table->objs =  realloc(obj_table->objs, obj_table->size * sizeof(obj_t));
+	}
+	for (i = obj_table->nobjs; i < obj_table->size; i++) {
+		obj_table->objs[i].objno = 0;
+		obj_table->objs[i].nlink = 0;
+	}
+	i = obj_table->nobjs++;
+	obj_table->objs[i].objno = objno;
+	obj_table->objs[i].nlink = nlink;
+}
 
 /* copied and modified from H5Osdspace.c */
 /*--------------------------------------------------------------------------
@@ -2263,7 +2327,7 @@ H5D_istore_sizeof_rkey(H5F_shared_t shared_data, unsigned ndims)
  * 2. Validate the information obtained.
  */
 herr_t
-check_superblock(FILE *inputfd)
+check_superblock(FILE *inputfd, H5F_shared_t *shared_info)
 {
 	uint		n;
 	uint8_t		buf[H5F_SUPERBLOCK_SIZE];
@@ -2287,17 +2351,17 @@ check_superblock(FILE *inputfd)
 	 * or may not be there at all.
 	 */
 	ret = SUCCEED;
-	shared_info.super_addr = locate_super_signature(inputfd);
-	if (shared_info.super_addr == HADDR_UNDEF) {
+	shared_info->super_addr = locate_super_signature(inputfd);
+	if (shared_info->super_addr == HADDR_UNDEF) {
 		H5E_push("check_superblock", "Couldn't find super block.", -1);
 		printf("Assuming super block at address 0.\n");
-		shared_info.super_addr = 0;
+		shared_info->super_addr = 0;
 		ret++;
 	}
 	
-	printf("Validating the super block at %lld...\n", shared_info.super_addr);
+	printf("Validating the super block at %lld...\n", shared_info->super_addr);
 
-	fseek(inputfd, shared_info.super_addr, SEEK_SET);
+	fseek(inputfd, shared_info->super_addr, SEEK_SET);
 	fread(buf, 1, fixed_size, inputfd);
 	/* super block signature already checked */
 	p = buf + H5F_SIGNATURE_LEN;
@@ -2309,34 +2373,34 @@ check_superblock(FILE *inputfd)
 	p++;
 
 	shared_head_vers = *p++;
-	shared_info.size_offsets = *p++;
-	shared_info.size_lengths = *p++;
+	shared_info->size_offsets = *p++;
+	shared_info->size_lengths = *p++;
 	/* skip over reserved byte */
 	p++;
 
-	UINT16DECODE(p, shared_info.gr_leaf_node_k);
-	UINT16DECODE(p, shared_info.gr_int_node_k);
+	UINT16DECODE(p, shared_info->gr_leaf_node_k);
+	UINT16DECODE(p, shared_info->gr_int_node_k);
 
 	/* File consistency flags. Not really used yet */
-    	UINT32DECODE(p, shared_info.file_consist_flg);
+    	UINT32DECODE(p, shared_info->file_consist_flg);
 
 
 	/* decode the variable length part of the super block */
 	/* Potential indexed storage internal node K */
     	variable_size = (super_vers>0 ? 4 : 0) + 
-                    shared_info.size_offsets +  /* base addr*/
-                    shared_info.size_offsets +  /* address of global free-space heap */
-                    shared_info.size_offsets +  /* end of file address*/
-                    shared_info.size_offsets +  /* driver-information block address */
-                    H5G_SIZEOF_ENTRY(shared_info); /* root group symbol table entry */
+                    shared_info->size_offsets +  /* base addr*/
+                    shared_info->size_offsets +  /* address of global free-space heap */
+                    shared_info->size_offsets +  /* end of file address*/
+                    shared_info->size_offsets +  /* driver-information block address */
+                    H5G_SIZEOF_ENTRY(*shared_info); /* root group symbol table entry */
 
 	if ((fixed_size + variable_size) > sizeof(buf)) {
-		H5E_push("check_superblock", "Total size of super block is incorrect.", shared_info.super_addr);
+		H5E_push("check_superblock", "Total size of super block is incorrect.", shared_info->super_addr);
 		ret++;
 		return(ret);
 	}
 
-	fseek(inputfd, shared_info.super_addr+fixed_size, SEEK_SET);
+	fseek(inputfd, shared_info->super_addr+fixed_size, SEEK_SET);
 	fread(p, 1, variable_size, inputfd);
 
     	/*
@@ -2344,43 +2408,43 @@ check_superblock(FILE *inputfd)
      	 * storage B-tree internal 'K' value
      	 */
     	if (super_vers > 0) {
-        	UINT16DECODE(p, shared_info.btree_k);
+        	UINT16DECODE(p, shared_info->btree_k);
         	p += 2;   /* reserved */
     	}
 
 
-	H5F_addr_decode(shared_info, (const uint8_t **)&p, &shared_info.base_addr/*out*/);
-    	H5F_addr_decode(shared_info, (const uint8_t **)&p, &shared_info.freespace_addr/*out*/);
-    	H5F_addr_decode(shared_info, (const uint8_t **)&p, &shared_info.stored_eoa/*out*/);
-    	H5F_addr_decode(shared_info, (const uint8_t **)&p, &shared_info.driver_addr/*out*/);
+	H5F_addr_decode(*shared_info, (const uint8_t **)&p, &shared_info->base_addr/*out*/);
+    	H5F_addr_decode(*shared_info, (const uint8_t **)&p, &shared_info->freespace_addr/*out*/);
+    	H5F_addr_decode(*shared_info, (const uint8_t **)&p, &shared_info->stored_eoa/*out*/);
+    	H5F_addr_decode(*shared_info, (const uint8_t **)&p, &shared_info->driver_addr/*out*/);
 
-	if (H5G_ent_decode(shared_info, (const uint8_t **)&p, &root_ent/*out*/) < 0) {
-		H5E_push("check_superblock", "Unable to read root symbol entry.", shared_info.super_addr);
+	if (H5G_ent_decode(*shared_info, (const uint8_t **)&p, &root_ent/*out*/) < 0) {
+		H5E_push("check_superblock", "Unable to read root symbol entry.", shared_info->super_addr);
 		ret++;
 		return(ret);
 	}
-	shared_info.root_grp = &root_ent;
+	shared_info->root_grp = &root_ent;
 
 
 	}  /* DONE WITH SCANNING and STORING OF SUPERBLOCK INFO */
 
 #ifdef DEBUG
-	printf("super_addr = %lld\n", shared_info.super_addr);
+	printf("super_addr = %lld\n", shared_info->super_addr);
 	printf("super_vers=%d, freespace_vers=%d, root_sym_vers=%d\n",	
 		super_vers, freespace_vers, root_sym_vers);
 	printf("size_offsets=%d, size_lengths=%d\n",	
-		shared_info.size_offsets, shared_info.size_lengths);
+		shared_info->size_offsets, shared_info->size_lengths);
 	printf("gr_leaf_node_k=%d, gr_int_node_k=%d, file_consist_flg=%d\n",	
-		shared_info.gr_leaf_node_k, shared_info.gr_int_node_k, shared_info.file_consist_flg);
+		shared_info->gr_leaf_node_k, shared_info->gr_int_node_k, shared_info->file_consist_flg);
 	printf("base_addr=%lld, freespace_addr=%lld, stored_eoa=%lld, driver_addr=%lld\n",
-		shared_info.base_addr, shared_info.freespace_addr, shared_info.stored_eoa, shared_info.driver_addr);
+		shared_info->base_addr, shared_info->freespace_addr, shared_info->stored_eoa, shared_info->driver_addr);
 
 	/* print root group table entry */
 	printf("name0ffset=%d, header_address=%lld\n", 
-		shared_info.root_grp->name_off, shared_info.root_grp->header);
+		shared_info->root_grp->name_off, shared_info->root_grp->header);
 	printf("btree_addr=%lld, heap_addr=%lld\n", 
-		shared_info.root_grp->cache.stab.btree_addr, 
-		shared_info.root_grp->cache.stab.heap_addr);
+		shared_info->root_grp->cache.stab.btree_addr, 
+		shared_info->root_grp->cache.stab.heap_addr);
 #endif
 
 	/* 
@@ -2393,83 +2457,83 @@ check_superblock(FILE *inputfd)
 	/* fixed size part validation */
 	if (super_vers != HDF5_SUPERBLOCK_VERSION_DEF && 
 	    super_vers != HDF5_SUPERBLOCK_VERSION_MAX) {
-		H5E_push("check_superblock", "Version number of the superblock is incorrect.", shared_info.super_addr);
+		H5E_push("check_superblock", "Version number of the superblock is incorrect.", shared_info->super_addr);
 		ret++;
 	}
 	if (freespace_vers != HDF5_FREESPACE_VERSION) {
-		H5E_push("check_superblock", "Version number of the file free-space information is incorrect.", shared_info.super_addr);
+		H5E_push("check_superblock", "Version number of the file free-space information is incorrect.", shared_info->super_addr);
 		ret++;
 	}
 	if (root_sym_vers != HDF5_OBJECTDIR_VERSION) {
-		H5E_push("check_superblock", "Version number of the root group symbol table entry is incorrect.", shared_info.super_addr);
+		H5E_push("check_superblock", "Version number of the root group symbol table entry is incorrect.", shared_info->super_addr);
 		ret++;
 	}
 	if (shared_head_vers != HDF5_SHAREDHEADER_VERSION) {
-		H5E_push("check_superblock", "Version number of the shared header message format is incorrect.", shared_info.super_addr);
+		H5E_push("check_superblock", "Version number of the shared header message format is incorrect.", shared_info->super_addr);
 		ret++;
 	}
-	if (shared_info.size_offsets != 2 && shared_info.size_offsets != 4 &&
-            shared_info.size_offsets != 8 && shared_info.size_offsets != 16 && 
-	    shared_info.size_offsets != 32) {
-		H5E_push("check_superblock", "Bad byte number in an address.", shared_info.super_addr);
+	if (shared_info->size_offsets != 2 && shared_info->size_offsets != 4 &&
+            shared_info->size_offsets != 8 && shared_info->size_offsets != 16 && 
+	    shared_info->size_offsets != 32) {
+		H5E_push("check_superblock", "Bad byte number in an address.", shared_info->super_addr);
 		ret++;
 	}
-	if (shared_info.size_lengths != 2 && shared_info.size_lengths != 4 &&
-            shared_info.size_lengths != 8 && shared_info.size_lengths != 16 && 
-	    shared_info.size_lengths != 32) {
-		H5E_push("check_superblock", "Bad byte number for object size.", shared_info.super_addr);
+	if (shared_info->size_lengths != 2 && shared_info->size_lengths != 4 &&
+            shared_info->size_lengths != 8 && shared_info->size_lengths != 16 && 
+	    shared_info->size_lengths != 32) {
+		H5E_push("check_superblock", "Bad byte number for object size.", shared_info->super_addr);
 		ret++;
 	}
-	if (shared_info.gr_leaf_node_k <= 0) {
-		H5E_push("check_superblock", "Invalid leaf node of a group B-tree.", shared_info.super_addr);
+	if (shared_info->gr_leaf_node_k <= 0) {
+		H5E_push("check_superblock", "Invalid leaf node of a group B-tree.", shared_info->super_addr);
 		ret++;
 	}
-	if (shared_info.gr_int_node_k <= 0) {
-		H5E_push("check_superblock", "Invalid internal node of a group B-tree.", shared_info.super_addr);
+	if (shared_info->gr_int_node_k <= 0) {
+		H5E_push("check_superblock", "Invalid internal node of a group B-tree.", shared_info->super_addr);
 		ret++;
 	}
-	if (shared_info.file_consist_flg > 0x03) {
-		H5E_push("check_superblock", "Invalid file consistency flags.", shared_info.super_addr, shared_info.super_addr);
+	if (shared_info->file_consist_flg > 0x03) {
+		H5E_push("check_superblock", "Invalid file consistency flags.", shared_info->super_addr, shared_info->super_addr);
 		ret++;
 	}
 
 
 	/* variable size part validation */
     	if (super_vers > 0) { /* indexed storage internal node k */
-    		if (shared_info.btree_k <= 0) {
-			H5E_push("check_superblock", "Invalid internal node of an indexed storage b-tree.", shared_info.super_addr);
+    		if (shared_info->btree_k <= 0) {
+			H5E_push("check_superblock", "Invalid internal node of an indexed storage b-tree.", shared_info->super_addr);
 			ret++;
 		}
     	}
 
 	/* SHOULD THERE BE MORE VALIDATION of base_addr?? */
-	if ((shared_info.base_addr != shared_info.super_addr) ||
-	    (shared_info.base_addr >= shared_info.stored_eoa))
+	if ((shared_info->base_addr != shared_info->super_addr) ||
+	    (shared_info->base_addr >= shared_info->stored_eoa))
 	{
-		H5E_push("check_superblock", "Invalid base address.", shared_info.super_addr);
+		H5E_push("check_superblock", "Invalid base address.", shared_info->super_addr);
 		ret++;
 	} 
 
-	if (shared_info.freespace_addr != HADDR_UNDEF) {
-		H5E_push("check_superblock", "Invalid address of global free-space index.", shared_info.super_addr);
+	if (shared_info->freespace_addr != HADDR_UNDEF) {
+		H5E_push("check_superblock", "Invalid address of global free-space index.", shared_info->super_addr);
 		ret++;
 	}
 
-	if (shared_info.stored_eoa == HADDR_UNDEF) {
-		H5E_push("check_superblock", "Invalid end of file address.", shared_info.super_addr);
+	if (shared_info->stored_eoa == HADDR_UNDEF) {
+		H5E_push("check_superblock", "Invalid end of file address.", shared_info->super_addr);
 		ret++;
 	}
 
 	/* Read in driver information block and validate */
 	/* Defined driver information block address or not */
-    	if (shared_info.driver_addr != HADDR_UNDEF) {
-		haddr_t drv_addr = shared_info.base_addr + shared_info.driver_addr;
+    	if (shared_info->driver_addr != HADDR_UNDEF) {
+		haddr_t drv_addr = shared_info->base_addr + shared_info->driver_addr;
         	uint8_t dbuf[H5F_DRVINFOBLOCK_SIZE];     /* Local buffer */
 		size_t  driver_size;   /* Size of driver info block, in bytes */
 
 
-		if (((drv_addr+16) == HADDR_UNDEF) || ((drv_addr+16) >= shared_info.stored_eoa)) {
-			H5E_push("check_superblock", "Invalid driver information block.", shared_info.super_addr);
+		if (((drv_addr+16) == HADDR_UNDEF) || ((drv_addr+16) >= shared_info->stored_eoa)) {
+			H5E_push("check_superblock", "Invalid driver information block.", shared_info->super_addr);
 			ret++;
 			return(ret);
 		}
@@ -2478,7 +2542,7 @@ check_superblock(FILE *inputfd)
 		fread(dbuf, 1, 16, inputfd);
 		p = dbuf;
 		if (*p++ != HDF5_DRIVERINFO_VERSION) {
-			H5E_push("check_superblock", "Bad driver information block version number.", shared_info.super_addr);
+			H5E_push("check_superblock", "Bad driver information block version number.", shared_info->super_addr);
 			ret++;
 		}
 		p += 3; /* reserved */
@@ -2488,8 +2552,8 @@ check_superblock(FILE *inputfd)
 		 /* Read driver information and decode */
         	assert((driver_size + 16) <= sizeof(dbuf));
 		if (((drv_addr+16+driver_size) == HADDR_UNDEF) || 
-		    ((drv_addr+16+driver_size) >= shared_info.stored_eoa)) {
-			H5E_push("check_superblock", "Invalid driver information size.", shared_info.super_addr);
+		    ((drv_addr+16+driver_size) >= shared_info->stored_eoa)) {
+			H5E_push("check_superblock", "Invalid driver information size.", shared_info->super_addr);
 			ret++;
 		}
 	}  /* DONE with driver information block */
@@ -2497,13 +2561,13 @@ check_superblock(FILE *inputfd)
 
 	/* NEED to validate shared_info.root_grp->name_off??? to be within size of local heap */
 
-	if ((shared_info.root_grp->header==HADDR_UNDEF) || 
-	    (shared_info.root_grp->header >= shared_info.stored_eoa)) {
-		H5E_push("check_superblock", "Invalid object header address.", shared_info.super_addr);
+	if ((shared_info->root_grp->header==HADDR_UNDEF) || 
+	    (shared_info->root_grp->header >= shared_info->stored_eoa)) {
+		H5E_push("check_superblock", "Invalid object header address.", shared_info->super_addr);
 		ret++;
 	}
-	if (shared_info.root_grp->type < 0) {
-		H5E_push("check_superblock", "Invalid cache type.", shared_info.super_addr);
+	if (shared_info->root_grp->type < 0) {
+		H5E_push("check_superblock", "Invalid cache type.", shared_info->super_addr);
 		ret++;
 	}
 	return(ret);
@@ -2512,7 +2576,7 @@ check_superblock(FILE *inputfd)
 
 /* Based on H5G_node_load() in H5Gnode.c */
 herr_t
-check_sym(FILE *inputfd, haddr_t sym_addr) 
+check_sym(FILE *inputfd, H5F_shared_t shared_info, haddr_t sym_addr) 
 {
 	size_t 		size = 0;
 	uint8_t		*buf = NULL;
@@ -2614,8 +2678,9 @@ check_sym(FILE *inputfd, haddr_t sym_addr)
 			H5E_push("check_sym", "Invalid cache type.", sym_addr);
 			ret++;
 		}
+/* NEED TO check for symbolic link, if so, the object header address is undefined */
 
-		ret = check_obj_header(inputfd, ent->header, 0, NULL);
+		ret = check_obj_header(inputfd, shared_info, ent->header, 0, NULL);
 		if (ret != SUCCEED) {
 			H5E_print(stderr);
 			H5E_clear();
@@ -2634,7 +2699,7 @@ check_sym(FILE *inputfd, haddr_t sym_addr)
 }
 
 herr_t
-check_btree(FILE *inputfd, haddr_t btree_addr, unsigned ndims)
+check_btree(FILE *inputfd, H5F_shared_t shared_info, haddr_t btree_addr, unsigned ndims)
 {
 	uint8_t		*buf=NULL, *buffer=NULL;
 	uint8_t		*p, nodetype;
@@ -2768,9 +2833,9 @@ check_btree(FILE *inputfd, haddr_t btree_addr, unsigned ndims)
 				printf("Internal node pointing to sub-trees\n");	
 				printf("name_offset=%d\n", name_offset);
 				printf("child=%ld\n", child);
-				check_btree(inputfd, child);
+				check_btree(inputfd, shared_info, child);
 			} else {
-				status = check_sym(inputfd, child);
+				status = check_sym(inputfd, shared_info, child);
 				if (status != SUCCEED) {
 					H5E_print(stderr);
 					H5E_clear();
@@ -2837,11 +2902,11 @@ check_btree(FILE *inputfd, haddr_t btree_addr, unsigned ndims)
 
 		if (nodelev > 0) {
 			printf("Internal node pointing to sub-trees\n");	
-			check_btree(inputfd, child, 0);
+			check_btree(inputfd, shared_info, child, 0);
 		} else {
 			if (nodetype == 0) {
 				printf("Leaf node pointing to group node: symbol table\n");
-				status = check_sym(inputfd, child);
+				status = check_sym(inputfd, shared_info, child);
 				if (status != SUCCEED) {
 					H5E_print(stderr);
 					H5E_clear();
@@ -2874,7 +2939,7 @@ check_btree(FILE *inputfd, haddr_t btree_addr, unsigned ndims)
 
 /* copied and modified from H5HL_load() of H5HL.c */
 herr_t
-check_lheap(FILE *inputfd, haddr_t lheap_addr, uint8_t **ret_heap_chunk)
+check_lheap(FILE *inputfd, H5F_shared_t shared_info, haddr_t lheap_addr, uint8_t **ret_heap_chunk)
 {
 	uint8_t		hdr[52];
 	size_t		hdr_size, data_seg_size;
@@ -2891,7 +2956,7 @@ check_lheap(FILE *inputfd, haddr_t lheap_addr, uint8_t **ret_heap_chunk)
     	hdr_size = H5HL_SIZEOF_HDR(shared_info);
     	assert(hdr_size<=sizeof(hdr));
 
-	printf("Validating the local heap at %d...\n", lheap_addr);
+	printf("Validating the local heap at %lld...\n", lheap_addr);
 	ret = SUCCEED;
 
 	fseek(inputfd, lheap_addr, SEEK_SET);
@@ -3004,6 +3069,206 @@ check_lheap(FILE *inputfd, haddr_t lheap_addr, uint8_t **ret_heap_chunk)
 	return(ret);
 }
 
+
+/* copied and modified from H5HG_load() of H5HG.c */
+/*-------------------------------------------------------------------------
+ * Function:    H5HG_load
+ *
+ * Purpose:     Loads a global heap collection from disk.
+ *
+ * Return:      Success:        Ptr to a global heap collection.
+ *
+ *              Failure:        NULL
+ *
+ * Programmer:  Robb Matzke
+ *              Friday, March 27, 1998
+ *
+ * Modifications:
+ *              Robb Matzke, 1999-07-28
+ *              The ADDR argument is passed by value.
+ *
+ *      Quincey Koziol, 2002-7-180
+ *      Added dxpl parameter to allow more control over I/O from metadata
+ *      cache.
+ *-------------------------------------------------------------------------
+ */
+herr_t
+check_gheap(FILE *inputfd, H5F_shared_t shared_info, haddr_t gheap_addr, uint8_t **ret_heap_chunk)
+{
+    	H5HG_heap_t 	*heap = NULL;
+    	uint8_t     	*p = NULL;
+    	int 		ret, i;
+    	size_t      	nalloc, need;
+    	size_t      	max_idx=0;              /* The maximum index seen */
+    	H5HG_heap_t 	*ret_value = NULL;      /* Return value */
+
+
+    	/* check arguments */
+    	assert(H5F_addr_defined(gheap_addr));
+	ret = SUCCEED;
+
+    	/* Read the initial 4k page */
+    	if ((heap = calloc(1, sizeof(H5HG_heap_t)))==NULL) {
+		H5E_push("check_gheap", "Couldn't calloc() H5HG_heap_t.", gheap_addr);
+		ret++;
+		return(ret);
+	}
+    	heap->addr = gheap_addr;
+    	if ((heap->chunk = malloc(H5HG_MINSIZE))==NULL) {
+		H5E_push("check_gheap", "Couldn't malloc() H5HG_heap_t->chunk.", gheap_addr);
+		ret++;
+		return(ret);
+	}
+
+ 	printf("Validating the global heap at %lld...\n", gheap_addr);
+        
+        fseek(inputfd, gheap_addr, SEEK_SET);
+        if (fread(heap->chunk, 1, H5HG_MINSIZE, inputfd)<0) {
+                H5E_push("check_gheap", "Unable to read global heap collection.", gheap_addr);
+                ret++;
+                return(ret);
+	}
+
+    	/* Magic number */
+    	if (memcmp(heap->chunk, H5HG_MAGIC, H5HG_SIZEOF_MAGIC)) {
+		H5E_push("check_gheap", "Couldn't find GCOL signature.", gheap_addr);
+		ret++;
+	} else
+		printf("FOUND GLOBAL HEAP SIGNATURE\n");
+
+    	p = heap->chunk + H5HG_SIZEOF_MAGIC;
+
+    	/* Version */
+    	if (H5HG_VERSION != *p++) {
+		H5E_push("check_gheap", "Wrong version number in global heap.", gheap_addr);
+		ret++;
+	} else
+		printf("Version 1 of global heap is detected\n");
+
+    	/* Reserved */
+    	p += 3;
+
+    	/* Size */
+    	H5F_DECODE_LENGTH(shared_info, p, heap->size);
+	printf("size of global heap = %d\n", heap->size);
+    	assert (heap->size>=H5HG_MINSIZE);
+
+    	/*
+     	 * If we didn't read enough in the first try, then read the rest of the
+         * collection now.
+     	 */
+    	if (heap->size > H5HG_MINSIZE) {
+        	haddr_t next_addr = gheap_addr + (hsize_t)H5HG_MINSIZE;
+
+        	if ((heap->chunk = realloc(heap->chunk, heap->size))==NULL) {
+			H5E_push("check_gheap", "Couldn't realloc() H5HG_heap_t->chunk.", gheap_addr);
+			ret++;
+			return(ret);
+		}
+        	fseek(inputfd, next_addr, SEEK_SET);
+        	if (fread(heap->chunk+H5HG_MINSIZE, 1, heap->size-H5HG_MINSIZE, inputfd)<0) {
+                	H5E_push("check_gheap", "Unable to read global heap collection.", gheap_addr);
+                	ret++;
+                	return(ret);
+    		}
+	}  /* end if */
+
+    	/* Decode each object */
+    	p = heap->chunk + H5HG_SIZEOF_HDR(shared_info);
+    	nalloc = H5HG_NOBJS(shared_info, heap->size);
+    	if ((heap->obj = malloc(nalloc*sizeof(H5HG_obj_t)))==NULL) {
+                H5E_push("check_gheap", "Couldn't malloc() H5HG_obj_t.", gheap_addr);
+                ret++;
+                return(ret);
+	}
+    	heap->obj[0].size = heap->obj[0].nrefs=0;
+    	heap->obj[0].begin = NULL;
+
+    	heap->nalloc = nalloc;
+    	while (p < heap->chunk+heap->size) {
+        	if (p+H5HG_SIZEOF_OBJHDR(shared_info) > heap->chunk+heap->size) {
+            		/*
+             		 * The last bit of space is too tiny for an object header, so we
+              		 * assume that it's free space.
+             		 */
+            		assert(NULL==heap->obj[0].begin);
+            		heap->obj[0].size = (heap->chunk+heap->size) - p;
+            		heap->obj[0].begin = p;
+            		p += heap->obj[0].size;
+        	} else {
+            		unsigned idx;
+            		uint8_t *begin = p;
+
+            		UINT16DECODE (p, idx);
+			printf("global heap idx=%d\n", idx);
+
+            		/* Check if we need more room to store heap objects */
+            		if(idx >= heap->nalloc) {
+                		size_t new_alloc;       /* New allocation number */
+                		H5HG_obj_t *new_obj;    /* New array of object descriptions */
+
+                		/* Determine the new number of objects to index */
+                		new_alloc = MAX(heap->nalloc*2,(idx+1));
+
+                		/* Reallocate array of objects */
+                		if ((new_obj=realloc(heap->obj, new_alloc*sizeof(H5HG_obj_t)))==NULL) {
+                			H5E_push("check_gheap", "Couldn't realloc() H5HG_obj_t.", gheap_addr);
+                			ret++;
+                			return(ret);
+				}
+
+                		/* Update heap information */
+                		heap->nalloc = new_alloc;
+                		heap->obj = new_obj;
+            		} /* end if */
+
+            		UINT16DECODE (p, heap->obj[idx].nrefs);
+            		p += 4; /*reserved*/
+            		H5F_DECODE_LENGTH (shared_info, p, heap->obj[idx].size);
+            		heap->obj[idx].begin = begin;
+			printf("global heap:size=%d, begin=%d\n",
+			heap->obj[idx].size, heap->obj[idx].begin);
+			if (idx > 0)
+				printf("global:%s\n", p);
+            		/*
+             		 * The total storage size includes the size of the object header
+             		 * and is zero padded so the next object header is properly
+             		 * aligned. The last bit of space is the free space object whose
+             		 * size is never padded and already includes the object header.
+             		 */
+            		if (idx > 0) {
+                		need = H5HG_SIZEOF_OBJHDR(shared_info) + H5HG_ALIGN(heap->obj[idx].size);
+
+                		/* Check for "gap" in index numbers (caused by deletions) 
+			   	   and fill in heap object values */
+                		if(idx > (max_idx+1))
+                    			memset(&heap->obj[max_idx+1],0,sizeof(H5HG_obj_t)*(idx-(max_idx+1)));
+                		max_idx = idx;
+            		} else {
+                		need = heap->obj[idx].size;
+            		}
+            		p = begin + need;
+        		}  /* end else */
+	}  /* end while */
+
+    	assert(p==heap->chunk+heap->size);
+    	assert(H5HG_ISALIGNED(heap->obj[0].size));
+
+    	/* Set the next index value to use */
+    	if(max_idx > 0)
+        	heap->nused = max_idx + 1;
+    	else
+        	heap->nused = 1;
+
+	if (ret_heap_chunk) {
+		*ret_heap_chunk = (uint8_t *)heap;
+	} else if (heap) {
+		free(heap->chunk);
+		free(heap->obj);
+		free(heap);
+	}
+}
+
 herr_t
 decode_validate_messages(FILE *inputfd, H5O_t *oh)
 {
@@ -3014,6 +3279,10 @@ decode_validate_messages(FILE *inputfd, H5O_t *oh)
 	uint8_t		*heap_chunk;
 	size_t		k;
     	const char      *s = NULL;
+
+	uint8_t		*pp;
+	unsigned	global1, global2;
+	haddr_t		global;
 
 	ret = SUCCEED;
 
@@ -3084,7 +3353,7 @@ decode_validate_messages(FILE *inputfd, H5O_t *oh)
 			printf("Done with decode/validate for External Data Files message id=%d\n", id);
 			printf("Going to validate the local heap at efl->heap_addr=%lld\n",
 				((H5O_efl_t *)mesg)->heap_addr);
-			status = check_lheap(inputfd, ((H5O_efl_t *)mesg)->heap_addr, &heap_chunk);
+			status = check_lheap(inputfd, shared_info, ((H5O_efl_t *)mesg)->heap_addr, &heap_chunk);
 			if (status != SUCCEED) {
 				if (heap_chunk) free(heap_chunk);
 				H5E_print(stderr);
@@ -3124,7 +3393,7 @@ decode_validate_messages(FILE *inputfd, H5O_t *oh)
 				btree_addr = ((H5O_layout_t *)mesg)->u.chunk.addr;
 				printf("Validating the btree at %lld for raw chunk data\n",
 					btree_addr);
-				status = check_btree(inputfd, btree_addr, ndims);
+				status = check_btree(inputfd, shared_info, btree_addr, ndims);
 			}
 			printf("END H5O_LAYOUT_ID=%d.\n", id);
 
@@ -3141,10 +3410,16 @@ decode_validate_messages(FILE *inputfd, H5O_t *oh)
 				((H5A_t *)mesg)->ds->extent.nelem);
 			printf("attr->data_size=%d\n", ((H5A_t *)mesg)->data_size);
 
+#ifdef TEMP
 			/* IT MAY NOT BE a string, maybe global heap pointer or 
 			   some others but for now can i say get type if string print string, 
 			   otherwise print integer */
-			printf("attr->data=%s\n", ((H5A_t*)mesg)->data);
+			pp = ((H5A_t*)mesg)->data;
+            		UINT32DECODE(pp, global1);
+		H5F_addr_decode(shared_info, (const uint8_t **)&pp, &global);
+			printf("global1=%ld, global=%lld\n", global1, global);
+			check_gheap(inputfd, shared_info, global, NULL);
+#endif
 			printf("END H5O_ATTR_ID=%d.\n", id);
 
 			break;
@@ -3152,13 +3427,13 @@ decode_validate_messages(FILE *inputfd, H5O_t *oh)
 			printf("Done with decode/validate for Group message id=%d\n", id);
 			printf("stab->btree_addr=%lld,stab->heap_addr=%lld\n",
 				((H5O_stab_t *)mesg)->btree_addr, ((H5O_stab_t *)mesg)->heap_addr);
-			status = check_btree(inputfd, ((H5O_stab_t *)mesg)->btree_addr, 0);
+			status = check_btree(inputfd, shared_info, ((H5O_stab_t *)mesg)->btree_addr, 0);
 			if (status != SUCCEED) {
 				H5E_print(stderr);
 				H5E_clear();
 				ret = SUCCEED;
 			}
-			status = check_lheap(inputfd, ((H5O_stab_t *)mesg)->heap_addr, NULL);
+			status = check_lheap(inputfd, shared_info, ((H5O_stab_t *)mesg)->heap_addr, NULL);
 			if (status != SUCCEED) {
 				H5E_print(stderr);
 				H5E_clear();
@@ -3317,7 +3592,7 @@ H5O_shared_read(FILE *inputfd, H5O_shared_t *shared, const H5O_class_t *type)
 
 #endif
     	} else {
-	  	ret = check_obj_header(inputfd, shared->u.ent.header, 1, type);
+	  	ret = check_obj_header(inputfd, shared_info, shared->u.ent.header, 1, type);
     	}
 	
 	return(ret);
@@ -3325,9 +3600,10 @@ H5O_shared_read(FILE *inputfd, H5O_shared_t *shared, const H5O_class_t *type)
 
 
 
+
 /* copied and modified from H5O_load() of H5O.c */
 herr_t
-check_obj_header(FILE *inputfd, haddr_t obj_head_addr, int search, const H5O_class_t *type)
+check_obj_header(FILE *inputfd, H5F_shared_t shared_info, haddr_t obj_head_addr, int search, const H5O_class_t *type)
 {
 	size_t		hdr_size, chunk_size;
 	haddr_t		chunk_addr;
@@ -3346,14 +3622,31 @@ check_obj_header(FILE *inputfd, haddr_t obj_head_addr, int search, const H5O_cla
        	H5O_cont_t 	*cont;
 	H5O_stab_t 	*stab;
 	int		idx;
+	table_t		tb;
 
 
 	assert(H5F_addr_defined(obj_head_addr));
+	ret = SUCCEED;
+	idx = table_search(obj_head_addr);
+	if (idx >= 0) { /* FOUND the object */
+		printf(" THE OBJECT FOUND....nlink=%d,id=%lld\n", 
+			obj_table->objs[idx].nlink, obj_table->objs[idx].objno);
+		if (obj_table->objs[idx].nlink > 0) {
+			obj_table->objs[idx].nlink--;
+			printf("This node %lld already visited.Return.\n", 
+				obj_table->objs[idx].objno);
+			return(ret);
+		} else {
+			printf("Error in reference count\n");
+			H5E_push("check_obj_header", "Inconsistent reference count.", obj_head_addr);
+			ret++;  /* SHOULD I return??? */
+			return(ret);
+		}
+	}
     	hdr_size = H5O_SIZEOF_HDR(shared_info);
     	assert(hdr_size<=sizeof(buf));
 
 	printf("Validating the object header at %lld...\n", obj_head_addr);
-	ret = SUCCEED;
 
 #ifdef DEBUG
 	printf("obj_head_addr=%d, hdr_size=%d\n", 
@@ -3387,8 +3680,10 @@ check_obj_header(FILE *inputfd, haddr_t obj_head_addr, int search, const H5O_cla
 	}
 
 	UINT32DECODE(p, oh->nlink);
-printf("Object header link count=%d\n", oh->nlink);
-	/* DON'T KNOW HOW TO VADIATE object reference count yet */
+	printf("Going to insert obj_table:link count=%d,obj_head_addr=%lld\n", 
+		oh->nlink, obj_head_addr);
+
+	table_insert(obj_head_addr, oh->nlink-1);
 	
 
 	chunk_addr = obj_head_addr + (size_t)hdr_size;
@@ -3531,14 +3826,22 @@ int main(int argc, char **argv)
         }
 
 
-	ret = check_superblock(inputfd);
+	ret = check_superblock(inputfd, &shared_info);
 	if (ret != SUCCEED) {
 		H5E_print(stderr);
 		H5E_clear();
 		ret = SUCCEED;
 	}
 
-	ret = check_obj_header(inputfd, shared_info.root_grp->header, 0, NULL);
+	ret = table_init(&obj_table);
+	if (ret != SUCCEED) {
+		H5E_push("Main", "Hard link cannot be handled.", -1);
+		H5E_print(stderr);
+		H5E_clear();
+		ret = SUCCEED;
+	}
+
+	ret = check_obj_header(inputfd, shared_info, shared_info.root_grp->header, 0, NULL);
 	if (ret != SUCCEED) {
 		H5E_print(stderr);
 		H5E_clear();
@@ -3547,4 +3850,3 @@ int main(int argc, char **argv)
 
 	fclose(inputfd);
 }
-
