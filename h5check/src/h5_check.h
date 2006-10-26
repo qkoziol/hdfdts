@@ -926,6 +926,83 @@ typedef struct H5O_t {
                H5F_SIZEOF_SIZE (F) +    /*free list head                */    \
                H5F_SIZEOF_ADDR (F))     /*data address                  */
 
+/* copied from H5HG.c */
+#define H5HG_MINSIZE     4096
+#define H5HG_VERSION     1
+
+
+/* copied from H5HGprivate.h */
+/*
+ * Each collection has a magic number for some redundancy.
+ */
+#define H5HG_MAGIC      	"GCOL"
+#define H5HG_SIZEOF_MAGIC 	4
+
+
+/* copied and modified from H5HG.c */
+/*
+ * The size of the collection header, always a multiple of the alignment so
+ * that the stuff that follows the header is aligned.
+ */
+#define H5HG_SIZEOF_HDR(F)                                                    \
+    H5HG_ALIGN(4 +                      /*magic number          */            \
+               1 +                      /*version number        */            \
+               3 +                      /*reserved              */            \
+               H5F_SIZEOF_SIZE(F))      /*collection size       */
+
+/* copied from H5HGpkg.h */
+/*
+ * Pad all global heap messages to a multiple of eight bytes so we can load
+ * the entire collection into memory and operate on it there.  Eight should
+ * be sufficient for machines that have alignment constraints because our
+ * largest data type is eight bytes.
+ */
+#define H5HG_ALIGNMENT  8
+#define H5HG_ALIGN(X)   (H5HG_ALIGNMENT*(((X)+H5HG_ALIGNMENT-1)/              \
+                                         H5HG_ALIGNMENT))
+#define H5HG_ISALIGNED(X) ((X)==H5HG_ALIGN(X))
+/*
+ * The overhead associated with each object in the heap, always a multiple of
+ * the alignment so that the stuff that follows the header is aligned.
+ */
+#define H5HG_SIZEOF_OBJHDR(F)                                                 \
+    H5HG_ALIGN(2 +                      /*object id number      */            \
+               2 +                      /*reference count       */            \
+               4 +                      /*reserved              */            \
+               H5F_SIZEOF_SIZE(F))      /*object data size      */
+
+/*
+ * The initial guess for the number of messages in a collection.  We assume
+ * that all objects in that collection are zero length, giving the maximum
+ * possible number of objects in the collection.  The collection itself has
+ * some overhead and each message has some overhead.  The `+2' accounts for
+ * rounding and for the free space object.
+ */
+#define H5HG_NOBJS(F,z) (int)((((z)-H5HG_SIZEOF_HDR(F))/                      \
+                               H5HG_SIZEOF_OBJHDR(F)+2))
+
+
+/* copied from H5HGpkg.h */
+typedef struct H5HG_obj_t {
+    int         	nrefs;          /*reference count               */
+    size_t              size;           /*total size of object          */
+    uint8_t             *begin;         /*ptr to object into heap->chunk*/
+} H5HG_obj_t;
+
+struct H5HG_heap_t {
+    haddr_t             addr;           /*collection address            */
+    size_t              size;           /*total size of collection      */
+    uint8_t             *chunk;         /*the collection, incl. header  */
+    size_t              nalloc;         /*numb object slots allocated   */
+    size_t              nused;          /*number of slots used          */
+                                        /* If this value is >65535 then all indices */
+                                        /* have been used at some time and the */
+                                        /* correct new index should be searched for */
+    H5HG_obj_t  *obj;           	/*array of object descriptions  */
+};
+
+/* copied from H5HGprivate.h */
+typedef struct H5HG_heap_t H5HG_heap_t;
 
 /* copied and modified from H5private.h */
 /*
@@ -1001,3 +1078,20 @@ typedef struct H5D_istore_key_t {
     hsize_t     offset[H5O_LAYOUT_NDIMS];       /*logical offset to start*/
     unsigned    filter_mask;                    /*excluded filters      */
 } H5D_istore_key_t;
+
+/*struct taken from the dumper. needed in table struct*/
+typedef struct obj_t {
+    haddr_t 	objno;
+    int	  	nlink;
+} obj_t;
+
+
+/* To keep track of hard links */
+/* copied and modified from .../tools/lib/h5tools_utils.h */
+typedef struct table_t {
+    size_t 	size;
+    size_t 	nobjs; 
+    obj_t	*objs;
+} table_t;
+
+
