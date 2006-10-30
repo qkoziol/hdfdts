@@ -4,62 +4,26 @@
 #include <errno.h>
 #include <assert.h>
 #include <time.h>
+#include <string.h>
 #include "h5_check.h"
 
-
-#define	INPUTFILE	"/mnt/hdf/vchoi/work/H5CHECKER/TEST/h5check/test/cyclical.h5"
-#if 0
-#define	INPUTFILE	"./STUDY/eegroup.h5"
-#define	INPUTFILE	"./STUDY/tryout.h5"
-#define	INPUTFILE	"./example1.h5"
-#define	INPUTFILE	"/mnt/hdf/vchoi/work/STEP/READ_STEP/NARA/indexing/STEP/allspline.h5"
-#define	INPUTFILE	"/mnt/hdf/vchoi/work/STEP/READ_STEP/NARA/indexing/STEP/combine.h5"
-#define	INPUTFILE	"./STUDY/ee.h5"
-/* couldn't use this one for the time being....need to put in user block */
-#define	INPUTFILE	"./DOQ.h5"
-#endif
-
-/* test files from the testsuites */
-#if 0
-#define	INPUTFILE	"/home1/chilan/h5check/external.h5"
-#define	INPUTFILE	"/mnt/hdf/vchoi/work/H5CHECKER/TEST/h5check/test/basic_types.h5"
-#define	INPUTFILE	"/mnt/hdf/vchoi/work/H5CHECKER/TEST/h5check/test/compound.h5"
-#define	INPUTFILE	"/mnt/hdf/vchoi/work/H5CHECKER/TEST/h5check/test/cyclical.h5"
-#define	INPUTFILE	"/mnt/hdf/vchoi/work/H5CHECKER/TEST/h5check/test/dset_empty.h5"
-#define	INPUTFILE	"/mnt/hdf/vchoi/work/H5CHECKER/TEST/h5check/test/dset_full.h5"
-#define	INPUTFILE	"/mnt/hdf/vchoi/work/H5CHECKER/TEST/h5check/test/enum.h5"
-#define	INPUTFILE	"/mnt/hdf/vchoi/work/H5CHECKER/TEST/h5check/test/filters.h5"
-#define	INPUTFILE	"/mnt/hdf/vchoi/work/H5CHECKER/TEST/h5check/test/group_dsets.h5"
-#define	INPUTFILE	"/mnt/hdf/vchoi/work/H5CHECKER/TEST/h5check/test/hierarchical.h5"
-#define	INPUTFILE	"/mnt/hdf/vchoi/work/H5CHECKER/TEST/h5check/test/multipath.h5"
-#define	INPUTFILE	"/mnt/hdf/vchoi/work/H5CHECKER/TEST/h5check/test/rank_dsets_empty.h5"
-#define	INPUTFILE	"/mnt/hdf/vchoi/work/H5CHECKER/TEST/h5check/test/rank_dsets_full.h5"
-#define	INPUTFILE	"/mnt/hdf/vchoi/work/H5CHECKER/TEST/h5check/test/refer.h5"
-#define	INPUTFILE	"/mnt/hdf/vchoi/work/H5CHECKER/TEST/h5check/test/root.h5"
-#define	INPUTFILE	"/mnt/hdf/vchoi/work/H5CHECKER/TEST/h5check/test/vl.h5"
-#define	INPUTFILE	"/mnt/hdf/vchoi/work/H5CHECKER/TEST/h5check/test/filters.h5"
-/* NOT WORKING YET */
-#define	INPUTFILE	"/mnt/hdf/vchoi/work/H5CHECKER/TEST/h5check/test/cyclical.h5"
-/* this one working but not sure whether so ...if cyclical.h5 is not working */
-#define	INPUTFILE	"/mnt/hdf/vchoi/work/H5CHECKER/TEST/h5check/test/multipath.h5"
-#endif
-
-
-/* invalid files */
-#if 0
-#define	INPUTFILE	"/mnt/scr3/chilan/h5check/signature.h5"
-#define	INPUTFILE	"/mnt/scr3/chilan/h5check/base_addr.h5"
-
-/* NEED TO check out why no error messges for the following file */
-#define	INPUTFILE	"/mnt/scr3/chilan/h5check/leaf_internal_k.h5"
-
-#define	INPUTFILE	"/mnt/scr3/chilan/h5check/offsets_lengths.h5"
-#define	INPUTFILE	"/mnt/scr3/chilan/h5check/sb_version.h5"
-#endif
 
 H5F_shared_t	shared_info;
 H5G_entry_t 	root_ent;
 table_t		*obj_table;
+
+size_t strlen(const char *);
+char *strcpy(char *, const char *);
+void *memcpy(void *, const void *, size_t);
+void *memset(void *, int, size_t);
+int memcmp(const void *, const void *, size_t);
+char *strerror(int);
+
+
+void H5E_push(const char *, const char *, haddr_t );
+herr_t H5E_clear(void);
+void H5E_print(FILE *);
+
 
 herr_t  check_superblock(FILE *, H5F_shared_t *);
 herr_t 	check_obj_header(FILE *, H5F_shared_t, haddr_t, int, const H5O_class_t *);
@@ -158,6 +122,17 @@ const H5O_class_t H5O_LAYOUT[1] = {{
     H5O_layout_decode	        /*decode message                */
 }};
 
+/* copied and modified from H5Opline.c */
+static void *H5O_pline_decode (const uint8_t *);
+
+/* copied and modified from H5Opline.c */
+/* This message derives from H5O */
+const H5O_class_t H5O_PLINE[1] = {{
+    H5O_PLINE_ID,               /* message id number            */
+    "filter pipeline",          /* message name for debugging   */
+    sizeof(H5O_pline_t),        /* native message size          */
+    H5O_pline_decode,           /* decode message               */
+}};
 
 /* copied and modified from H5Oattr.c */
 static void *H5O_attr_decode (const uint8_t *);
@@ -260,9 +235,9 @@ static const H5O_class_t *const message_type_g[] = {
     NULL,               /*0x0006 Data storage -- compact object         */
     H5O_EFL,           	/*0x0007 Data storage -- external data files    */
     H5O_LAYOUT,        	/*0x0008 Data Layout                            */
-    NULL,               /*0x0008 "Bogus"                                */
+    NULL,               /*0x0009 "Bogus"                                */
     NULL,               /*0x000A Not assigned                           */
-    NULL,          	/*0x000B Data storage -- filter pipeline        */
+    H5O_PLINE,       	/*0x000B Data storage -- filter pipeline        */
     H5O_ATTR,          	/*0x000C Attribute list                         */
     H5O_NAME,          	/*0x000D Object name                            */
     NULL,         	/*0x000E Object modification date and time      */
@@ -407,7 +382,8 @@ H5O_sdspace_decode(const uint8_t *p)
     	sdim = calloc(1, sizeof(H5S_extent_t));
 	if (sdim == NULL) {
 		H5E_push("H5O_sdspace_decode", "Couldn't malloc() H5S_extent_t.", -1);
-		return(ret_value=NULL);
+		ret++;
+		goto done;
 	}
         /* Check version */
         version = *p++;
@@ -444,14 +420,16 @@ H5O_sdspace_decode(const uint8_t *p)
 	if (sdim->rank > 0) {
             	if ((sdim->size=malloc(sizeof(hsize_t)*sdim->rank))==NULL) {
 			H5E_push("H5O_sdspace_decode", "Couldn't malloc() hsize_t.", -1);
-			return(ret_value=NULL);
+			ret++;
+			goto done;
 		}
             	for (i = 0; i < sdim->rank; i++)
                 	H5F_DECODE_LENGTH (shared_info, p, sdim->size[i]);
             	if (flags & H5S_VALID_MAX) {
                 	if ((sdim->max=malloc(sizeof(hsize_t)*sdim->rank))==NULL) {
 				H5E_push("H5O_sdspace_decode", "Couldn't malloc() hsize_t.", -1);
-				return(ret_value=NULL);
+				ret++;
+				goto done;
 			}
                 	for (i = 0; i < sdim->rank; i++)
                     		H5F_DECODE_LENGTH (shared_info, p, sdim->max[i]);
@@ -462,12 +440,17 @@ H5O_sdspace_decode(const uint8_t *p)
         for(i=0, sdim->nelem=1; i<sdim->rank; i++)
            	sdim->nelem *= sdim->size[i];
 
-
+    	ret_value = (void*)sdim;    /*success*/
+done:
 	if (ret) {
-		sdim = NULL;
+		if (sdim) {
+			if (sdim->size) free(sdim->size);
+			if (sdim->max) free(sdim->max);
+			free(sdim);
+		}
+		ret_value = NULL;
 	}
     	/* Set return value */
-    	ret_value = (void*)sdim;    /*success*/
     	return(ret_value);
 }
 
@@ -1043,7 +1026,8 @@ H5O_fill_new_decode(const uint8_t *p)
     	mesg = calloc(1, sizeof(H5O_fill_new_t));
 	if (mesg == NULL) {
 		H5E_push("H5O_fill_new_decode", "Couldn't malloc() H5O_fill_new_t.", -1);
-		return(ret_value=NULL);
+		ret++;
+		goto done;
 	}
 
     	/* Version */
@@ -1088,9 +1072,8 @@ H5O_fill_new_decode(const uint8_t *p)
             		H5_CHECK_OVERFLOW(mesg->size,ssize_t,size_t);
             		if (NULL==(mesg->buf=malloc((size_t)mesg->size))) {
 				H5E_push("H5O_fill_new_decode", "Couldn't malloc() buffer for fill value.", -1);
-				if (mesg)
-					free(mesg);
-				return(ret_value=NULL);
+				ret++;
+				goto done;
 			}
             		memcpy(mesg->buf, p, (size_t)mesg->size);
         	}
@@ -1098,12 +1081,16 @@ H5O_fill_new_decode(const uint8_t *p)
 		mesg->size = (-1);
 
 
-    	/* Set return value */
-	if (ret)	
-		mesg = NULL;
     	ret_value = (void*)mesg;
+done:
+	if (ret) {
+		if (mesg) {
+			if (mesg->buf) free(mesg->buf);
+			free(mesg);
+		}
+		ret_value = NULL;
+	}
     	return(ret_value);
-
 }
 
 /*-------------------------------------------------------------------------
@@ -1140,7 +1127,8 @@ H5O_efl_decode(const uint8_t *p)
 
     	if ((mesg = calloc(1, sizeof(H5O_efl_t)))==NULL) {
 		H5E_push("H5O_efl_decode", "Couldn't malloc() H5O_efl_t.", -1);
-		return(ret_value=NULL);
+		ret++;
+		goto done;
 	}
 
     	/* Version */
@@ -1161,7 +1149,8 @@ H5O_efl_decode(const uint8_t *p)
 
 	if (!(mesg->nalloc >= mesg->nused)) {
 		H5E_push("H5O_efl_decode", "Inconsistent number of allocated slots.", -1);
-		return(ret_value=NULL);
+		ret++;
+		goto done;
 	}
 
     	/* Heap address */
@@ -1172,7 +1161,8 @@ H5O_efl_decode(const uint8_t *p)
     	mesg->slot = calloc(mesg->nalloc, sizeof(H5O_efl_entry_t));
     	if (NULL == mesg->slot) {
 		H5E_push("H5O_efl_decode", "Couldn't malloc() H5O_efl_entry_t.", -1);
-		return(ret_value=NULL);
+		ret++;
+		goto done;
 	}
 
     	for (u = 0; u < mesg->nused; u++) {
@@ -1185,10 +1175,14 @@ H5O_efl_decode(const uint8_t *p)
         	assert (mesg->slot[u].size>0);
     	}
 
-	if (ret)
-		mesg = NULL;
-    	/* Set return value */
     	ret_value = mesg;
+done:
+	if (ret) {
+		if (mesg) {
+			if (mesg->slot)	 free(mesg->slot);
+		}
+		ret_value = NULL;
+	}
     	return(ret_value);
 }
 
@@ -1374,6 +1368,128 @@ printf("CHUNKED_STORAGE:btree address=%lld, chunk size=%d, ndims=%d\n",
 }
 
 
+/* copied and modified from H5Opline.c */
+/*-------------------------------------------------------------------------
+ * Function:    H5O_pline_decode
+ *
+ * Purpose:     Decodes a filter pipeline message.
+ *
+ * Return:      Success:        Ptr to the native message.
+ *
+ *              Failure:        NULL
+ *
+ * Programmer:  Robb Matzke
+ *              Wednesday, April 15, 1998
+ *
+ * Modifications:
+ *
+ *-------------------------------------------------------------------------
+ */
+static void *
+H5O_pline_decode(const uint8_t *p)
+{
+    	H5O_pline_t     *pline = NULL;
+    	void            *ret_value;
+    	unsigned        version;
+    	size_t          i, j, n, name_length;
+	int		ret;
+
+    	/* check args */
+    	assert(p);
+	ret = SUCCEED;
+
+    	/* Decode */
+    	if ((pline = calloc(1, sizeof(H5O_pline_t)))==NULL) {
+		H5E_push("H5O_pline_decode", "Couldn't malloc() H5O_pline_t.", -1);
+		ret++;
+		goto done;
+	}
+
+    	version = *p++;
+    	if (version!=H5O_PLINE_VERSION) {
+		H5E_push("H5O_pline_decode", "Bad version number for filter pipeline message.", -1);
+		ret++;  /* ?????SHOULD I LET IT CONTINUE */
+	}
+
+    	pline->nused = *p++;
+    	if (pline->nused > H5Z_MAX_NFILTERS) {
+		H5E_push("H5O_pline_decode", "filter pipeline message has too many filters.", -1);
+		ret++;  /* ?????SHOULD I LET IT CONTINUE */
+	}
+
+    	p += 6;     /*reserved*/
+    	pline->nalloc = pline->nused;
+    	pline->filter = calloc(pline->nalloc, sizeof(pline->filter[0]));
+    	if (pline->filter==NULL) {
+		H5E_push("H5O_pline_decode", "Couldn't malloc() H5O_pline_t->filter.", -1);
+		ret++;
+		goto done;
+	}
+
+    	for (i = 0; i < pline->nused; i++) {
+        	UINT16DECODE(p, pline->filter[i].id);
+        	UINT16DECODE(p, name_length);
+        	if (name_length % 8) {
+			H5E_push("H5O_pline_decode", 
+			  "filter name length is not a multiple of eight.", -1);
+			ret++;
+			goto done;
+		}
+
+        	UINT16DECODE(p, pline->filter[i].flags);
+        	UINT16DECODE(p, pline->filter[i].cd_nelmts);
+        	if (name_length) {
+            		/*
+             		 * Get the name, allocating an extra byte for an extra null
+             		 * terminator just in case there isn't one in the file (there
+             		 * should be, but to be safe...)
+             		 */
+            		pline->filter[i].name = malloc(name_length+1);
+            		memcpy(pline->filter[i].name, p, name_length);
+            		pline->filter[i].name[name_length] = '\0';
+            		p += name_length;
+        	}
+        	if ((n=pline->filter[i].cd_nelmts)) {
+            	/*
+             	 * Read the client data values and the padding
+             	 */
+            	pline->filter[i].cd_values = malloc(n*sizeof(unsigned));
+            	if (pline->filter[i].cd_values==NULL) {
+			H5E_push("H5O_pline_decode", "Couldn't malloc() cd_values.", -1);
+			ret++;
+			goto done;
+		}
+
+            	for (j=0; j<pline->filter[i].cd_nelmts; j++)
+                	UINT32DECODE(p, pline->filter[i].cd_values[j]);
+
+            	if (pline->filter[i].cd_nelmts % 2)
+               		p += 4; /*padding*/
+        	}
+    	}
+
+    	/* Set return value */
+    	ret_value = pline;
+
+done:
+	if (ret) {
+		if (pline) {
+			if (pline->filter) {
+            			for (i=0; i<pline->nused; i++) {
+                			free(pline->filter[i].name);
+                			free(pline->filter[i].cd_values);
+				}
+				free(pline->filter);
+            		}
+			free(pline);
+		}
+		ret_value = NULL;
+	}
+	return(ret_value);
+}
+
+
+
 
 /* copied and modified from H5Oattr.c */
 /*--------------------------------------------------------------------------
@@ -1421,8 +1537,9 @@ H5O_attr_decode(const uint8_t *p)
 	ret = SUCCEED;
 
     	if ((attr=calloc(1, sizeof(H5A_t))) == NULL) {
-		H5E_push("H5O_attr_decode", "Couldn't malloc() H5A_t.", -1);
-		return(ret_value=NULL);
+		H5E_push("H5O_attr_decode", "Couldn't calloc() H5A_t.", -1);
+		ret++;
+		goto done;
 	}
 
     	/* Version number */
@@ -1454,7 +1571,8 @@ H5O_attr_decode(const uint8_t *p)
 	if (name_len != 0) {
 		if ((attr->name = malloc(name_len)) == NULL) {
 			H5E_push("H5O_attr_decode", "Couldn't malloc() space for attribute name.", -1);
-			return(ret_value=NULL);
+			ret++;
+			goto done;
 		}
 		strcpy(attr->name, (const char *)p);
 		/* should be null-terminated */
@@ -1467,11 +1585,10 @@ H5O_attr_decode(const uint8_t *p)
         p += H5O_ALIGN(name_len);    /* advance the memory pointer */
 
 
-
-
         if((attr->dt=(H5O_DTYPE->decode)(p))==NULL) {
 		H5E_push("H5O_attr_decode", "Can't decode attribute datatype.", -1);
-		return(ret_value=NULL);
+		ret++;
+		goto done;
 	}
 
         p += H5O_ALIGN(attr->dt_size);
@@ -1480,12 +1597,14 @@ H5O_attr_decode(const uint8_t *p)
 	/* ??? there is select info in the structure */
     	if ((attr->ds = calloc(1, sizeof(H5S_t)))==NULL) {
 		H5E_push("H5O_attr_decode", "Couldn't malloc() H5S_t.", -1);
-		return(ret_value=NULL);
+		ret++;
+		goto done;
 	}
 
     	if((extent=(H5O_SDSPACE->decode)(p))==NULL) {
 		H5E_push("H5O_attr_decode", "Can't decode attribute dataspace.", -1);
-		return(ret_value=NULL);
+		ret++;
+		goto done;
 	}
 
     	/* Copy the extent information */
@@ -1504,17 +1623,24 @@ H5O_attr_decode(const uint8_t *p)
     	if(attr->data_size) {
 		if ((attr->data = malloc(attr->data_size))==NULL) {
 			H5E_push("H5O_attr_decode", "Couldn't malloc() space for attribute data", -1);
-			return(ret_value=NULL);
+			ret++;
+			goto done;
 		}
 		/* How the data is interpreted is not stated in the format specification. */
 		memcpy(attr->data, p, attr->data_size);
 	}
 
-
-	if (ret)
-		attr = NULL;
-    	/* Set return value */
     	ret_value = attr;
+done:
+	if (ret) {
+		if (attr) {
+			if (attr->name) free(attr->name);
+			if (attr->ds) free(attr->ds);
+			if (attr->data) free(attr->data);
+			free(attr);
+		}
+		ret_value = NULL;
+	}
 	return(ret_value);
 }
 
@@ -1551,23 +1677,29 @@ H5O_name_decode(const uint8_t *p)
 
 	len = strlen((const char *)p);
     	/* decode */
-    	if ((mesg = calloc(1, sizeof(H5O_name_t)))==NULL ||
+    	if ((mesg=calloc(1, sizeof(H5O_name_t))) == NULL ||
             (mesg->s = malloc(len+1))==NULL) {
 		H5E_push("H5O_name_decode", "Couldn't malloc() H5O_name_t or comment string.", -1);
-		return(ret_value=NULL);
+		ret_value = NULL;
+		goto done;
 	}
     	strcpy(mesg->s, (const char*)p);
 	if (mesg->s[len] != '\0') {
 		H5E_push("H5O_name_decode", "The comment string should be null-terminated.", -1);
-		return(ret_value=NULL);
+		ret_value = NULL;
+		goto done;
 	}
 
 
     	/* Set return value */
-    	ret_value=mesg;
+    	ret_value = mesg;
 
-    	if(ret_value==NULL) {
-        	if (mesg) free(mesg);
+done:
+    	if(ret_value == NULL) {
+		if (mesg) {
+			if (mesg->s) free(mesg->s);
+        		free(mesg);
+		}
     	}
 	return(ret_value);
 }
@@ -1606,7 +1738,8 @@ H5O_shared_decode (const uint8_t *buf)
     	/* Decode */
     	if ((mesg = calloc(1, sizeof(H5O_shared_t)))==NULL) {
 		H5E_push("H5O_shared_decode", "Couldn't malloc() H5O_shared_t.", -1);
-		return(ret_value=NULL);
+		ret++;
+		goto done;
  	}
 
     	/* Version */
@@ -1616,7 +1749,8 @@ H5O_shared_decode (const uint8_t *buf)
 	/* SHOULD be only version 1 is described in the spec */
     	if (version != H5O_SHARED_VERSION_1 && version != H5O_SHARED_VERSION) {
 		H5E_push("H5O_shared_decode", "Bad version number for shared object message.", -1);
-		return(ret_value=NULL);
+		ret++;
+		goto done;
 	}
 
     	/* Get the shared information flags */
@@ -1655,7 +1789,8 @@ else
             		H5F_addr_decode(shared_info, &buf, &(mesg->u.ent.header));
 			if ((mesg->u.ent.header == HADDR_UNDEF) || (mesg->u.ent.header >= shared_info.stored_eoa)) {
 				H5E_push("H5O_shared_decode", "Invalid object header address.", -1);
-				return(ret_value=NULL);
+				ret++;
+				goto done;
 			}
 #ifdef DEBUG
 			printf("header =%lld\n", mesg->u.ent.header);
@@ -1663,12 +1798,12 @@ else
         	} /* end else */
     	}
 
-    	/* Set return value */
+    	ret_value = mesg;
+done:
 	if (ret) {
 		if (mesg != NULL) free(mesg);
-		mesg = NULL;
+		ret_value = NULL;
 	}
-    	ret_value = mesg;
 	return(ret_value);
 }
 
@@ -1706,7 +1841,8 @@ H5O_cont_decode(const uint8_t *p)
 	cont = malloc(sizeof(H5O_cont_t));
 	if (cont == NULL) {
 		H5E_push("H5O_cont_decode", "Couldn't malloc() H5O_cont_t.", -1);
-		return(ret_value=NULL);
+		ret++;
+		goto done;
 	}
 	
     	H5F_addr_decode(shared_info, &p, &(cont->addr));
@@ -1725,10 +1861,13 @@ H5O_cont_decode(const uint8_t *p)
 
     	cont->chunkno = 0;
 
-	if (ret)
-		cont = NULL;
-    	/* Set return value */
-    	return(ret_value=cont);
+	ret_value = cont;
+done:
+	if (ret) {
+		if (cont) free(cont);
+		ret_value = NULL;
+	}
+    	return(ret_value);
 }
 
 
@@ -1765,7 +1904,8 @@ H5O_stab_decode(const uint8_t *p)
 	stab = malloc(sizeof(H5O_stab_t));
 	if (stab == NULL) {
 		H5E_push("H5O_stab_decode", "Couldn't malloc() H5O_stab_t.", -1);
-		return(ret_value=NULL);
+		ret++;
+		goto done;
 	}
 
 	H5F_addr_decode(shared_info, &p, &(stab->btree_addr));
@@ -1779,10 +1919,13 @@ H5O_stab_decode(const uint8_t *p)
 		ret++;
 	}
 
-	if (ret)
-		stab = NULL;
-	/* Set return value */
-    	return(ret_value=stab);
+	ret_value = stab;
+done:
+	if (ret) {
+		if (stab) free(stab);
+		ret_value = NULL;
+	}
+    	return(ret_value);
 }
 
 
@@ -1834,19 +1977,22 @@ H5O_mtime_new_decode(const uint8_t *p)
     	UINT32DECODE(p, tmp_time);
 
     	/* The return value */
-    	if ((mesg = malloc(sizeof(time_t))) == NULL) {
+    	if ((mesg=malloc(sizeof(time_t))) == NULL) {
 		H5E_push("H5O_mtime_new_decode", "Couldn't malloc() time_t.", -1);
-		return(ret_value=NULL);
+		ret++;
+		goto done;
 	}
     	*mesg = (time_t)tmp_time;
 
     	/* Set return value */
     	ret_value = mesg;
-
-	if (ret)
-		mesg = NULL;
+done:
+	if (ret) {
+		if (mesg) free(mesg);
+		ret_value = NULL;
+	}
 	/* Set return value */
-    	return(ret_value=mesg);
+    	return(ret_value);
 }
 
 /* copied and modified from H5T.c */
@@ -2209,17 +2355,12 @@ H5G_node_decode_key(H5F_shared_t shared_info, unsigned UNUSED, const uint8_t **p
     	/* decode */
     	key = calloc(1, sizeof(H5G_node_key_t));
 	if (key == NULL) {
-		ret++;  /* ??? No use */
 		H5E_push("H5G_node_decode_key", "Couldn't malloc() H5G_node_key_t.", -1);
 		return(ret_value=NULL);
 	}
 
     	H5F_DECODE_LENGTH(shared_info, *p, key->offset);
 
-	/* no use ??? */
-	if (ret) {
-		key = NULL;
-	}
     	/* Set return value */
     	ret_value = (void*)key;    /*success*/
     	return(ret_value);
@@ -2258,7 +2399,6 @@ H5D_istore_decode_key(H5F_shared_t shared_info, size_t ndims, const uint8_t **p)
     	/* decode */
     	key = calloc(1, sizeof(H5D_istore_key_t));
 	if (key == NULL) {
-		ret++;  /* ??? No use */
 		H5E_push("H5G_node_decode_key", "Couldn't malloc() H5G_istore_key_t.", -1);
 		return(ret_value=NULL);
 	}
@@ -2268,10 +2408,6 @@ H5D_istore_decode_key(H5F_shared_t shared_info, size_t ndims, const uint8_t **p)
     	for (u=0; u<ndims; u++)
         	UINT64DECODE(*p, key->offset[u]);
 
-	/* ??? no use */
-	if (ret) {
-		key = NULL;
-	}
     	/* Set return value */
     	ret_value = (void*)key;    /*success*/
     	return(ret_value);
@@ -2493,7 +2629,7 @@ check_superblock(FILE *inputfd, H5F_shared_t *shared_info)
 		ret++;
 	}
 	if (shared_info->file_consist_flg > 0x03) {
-		H5E_push("check_superblock", "Invalid file consistency flags.", shared_info->super_addr, shared_info->super_addr);
+		H5E_push("check_superblock", "Invalid file consistency flags.", shared_info->super_addr);
 		ret++;
 	}
 
@@ -2601,27 +2737,27 @@ check_sym(FILE *inputfd, H5F_shared_t shared_info, haddr_t sym_addr)
 	if (buf == NULL) {
 		H5E_push("check_sym", "Unable to malloc() a symbol table node.", sym_addr);
 		ret++;
-		return(ret);
+		goto done;
 	}
 
 	sym = malloc(sizeof(H5G_node_t));
 	if (sym == NULL) {
 		H5E_push("check_sym", "Unable to malloc() H5G_node_t.", sym_addr);
 		ret++;
-		return(ret);
+		goto done;
 	}
 	sym->entry = malloc(2*H5F_SYM_LEAF_K(shared_info)*sizeof(H5G_entry_t));
 	if (sym->entry == NULL) {
 		H5E_push("check_sym", "Unable to malloc() H5G_entry_t.", sym_addr);
 		ret++;
-		return(ret);
+		goto done;
 	}
 
 	fseek(inputfd, sym_addr, SEEK_SET);
        	if (fread(buf, 1, size, inputfd)<0) {
 		H5E_push("check_sym", "Unable to read in the symbol table node.", sym_addr);
 		ret++;
-		return(ret);
+		goto done;
 	}
 
 	p = buf;
@@ -2657,7 +2793,7 @@ check_sym(FILE *inputfd, H5F_shared_t shared_info, haddr_t sym_addr)
 	if (ret != SUCCEED) {
 		H5E_push("check_sym", "Unable to read in symbol table group entries.", sym_addr);
 		ret++;
-		return(ret);
+		goto done;
 	}
 
 	/* validate symbol table group entries here  */
@@ -2680,7 +2816,7 @@ check_sym(FILE *inputfd, H5F_shared_t shared_info, haddr_t sym_addr)
 		}
 /* NEED TO check for symbolic link, if so, the object header address is undefined */
 
-		ret = check_obj_header(inputfd, shared_info, ent->header, 0, NULL);
+		ret = check_obj_header(inputfd, shared_info, shared_info.base_addr+ent->header, 0, NULL);
 		if (ret != SUCCEED) {
 			H5E_print(stderr);
 			H5E_clear();
@@ -2688,12 +2824,12 @@ check_sym(FILE *inputfd, H5F_shared_t shared_info, haddr_t sym_addr)
 		}
 	}
 
-	if (sym->entry)
-		free(sym->entry);
-	if (sym)
+done:
+	if (buf) free(buf);
+	if (sym) {
+		if (sym->entry) free(sym->entry);
 		free(sym);
-    	if (buf)
-        	free(buf);
+	}
 
 	return(ret);
 }
@@ -2724,7 +2860,7 @@ check_btree(FILE *inputfd, H5F_shared_t shared_info, haddr_t btree_addr, unsigne
 	if (buf == NULL) {
 		H5E_push("check_btree", "Unable to malloc() btree header.", btree_addr);
 		ret++;
-		return(ret);
+		goto done;
 	}
 
 	 /* read fixed-length part of object header */
@@ -2732,7 +2868,7 @@ check_btree(FILE *inputfd, H5F_shared_t shared_info, haddr_t btree_addr, unsigne
        	if (fread(buf, 1, (size_t)hdr_size, inputfd)<0) {
 		H5E_push("check_btree", "Unable to read btree header.", btree_addr);
 		ret++;
-		return(ret);
+		goto done;
 	}
 	p = buf;
 
@@ -2741,7 +2877,7 @@ check_btree(FILE *inputfd, H5F_shared_t shared_info, haddr_t btree_addr, unsigne
 	if (ret != 0) {
 		H5E_push("check_btree", "Couldn't find btree signature.", btree_addr);
 		ret++;
-		return(ret);
+		goto done;
 	} else
 		printf("FOUND btree signature.\n");
 
@@ -2833,9 +2969,9 @@ check_btree(FILE *inputfd, H5F_shared_t shared_info, haddr_t btree_addr, unsigne
 				printf("Internal node pointing to sub-trees\n");	
 				printf("name_offset=%d\n", name_offset);
 				printf("child=%ld\n", child);
-				check_btree(inputfd, shared_info, child);
+				check_btree(inputfd, shared_info, shared_info.base_addr+child);
 			} else {
-				status = check_sym(inputfd, shared_info, child);
+				status = check_sym(inputfd, shared_info, shared_info.base_addr+child);
 				if (status != SUCCEED) {
 					H5E_print(stderr);
 					H5E_clear();
@@ -2869,12 +3005,12 @@ check_btree(FILE *inputfd, H5F_shared_t shared_info, haddr_t btree_addr, unsigne
 	if (buffer == NULL) {
 		H5E_push("check_btree", "Unable to malloc() key+child.", btree_addr);
 		ret++;
-		return(ret);
+		goto done;
 	}
        	if (fread(buffer, 1, key_ptr_size, inputfd)<0) {
 		H5E_push("check_btree", "Unable to read key+child.", btree_addr);
 		ret++;
-		return(ret);
+		goto done;
 	}
 	p = buffer;
 		
@@ -2902,11 +3038,12 @@ check_btree(FILE *inputfd, H5F_shared_t shared_info, haddr_t btree_addr, unsigne
 
 		if (nodelev > 0) {
 			printf("Internal node pointing to sub-trees\n");	
-			check_btree(inputfd, shared_info, child, 0);
+/* NEED TO CHECK on something about ret value */
+			check_btree(inputfd, shared_info, shared_info.base_addr+child, 0);
 		} else {
 			if (nodetype == 0) {
 				printf("Leaf node pointing to group node: symbol table\n");
-				status = check_sym(inputfd, shared_info, child);
+				status = check_sym(inputfd, shared_info, shared_info.base_addr+child);
 				if (status != SUCCEED) {
 					H5E_print(stderr);
 					H5E_clear();
@@ -2928,10 +3065,9 @@ check_btree(FILE *inputfd, H5F_shared_t shared_info, haddr_t btree_addr, unsigne
 		printf("Final size of key data=%d\n", ((H5D_istore_key_t *)key)->nbytes);
 	}
 
-	if (buf)
-		free(buf);
-	if (buffer)
-		free(buffer);
+done:
+	if (buf) free(buf);
+	if (buffer) free(buffer);
 
 	return(ret);
 }
@@ -2963,7 +3099,7 @@ check_lheap(FILE *inputfd, H5F_shared_t shared_info, haddr_t lheap_addr, uint8_t
        	if (fread(hdr, 1, (size_t)hdr_size, inputfd)<0) {
 		H5E_push("check_lheap", "Unable to read local heap header.", lheap_addr);
 		ret++;
-		return(ret);
+		goto done;
 	}
     	p = hdr;
 
@@ -2972,7 +3108,7 @@ check_lheap(FILE *inputfd, H5F_shared_t shared_info, haddr_t lheap_addr, uint8_t
 	if (ret != 0) {
 		H5E_push("check_lheap", "Couldn't find local heap signature.", lheap_addr);
 		ret++;
-		return(ret);
+		goto done;
 	} else
 		printf("FOUND local heap signature.\n");
 
@@ -2993,30 +3129,31 @@ check_lheap(FILE *inputfd, H5F_shared_t shared_info, haddr_t lheap_addr, uint8_t
 	if (data_seg_size <= 0) {
 		H5E_push("check_lheap", "Invalid data segment size.", lheap_addr);
 		ret++;
-		return(ret);
+		goto done;
 	}
 
 	/* offset to head of free-list */
     	H5F_DECODE_LENGTH(shared_info, p, next_free_off);
-	if ((haddr_t)next_free_off != HADDR_UNDEF && next_free_off != H5HL_FREE_NULL && next_free_off >= data_seg_size) {
+	if ((haddr_t)next_free_off != HADDR_UNDEF && (haddr_t)next_free_off != H5HL_FREE_NULL && (haddr_t)next_free_off >= data_seg_size) {
 		H5E_push("check_lheap", "Offset to head of free list is invalid.", lheap_addr);
 		ret++;
-		return(ret);
+		goto done;
 	}
 
 	/* address of data segment */
     	H5F_addr_decode(shared_info, &p, &addr_data_seg);
+	addr_data_seg = addr_data_seg + shared_info.base_addr;
 	if ((addr_data_seg == HADDR_UNDEF) || (addr_data_seg >= shared_info.stored_eoa)) {
 		H5E_push("check_lheap", "Address of data segment is invalid.", lheap_addr);
 		ret++;
-		return(ret);
+		goto done;
 	}
 
 	heap_chunk = malloc(hdr_size+data_seg_size);
 	if (heap_chunk == NULL) {
 		H5E_push("check_lheap", "Memory allocation failed for local heap data segment.", lheap_addr);
 		ret++;
-		return(ret);
+		goto done;
 	}
 	
 #ifdef DEBUG
@@ -3029,7 +3166,7 @@ check_lheap(FILE *inputfd, H5F_shared_t shared_info, haddr_t lheap_addr, uint8_t
        		if (fread(heap_chunk+hdr_size, 1, data_seg_size, inputfd)<0) {
 			H5E_push("check_lheap", "Unable to read local heap data segment.", lheap_addr);
 			ret++;
-			return(ret);
+			goto done;
 		}
 	} 
 
@@ -3039,7 +3176,7 @@ check_lheap(FILE *inputfd, H5F_shared_t shared_info, haddr_t lheap_addr, uint8_t
 		if (next_free_off >= data_seg_size) {
 			H5E_push("check_lheap", "Offset of the next free block is invalid.", lheap_addr);
 			ret++;
-			return(ret);
+			goto done;
 		}
 		saved_offset = next_free_off;
 		p = heap_chunk + hdr_size + next_free_off;
@@ -3057,14 +3194,19 @@ check_lheap(FILE *inputfd, H5F_shared_t shared_info, haddr_t lheap_addr, uint8_t
         	if (saved_offset + size_free_block > data_seg_size) {
 			H5E_push("check_lheap", "Bad heap free list.", lheap_addr);
 			ret++;
-			return(ret);
+			goto done;
 		}
 	}
 
-	if (ret_heap_chunk) {
-		*ret_heap_chunk = heap_chunk;
-	} else if (heap_chunk) {
-		free(heap_chunk);
+/* NEED TO CHECK ON this */
+done:
+	if ((ret==SUCCEED) && ret_heap_chunk) {
+		*ret_heap_chunk = (uint8_t *)heap_chunk;
+	} else {
+		if (ret) /* fail */
+			*ret_heap_chunk = NULL;
+		if (heap_chunk)
+			free(heap_chunk);
 	}
 	return(ret);
 }
@@ -3111,13 +3253,13 @@ check_gheap(FILE *inputfd, H5F_shared_t shared_info, haddr_t gheap_addr, uint8_t
     	if ((heap = calloc(1, sizeof(H5HG_heap_t)))==NULL) {
 		H5E_push("check_gheap", "Couldn't calloc() H5HG_heap_t.", gheap_addr);
 		ret++;
-		return(ret);
+		goto done;
 	}
     	heap->addr = gheap_addr;
     	if ((heap->chunk = malloc(H5HG_MINSIZE))==NULL) {
 		H5E_push("check_gheap", "Couldn't malloc() H5HG_heap_t->chunk.", gheap_addr);
 		ret++;
-		return(ret);
+		goto done;
 	}
 
  	printf("Validating the global heap at %lld...\n", gheap_addr);
@@ -3126,7 +3268,7 @@ check_gheap(FILE *inputfd, H5F_shared_t shared_info, haddr_t gheap_addr, uint8_t
         if (fread(heap->chunk, 1, H5HG_MINSIZE, inputfd)<0) {
                 H5E_push("check_gheap", "Unable to read global heap collection.", gheap_addr);
                 ret++;
-                return(ret);
+		goto done;
 	}
 
     	/* Magic number */
@@ -3163,13 +3305,13 @@ check_gheap(FILE *inputfd, H5F_shared_t shared_info, haddr_t gheap_addr, uint8_t
         	if ((heap->chunk = realloc(heap->chunk, heap->size))==NULL) {
 			H5E_push("check_gheap", "Couldn't realloc() H5HG_heap_t->chunk.", gheap_addr);
 			ret++;
-			return(ret);
+			goto done;
 		}
         	fseek(inputfd, next_addr, SEEK_SET);
         	if (fread(heap->chunk+H5HG_MINSIZE, 1, heap->size-H5HG_MINSIZE, inputfd)<0) {
                 	H5E_push("check_gheap", "Unable to read global heap collection.", gheap_addr);
                 	ret++;
-                	return(ret);
+			goto done;
     		}
 	}  /* end if */
 
@@ -3179,7 +3321,7 @@ check_gheap(FILE *inputfd, H5F_shared_t shared_info, haddr_t gheap_addr, uint8_t
     	if ((heap->obj = malloc(nalloc*sizeof(H5HG_obj_t)))==NULL) {
                 H5E_push("check_gheap", "Couldn't malloc() H5HG_obj_t.", gheap_addr);
                 ret++;
-                return(ret);
+		goto done;
 	}
     	heap->obj[0].size = heap->obj[0].nrefs=0;
     	heap->obj[0].begin = NULL;
@@ -3214,7 +3356,7 @@ check_gheap(FILE *inputfd, H5F_shared_t shared_info, haddr_t gheap_addr, uint8_t
                 		if ((new_obj=realloc(heap->obj, new_alloc*sizeof(H5HG_obj_t)))==NULL) {
                 			H5E_push("check_gheap", "Couldn't realloc() H5HG_obj_t.", gheap_addr);
                 			ret++;
-                			return(ret);
+					goto done;
 				}
 
                 		/* Update heap information */
@@ -3260,13 +3402,19 @@ check_gheap(FILE *inputfd, H5F_shared_t shared_info, haddr_t gheap_addr, uint8_t
     	else
         	heap->nused = 1;
 
-	if (ret_heap_chunk) {
+done:
+	if ((ret==SUCCEED) && ret_heap_chunk) {
 		*ret_heap_chunk = (uint8_t *)heap;
-	} else if (heap) {
-		free(heap->chunk);
-		free(heap->obj);
-		free(heap);
+	} else {
+		if (ret) /* fail */
+			*ret_heap_chunk = NULL;
+		if (heap) {
+			if (heap->chunk) free(heap->chunk);
+			if (heap->obj) free(heap->obj);
+			free(heap);
+		}
 	}
+	return(ret);
 }
 
 herr_t
@@ -3353,9 +3501,8 @@ decode_validate_messages(FILE *inputfd, H5O_t *oh)
 			printf("Done with decode/validate for External Data Files message id=%d\n", id);
 			printf("Going to validate the local heap at efl->heap_addr=%lld\n",
 				((H5O_efl_t *)mesg)->heap_addr);
-			status = check_lheap(inputfd, shared_info, ((H5O_efl_t *)mesg)->heap_addr, &heap_chunk);
+			status = check_lheap(inputfd, shared_info, shared_info.base_addr+((H5O_efl_t *)mesg)->heap_addr, &heap_chunk);
 			if (status != SUCCEED) {
-				if (heap_chunk) free(heap_chunk);
 				H5E_print(stderr);
 				H5E_clear();
 				ret = SUCCEED;
@@ -3363,15 +3510,14 @@ decode_validate_messages(FILE *inputfd, H5O_t *oh)
 #if 0
         assert(mesg->slot[u].name);
 #endif
+			/* should be linked together as else when status == SUCCEED */
     			for (k = 0; k < ((H5O_efl_t *)mesg)->nused; k++) {
 			
 				s = heap_chunk+H5HL_SIZEOF_HDR(shared_info)+((H5O_efl_t *)mesg)->slot[k].name_offset;
         			assert (s && *s);
-#ifdef DEBUG
 				printf("External name_offset:%d\n", 
 					((H5O_efl_t *)mesg)->slot[k].name_offset);
 				printf("Externalfile:%s\n", s);
-#endif
 			}
 			if (heap_chunk) free(heap_chunk);
 			printf("END H5O_EFL_ID=%d.\n", id);
@@ -3393,10 +3539,18 @@ decode_validate_messages(FILE *inputfd, H5O_t *oh)
 				btree_addr = ((H5O_layout_t *)mesg)->u.chunk.addr;
 				printf("Validating the btree at %lld for raw chunk data\n",
 					btree_addr);
-				status = check_btree(inputfd, shared_info, btree_addr, ndims);
+/* NEED TO CHECK ON THIS */
+				status = check_btree(inputfd, shared_info, shared_info.base_addr+btree_addr, ndims);
 			}
 			printf("END H5O_LAYOUT_ID=%d.\n", id);
 
+			break;
+    		case H5O_PLINE_ID:
+			printf("Done with decode/validate for Data Store--filter pipeline message id=%d\n",id);
+			for (j=0; j<((H5O_pline_t *)mesg)->nused; j++) {
+				printf("plinename=%s;\n", ((H5O_pline_t *)mesg)->filter[j].name);
+			}
+			printf("END H5O_PLINE_ID=%d.\n", id);
 			break;
     		case H5O_ATTR_ID:
 			printf("Done with decode/validate for Attribute message id=%d\n",id);
@@ -3418,7 +3572,8 @@ decode_validate_messages(FILE *inputfd, H5O_t *oh)
             		UINT32DECODE(pp, global1);
 		H5F_addr_decode(shared_info, (const uint8_t **)&pp, &global);
 			printf("global1=%ld, global=%lld\n", global1, global);
-			check_gheap(inputfd, shared_info, global, NULL);
+/* SHULD CHECK for return status */
+			check_gheap(inputfd, shared_info, shared_info.base_addr+global, NULL);
 #endif
 			printf("END H5O_ATTR_ID=%d.\n", id);
 
@@ -3427,13 +3582,13 @@ decode_validate_messages(FILE *inputfd, H5O_t *oh)
 			printf("Done with decode/validate for Group message id=%d\n", id);
 			printf("stab->btree_addr=%lld,stab->heap_addr=%lld\n",
 				((H5O_stab_t *)mesg)->btree_addr, ((H5O_stab_t *)mesg)->heap_addr);
-			status = check_btree(inputfd, shared_info, ((H5O_stab_t *)mesg)->btree_addr, 0);
+			status = check_btree(inputfd, shared_info, shared_info.base_addr+((H5O_stab_t *)mesg)->btree_addr, 0);
 			if (status != SUCCEED) {
 				H5E_print(stderr);
 				H5E_clear();
 				ret = SUCCEED;
 			}
-			status = check_lheap(inputfd, shared_info, ((H5O_stab_t *)mesg)->heap_addr, NULL);
+			status = check_lheap(inputfd, shared_info, shared_info.base_addr+((H5O_stab_t *)mesg)->heap_addr, NULL);
 			if (status != SUCCEED) {
 				H5E_print(stderr);
 				H5E_clear();
@@ -3540,7 +3695,7 @@ H5O_find_in_ohdr(FILE *inputfd, H5O_t *oh, const H5O_class_t **type_p, int seque
      */
     *type_p = oh->mesg[u].type;
 
-    	/* Set return value */
+   	/* Set return value */
     	ret_value = u;
 	return(ret_value);
 }
@@ -3592,7 +3747,7 @@ H5O_shared_read(FILE *inputfd, H5O_shared_t *shared, const H5O_class_t *type)
 
 #endif
     	} else {
-	  	ret = check_obj_header(inputfd, shared_info, shared->u.ent.header, 1, type);
+	  	ret = check_obj_header(inputfd, shared_info, shared_info.base_addr+shared->u.ent.header, 1, type);
     	}
 	
 	return(ret);
@@ -3769,7 +3924,7 @@ check_obj_header(FILE *inputfd, H5F_shared_t shared_info, haddr_t obj_head_addr,
         	for (chunk_addr = HADDR_UNDEF; !H5F_addr_defined(chunk_addr) && curmesg < oh->nmesgs; ++curmesg) {
             		if (oh->mesg[curmesg].type->id == H5O_CONT_ID) {
 				printf("PROCESSING a continuation message id\n");
-                		cont = (H5O_CONT->decode) (oh->mesg[curmesg].raw);
+                		cont = (H5O_CONT->decode) (shared_info.base_addr+oh->mesg[curmesg].raw);
 				if (cont == NULL) {
 					H5E_push("check_obj_header", "Corrupt continuation message...skipped.", 
 						obj_head_addr);
@@ -3811,16 +3966,27 @@ check_obj_header(FILE *inputfd, H5F_shared_t shared_info, haddr_t obj_head_addr,
 int main(int argc, char **argv)
 {
 	int	ret;
+	char	*prog_name;
 	FILE 	*inputfd;
 	haddr_t	gheap_addr;
 
-	ret = SUCCEED;
-	printf("\nVALIDATING %s\n\n", INPUTFILE);
 
-	inputfd = fopen(INPUTFILE, "r");
+	if (argc != 2) {
+		if ((prog_name=strrchr(argv[0], '/'))) 
+			prog_name++;
+		else 
+			prog_name = argv[0];
+		fprintf(stderr, "usage: %s h5file\n", prog_name);
+		exit(1);
+	}
+
+	ret = SUCCEED;
+	printf("\nVALIDATING %s\n\n", argv[1]);
+
+	inputfd = fopen(argv[1], "r");
 
         if (inputfd == NULL) {
-                fprintf(stderr, "fopen(\"%s\") failed: %s\n", INPUTFILE,
+                fprintf(stderr, "fopen(\"%s\") failed: %s\n", argv[1],
                                  strerror(errno));
                 exit(errno);
         }
@@ -3841,7 +4007,7 @@ int main(int argc, char **argv)
 		ret = SUCCEED;
 	}
 
-	ret = check_obj_header(inputfd, shared_info, shared_info.root_grp->header, 0, NULL);
+	ret = check_obj_header(inputfd, shared_info, shared_info.base_addr+shared_info.root_grp->header, 0, NULL);
 	if (ret != SUCCEED) {
 		H5E_print(stderr);
 		H5E_clear();

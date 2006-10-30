@@ -728,26 +728,64 @@ typedef struct H5O_layout_t {
     } u;
 } H5O_layout_t;
 
+
+
+/* copied from H5Opline.c */
+#define H5O_PLINE_VERSION       1
+
+/* copied from H5Zpublic.h */
+#define H5Z_MAX_NFILTERS        32      /* Maximum number of filters allowed in a pipeline (should probably be allowed to be an unlimited amount) */
+
+
+/* copied from H5Zpublic.h */
+typedef int H5Z_filter_t;
+
+/* copied from H5Zprivate.h */
+/* Structure to store information about each filter's parameters */
+typedef struct {
+    H5Z_filter_t        id;             /*filter identification number       */
+    unsigned            flags;          /*defn and invocation flags          */
+    char                *name;          /*optional filter name               */
+    size_t              cd_nelmts;      /*number of elements in cd_values[]  */
+    unsigned            *cd_values;     /*client data values                 */
+} H5Z_filter_info_t;
+
+
+/* copied from H5Oprivate.h */
+/*
+ * Filter pipeline message.
+ * (Data structure in memory)
+ */
+typedef struct H5O_pline_t {
+    size_t      nalloc;                 /*num elements in `filter' array     */
+    size_t      nused;                  /*num filters defined                */
+    H5Z_filter_info_t *filter;          /*array of filters                   */
+} H5O_pline_t;
+
+
+
+/* copied from H5Oattr.c */
 /* This is the initial version, which does not have support for shared datatypes */
 #define H5O_ATTR_VERSION        1
-
 /* This version allows support for shared datatypes */
 #define H5O_ATTR_VERSION_NEW    2
-
 /* Flags for attribute flag encoding */
 #define H5O_ATTR_FLAG_TYPE_SHARED       0x01
 
+/* copied and modified from H5Spkg.h */
 /* Main dataspace structure (typedef'd in H5Sprivate.h) */
 struct H5S_t {
     H5S_extent_t extent;                /* Dataspace extent */
-    void 	 *select;               /* DELETED for now: Dataspace selection */
+    void 	 *select;               /* ??? DELETED for now: Dataspace selection */
 };
 
 
 
+/* copied from H5Sprivate.h */
 /* Forward references of package typedefs */
 typedef struct H5S_t H5S_t;
 
+/* copied from H5Aprivate.h */
 /* Forward references of package typedefs */
 typedef struct H5A_t H5A_t;
 
