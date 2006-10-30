@@ -4,9 +4,9 @@
 #include <stdlib.h>
 #include <errno.h>
 #include <assert.h>
+#include <string.h>
 #include "h5_check.h"
 #include "h5_error.h"
-
 
 /*-------------------------------------------------------------------------
  * Function:    H5E_push
@@ -28,6 +28,7 @@
  *
  *-------------------------------------------------------------------------
  */
+void
 H5E_push(const char *function_name, const char *desc, haddr_t address)
 {
 	
@@ -97,7 +98,7 @@ H5E_clear(void)
 	return(0);
 }
 
-herr_t
+void
 H5E_print(FILE *stream)
 {
 	int	i;
