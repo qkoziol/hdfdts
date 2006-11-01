@@ -318,8 +318,6 @@ typedef struct {
 /* Opaque information */
 #define H5T_OPAQUE_TAG_MAX      256     /* Maximum length of an opaque tag */
                                         /* This could be raised without too much difficulty */
-/* copied from H5Spublic.h */
-#define H5S_MAX_RANK    32
 
 /* copied from H5Tpublic.h */
 /* Byte orders */
