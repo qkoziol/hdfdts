@@ -505,7 +505,6 @@ H5O_dtype_decode_helper(const uint8_t **pp, H5T_t *dt)
 
     	switch (dt->shared->type) {
           case H5T_INTEGER:
-printf("Class type is H5T_INTEGER\n");
             /*
              * Integer types...
              */
@@ -522,7 +521,6 @@ printf("Class type is H5T_INTEGER\n");
             break;
 
 	 case H5T_FLOAT:
-printf("Class type is H5T_FLOAT\n");
             /*
              * Floating-point types...
              */
@@ -568,7 +566,6 @@ printf("Class type is H5T_FLOAT\n");
             break;
 
 	case H5T_TIME:  /* Time datatypes */
-printf("Class type is H5T_TIME\n");
             dt->shared->u.atomic.order = (flags & 0x1) ? H5T_ORDER_BE : H5T_ORDER_LE;
 
 	    if ((flags>>1) != 0) {  /* should be reserved(zero) */
@@ -580,7 +577,6 @@ printf("Class type is H5T_TIME\n");
             break;
 
 	  case H5T_STRING:
-printf("Class type is H5T_STRING\n");
             /*
              * Character string types...
              */
@@ -612,7 +608,6 @@ printf("Class type is H5T_STRING\n");
 	    break;
 	
         case H5T_BITFIELD:
-printf("Class type is H5T_BITFIELD\n");
             /*
              * Bit fields...
              */
@@ -628,7 +623,6 @@ printf("Class type is H5T_BITFIELD\n");
             break;
 
         case H5T_OPAQUE:
-printf("Class type is H5T_OPAQUE\n");
             /*
              * Opaque types...
              */
@@ -652,7 +646,6 @@ printf("Class type is H5T_OPAQUE\n");
             break;
 
 	 case H5T_COMPOUND:
-printf("Class type is H5T_COMPOUND\n");
             /*
              * Compound datatypes...
              */
@@ -671,7 +664,6 @@ printf("Class type is H5T_COMPOUND\n");
 		ret++;
 		return(ret);
 	    }
-printf("number of members = %d\n", dt->shared->u.compnd.nmembs);
             for (i = 0; i < dt->shared->u.compnd.nmembs; i++) {
                 unsigned ndims=0;     /* Number of dimensions of the array field */
 		hsize_t dim[H5O_LAYOUT_NDIMS];  /* Dimensions of the array */
@@ -692,7 +684,6 @@ printf("number of members = %d\n", dt->shared->u.compnd.nmembs);
 			return(ret);
 		}
 		strcpy(dt->shared->u.compnd.memb[i].name, (const char *)*pp);
-printf("MEMBERNAME=%s\n", dt->shared->u.compnd.memb[i].name);
 
                 /*multiple of 8 w/ null terminator */
                 *pp += ((strlen((const char *)*pp) + 8) / 8) * 8;
@@ -756,7 +747,6 @@ printf("MEMBERNAME=%s\n", dt->shared->u.compnd.memb[i].name);
             break;
 
         case H5T_REFERENCE: /* Reference datatypes...  */
-printf("Class type is H5T_REFERENCE\n");
             dt->shared->u.atomic.order = H5T_ORDER_NONE;
             dt->shared->u.atomic.prec = 8 * dt->shared->size;            
 	    dt->shared->u.atomic.offset = 0;
@@ -779,7 +769,6 @@ printf("Class type is H5T_REFERENCE\n");
             break;
 
 	case H5T_ENUM:
-printf("Class type is H5T_ENUM\n");
             /*
              * Enumeration datatypes...
              */
@@ -842,7 +831,6 @@ printf("Class type is H5T_ENUM\n");
             break;
 
         case H5T_VLEN:  /* Variable length datatypes...  */
-printf("Class type is H5T_VLEN\n");
             /* Set the type of VL information, either sequence or string */
             dt->shared->u.vlen.type = (H5T_vlen_type_t)(flags & 0x0f);
             if(dt->shared->u.vlen.type == H5T_VLEN_STRING) {
@@ -888,7 +876,6 @@ printf("Class type is H5T_VLEN\n");
 
 
         case H5T_ARRAY:  /* Array datatypes...  */
-printf("Class type is H5T_ARRAY\n");
             /* Decode the number of dimensions */
             dt->shared->u.array.ndims = *(*pp)++;
 
@@ -1262,11 +1249,9 @@ H5O_layout_decode(const uint8_t *p)
 
         	/* Address */
         	if(mesg->type==H5D_CONTIGUOUS) {
-printf("CONTIGUOUS storage\n");
             		H5F_addr_decode(shared_info, &p, &(mesg->u.contig.addr));
         	} else if(mesg->type==H5D_CHUNKED) {
             		H5F_addr_decode(shared_info, &p, &(mesg->u.chunk.addr));
-printf("CHUNKED_STORAGE:btree address=%d\n", mesg->u.chunk.addr);
 		}
 
         	/* Read the size */
@@ -1286,7 +1271,6 @@ printf("CHUNKED_STORAGE:btree address=%d\n", mesg->u.chunk.addr);
             		mesg->u.chunk.ndims=ndims;
             		for (u = 0; u < ndims; u++) {
                 		UINT32DECODE(p, mesg->u.chunk.dim[u]);
-printf("LAYOUT_DECODE: dim[%d]=%d,", u,mesg->u.chunk.dim[u]);
 			}
 
             		/* Compute chunk size */
@@ -2490,12 +2474,13 @@ check_superblock(FILE *inputfd, H5F_shared_t *shared_info)
 	shared_info->super_addr = locate_super_signature(inputfd);
 	if (shared_info->super_addr == HADDR_UNDEF) {
 		H5E_push("check_superblock", "Couldn't find super block.", -1);
-		printf("Assuming super block at address 0.\n");
+		H5E_print(stderr);
+		H5E_clear();
+		printf("ASSUMING super block at address 0.\n");
 		shared_info->super_addr = 0;
-		ret++;
 	}
 	
-	printf("Validating the super block at %lld...\n", shared_info->super_addr);
+	printf("VALIDATING the super block at %lld...\n", shared_info->super_addr);
 
 	fseek(inputfd, shared_info->super_addr, SEEK_SET);
 	fread(buf, 1, fixed_size, inputfd);
@@ -2660,6 +2645,7 @@ check_superblock(FILE *inputfd, H5F_shared_t *shared_info)
 		ret++;
 	}
 
+
 	/* Read in driver information block and validate */
 	/* Defined driver information block address or not */
     	if (shared_info->driver_addr != HADDR_UNDEF) {
@@ -2724,7 +2710,7 @@ check_sym(FILE *inputfd, H5F_shared_t shared_info, haddr_t sym_addr)
 
 	assert(H5F_addr_defined(sym_addr));
 
-	printf("Validating the SNOD at %d...\n", sym_addr);
+	printf("VALIDATING the SNOD at %d...\n", sym_addr);
 	size = H5G_node_size(shared_info);
 	ret = SUCCEED;
 
@@ -2781,7 +2767,6 @@ check_sym(FILE *inputfd, H5F_shared_t shared_info, haddr_t sym_addr)
 
     	/* number of symbols */
     	UINT16DECODE(p, sym->nsyms);
-	printf("sym->nsyms=%d\n",sym->nsyms);
 	if (sym->nsyms > (2 * H5F_SYM_LEAF_K(shared_info))) {
 		H5E_push("check_sym", "Number of symbols exceed (2*Group Leaf Node K).", sym_addr);
 		ret++;
@@ -2818,6 +2803,7 @@ check_sym(FILE *inputfd, H5F_shared_t shared_info, haddr_t sym_addr)
 
 		ret = check_obj_header(inputfd, shared_info, shared_info.base_addr+ent->header, 0, NULL);
 		if (ret != SUCCEED) {
+			H5E_push("check_sym", "Errors from check_obj_header()", sym_addr);
 			H5E_print(stderr);
 			H5E_clear();
 			ret = SUCCEED;
@@ -2854,7 +2840,7 @@ check_btree(FILE *inputfd, H5F_shared_t shared_info, haddr_t btree_addr, unsigne
     	hdr_size = H5B_SIZEOF_HDR(shared_info);
 	ret = SUCCEED;
 
-	printf("Validating the btree at %lld...\n", btree_addr);
+	printf("VALIDATING the btree at %lld...\n", btree_addr);
 
 	buf = malloc(hdr_size);
 	if (buf == NULL) {
@@ -2921,78 +2907,6 @@ check_btree(FILE *inputfd, H5F_shared_t shared_info, haddr_t btree_addr, unsigne
 
 	fseek(inputfd, btree_addr+hdr_size, SEEK_SET);
 
-#if 0
-	key_size = node_key_g[nodetype]->get_sizeof_rkey(shared_info);
-	if (nodetype == 0) {
-		/* the remaining node size: key + child pointer */
-		/* probably should put that in a macro */
-		key_ptr_size = (2*shared_info.gr_int_node_k)*H5F_SIZEOF_ADDR(shared_info) +
-			(2*(shared_info.gr_int_node_k+1))*H5F_SIZEOF_SIZE(shared_info);
-
-	new_key_ptr_size = (2*shared_info.gr_int_node_k)*H5F_SIZEOF_ADDR(shared_info) +
-			   (2*(shared_info.gr_int_node_k+1))*key_size;
-	printf("key_ptr_size=%d, new_key_ptr_size=%d\n", key_ptr_size, new_key_ptr_size);
-
-		buffer = malloc(key_ptr_size);
-		if (buffer == NULL) {
-			H5E_push("check_btree", "Unable to malloc() key+child.", btree_addr);
-			ret++;
-			return(ret);
-		}
-       		if (fread(buffer, 1, key_ptr_size, inputfd)<0) {
-			H5E_push("check_btree", "Unable to read key+child.", btree_addr);
-			ret++;
-			return(ret);
-		}
-		p = buffer;
-		
-		for (u = 0; u < entries; u++) {
-			node_key_g[nodetype]->decode(shared_info, (const uint8_t **)&p, (size_t *)&name_offset);
-/*
-			H5F_DECODE_LENGTH(shared_info, p, name_offset);
-*/
-			printf("name_offset=%d\n", name_offset);
-
-			/* NEED TO VALIDATE name_offset to be within the local heap's size??HOW */
-
-        		/* Decode address value */
-  			H5F_addr_decode(shared_info, (const uint8_t **)&p, &child/*out*/);
-			printf("child=%lld\n", child);
-
-			if ((child != HADDR_UNDEF) && (child >= shared_info.stored_eoa)) {
-				H5E_push("check_btree", "Invalid child address.", btree_addr);
-				ret++;
-				continue;
-			}
-
-			if (nodelev > 0) {
-				printf("Internal node pointing to sub-trees\n");	
-				printf("name_offset=%d\n", name_offset);
-				printf("child=%ld\n", child);
-				check_btree(inputfd, shared_info, shared_info.base_addr+child);
-			} else {
-				status = check_sym(inputfd, shared_info, shared_info.base_addr+child);
-				if (status != SUCCEED) {
-					H5E_print(stderr);
-					H5E_clear();
-					ret = SUCCEED;
-					continue;
-				}
-			}
-		}
-		/* decode final key */
-		if (entries > 0) {
-			H5F_DECODE_LENGTH(shared_info, p, name_offset);
-			printf("final name_offset=%d\n", name_offset);
-		}
-
-	} else if ((nodelev == 0) && (nodetype == 1)) {  /* this tree points to raw data chunks */
-		printf("This is a leaf node pointing raw data chunks\n");
-	} else { 
-		H5E_push("check_btree", "Inconsistent node level and type.", btree_addr);
-		ret++;
-	}
-#endif
 	/* the remaining node size: key + child pointer */
 	key_size = node_key_g[nodetype]->get_sizeof_rkey(shared_info, ndims);
 	key_ptr_size = (2*shared_info.gr_int_node_k)*H5F_SIZEOF_ADDR(shared_info) +
@@ -3028,7 +2942,6 @@ check_btree(FILE *inputfd, H5F_shared_t shared_info, haddr_t btree_addr, unsigne
 
         	/* Decode address value */
   		H5F_addr_decode(shared_info, (const uint8_t **)&p, &child/*out*/);
-		printf("child=%lld\n", child);
 
 		if ((child != HADDR_UNDEF) && (child >= shared_info.stored_eoa)) {
 			H5E_push("check_btree", "Invalid child address.", btree_addr);
@@ -3037,21 +2950,19 @@ check_btree(FILE *inputfd, H5F_shared_t shared_info, haddr_t btree_addr, unsigne
 		}
 
 		if (nodelev > 0) {
-			printf("Internal node pointing to sub-trees\n");	
 /* NEED TO CHECK on something about ret value */
 			check_btree(inputfd, shared_info, shared_info.base_addr+child, 0);
 		} else {
 			if (nodetype == 0) {
-				printf("Leaf node pointing to group node: symbol table\n");
 				status = check_sym(inputfd, shared_info, shared_info.base_addr+child);
 				if (status != SUCCEED) {
+					H5E_push("check_btree", "Errors from check_sym().", btree_addr);
 					H5E_print(stderr);
 					H5E_clear();
 					ret = SUCCEED;
 					continue;
 				}
 			} else if (nodetype == 1) {
-				printf("Leaf node pointing to raw data chunk\n");
 				/* check_chunk_data() for btree */
 			}
 		}
@@ -3059,10 +2970,12 @@ check_btree(FILE *inputfd, H5F_shared_t shared_info, haddr_t btree_addr, unsigne
 	/* decode final key */
 	if (entries > 0) {
 		key = node_key_g[nodetype]->decode(shared_info, ndims, (const uint8_t **)&p);
+#ifdef DEBUG
 		if (nodetype == 0)
 		printf("Final key's offset=%d\n", ((H5G_node_key_t *)key)->offset);
 		else if (nodetype == 1)
 		printf("Final size of key data=%d\n", ((H5D_istore_key_t *)key)->nbytes);
+#endif
 	}
 
 done:
@@ -3092,7 +3005,7 @@ check_lheap(FILE *inputfd, H5F_shared_t shared_info, haddr_t lheap_addr, uint8_t
     	hdr_size = H5HL_SIZEOF_HDR(shared_info);
     	assert(hdr_size<=sizeof(hdr));
 
-	printf("Validating the local heap at %lld...\n", lheap_addr);
+	printf("VALIDATING the local heap at %lld...\n", lheap_addr);
 	ret = SUCCEED;
 
 	fseek(inputfd, lheap_addr, SEEK_SET);
@@ -3262,7 +3175,7 @@ check_gheap(FILE *inputfd, H5F_shared_t shared_info, haddr_t gheap_addr, uint8_t
 		goto done;
 	}
 
- 	printf("Validating the global heap at %lld...\n", gheap_addr);
+ 	printf("VALIDATING the global heap at %lld...\n", gheap_addr);
         
         fseek(inputfd, gheap_addr, SEEK_SET);
         if (fread(heap->chunk, 1, H5HG_MINSIZE, inputfd)<0) {
@@ -3292,7 +3205,6 @@ check_gheap(FILE *inputfd, H5F_shared_t shared_info, haddr_t gheap_addr, uint8_t
 
     	/* Size */
     	H5F_DECODE_LENGTH(shared_info, p, heap->size);
-	printf("size of global heap = %d\n", heap->size);
     	assert (heap->size>=H5HG_MINSIZE);
 
     	/*
@@ -3342,7 +3254,6 @@ check_gheap(FILE *inputfd, H5F_shared_t shared_info, haddr_t gheap_addr, uint8_t
             		uint8_t *begin = p;
 
             		UINT16DECODE (p, idx);
-			printf("global heap idx=%d\n", idx);
 
             		/* Check if we need more room to store heap objects */
             		if(idx >= heap->nalloc) {
@@ -3368,10 +3279,10 @@ check_gheap(FILE *inputfd, H5F_shared_t shared_info, haddr_t gheap_addr, uint8_t
             		p += 4; /*reserved*/
             		H5F_DECODE_LENGTH (shared_info, p, heap->obj[idx].size);
             		heap->obj[idx].begin = begin;
-			printf("global heap:size=%d, begin=%d\n",
-			heap->obj[idx].size, heap->obj[idx].begin);
+#ifdef DEBUG
 			if (idx > 0)
 				printf("global:%s\n", p);
+#endif
             		/*
              		 * The total storage size includes the size of the object header
              		 * and is zero padded so the next object header is properly
@@ -3437,27 +3348,22 @@ decode_validate_messages(FILE *inputfd, H5O_t *oh)
 	for (i = 0; i < oh->nmesgs; i++) {	
 	  id = oh->mesg[i].type->id;
 	  if (id == H5O_CONT_ID) {
-		printf("Encountered an Object Header Continuation message id=%d...skipped.\n", id);
 		continue;
 	  } else if (id == H5O_NULL_ID) {
-		printf("Encountered a NIL message id=%d...skipped.\n", id);
 		continue;
 	  } else if (oh->mesg[i].flags & H5O_FLAG_SHARED) {
-		printf("Going to decode/validate a SHARED message with id=%d\n",id); 
 	  	mesg = H5O_SHARED->decode(oh->mesg[i].raw);
 		if (mesg != NULL) {
-			printf("Done with decode/validate for a SHARED message with id=%d\n", id);
 			status = H5O_shared_read(inputfd, mesg, oh->mesg[i].type);
 			if (status != SUCCEED) {
+				H5E_push("decode_validate_messages", "Errors from H5O_shared_read()", -1);
 				H5E_print(stderr);
 				H5E_clear();
 				ret = SUCCEED;
 			}
-			printf("END H5O_SHARED_ID with id=%d.\n", id);
 			continue;
 		}
 	   } else {
-		printf("Going to decode/validate message id=%d.\n", id);
 	  	mesg = message_type_g[id]->decode(oh->mesg[i].raw);
 	    }
 
@@ -3468,7 +3374,6 @@ decode_validate_messages(FILE *inputfd, H5O_t *oh)
 	    }
 	    switch (id) {
 		case H5O_SDSPACE_ID:
-			printf("Done with decode/validate for Simple Dataspace message id=%d\n", id);
 #ifdef DEBUG
 			printf("sdim->type=%d, sdim->nelem=%d, sdim->rank=%d\n",
 				((H5S_extent_t *)mesg)->type, ((H5S_extent_t *)mesg)->nelem, 
@@ -3482,27 +3387,20 @@ decode_validate_messages(FILE *inputfd, H5O_t *oh)
                     			printf("max=%d\n", ((H5S_extent_t *)mesg)->max[j]);
 			}
 #endif
-			printf("END H5O_SDSPACE_ID=%d.\n", id);
 			break;
 		case H5O_DTYPE_ID:
-			printf("Done with decode/validate for Datatype message id=%d\n", id);
 #ifdef DEBUG
 			printf("type=%d, size=%d\n", ((H5T_t *)mesg)->shared->type, 
 				((H5T_t *)mesg)->shared->size);
 #endif
-			printf("END H5O_DTYPE_ID=%d.\n", id);
 			break;
 
 		case H5O_FILL_NEW_ID:
-			printf("Done with decode/validate for Fill Value message id=%d\n", id);
-			printf("END H5O_FILL_NEW_ID=%d.\n", id);
 			break;
     		case H5O_EFL_ID:
-			printf("Done with decode/validate for External Data Files message id=%d\n", id);
-			printf("Going to validate the local heap at efl->heap_addr=%lld\n",
-				((H5O_efl_t *)mesg)->heap_addr);
 			status = check_lheap(inputfd, shared_info, shared_info.base_addr+((H5O_efl_t *)mesg)->heap_addr, &heap_chunk);
 			if (status != SUCCEED) {
+				H5E_push("decode_validate_messages", "Failure from check_lheap()", -1);
 				H5E_print(stderr);
 				H5E_clear();
 				ret = SUCCEED;
@@ -3515,15 +3413,15 @@ decode_validate_messages(FILE *inputfd, H5O_t *oh)
 			
 				s = heap_chunk+H5HL_SIZEOF_HDR(shared_info)+((H5O_efl_t *)mesg)->slot[k].name_offset;
         			assert (s && *s);
+#ifdef DEBUG
 				printf("External name_offset:%d\n", 
 					((H5O_efl_t *)mesg)->slot[k].name_offset);
 				printf("Externalfile:%s\n", s);
+#endif
 			}
 			if (heap_chunk) free(heap_chunk);
-			printf("END H5O_EFL_ID=%d.\n", id);
 			break;
 		case H5O_LAYOUT_ID:
-			printf("Done with decode/validate for Data Storage-Layout message id=%d\n",id);
 #ifdef DEBUG
 			printf("type=%d\n", ((H5O_layout_t *)mesg)->version, ((H5O_layout_t *)mesg)->type);
 			printf("contig address=%d, ndims=%d\n", 
@@ -3537,23 +3435,20 @@ decode_validate_messages(FILE *inputfd, H5O_t *oh)
 				
 				ndims = ((H5O_layout_t *)mesg)->u.chunk.ndims;
 				btree_addr = ((H5O_layout_t *)mesg)->u.chunk.addr;
-				printf("Validating the btree at %lld for raw chunk data\n",
-					btree_addr);
 /* NEED TO CHECK ON THIS */
 				status = check_btree(inputfd, shared_info, shared_info.base_addr+btree_addr, ndims);
 			}
-			printf("END H5O_LAYOUT_ID=%d.\n", id);
 
 			break;
     		case H5O_PLINE_ID:
-			printf("Done with decode/validate for Data Store--filter pipeline message id=%d\n",id);
+#ifdef DEBUG
 			for (j=0; j<((H5O_pline_t *)mesg)->nused; j++) {
 				printf("plinename=%s;\n", ((H5O_pline_t *)mesg)->filter[j].name);
 			}
-			printf("END H5O_PLINE_ID=%d.\n", id);
+#endif
 			break;
     		case H5O_ATTR_ID:
-			printf("Done with decode/validate for Attribute message id=%d\n",id);
+#ifdef DEBUG
 			printf("Attribute dt_size=%d,ds_size=%d\n", 
 				((H5A_t *)mesg)->dt_size, ((H5A_t *)mesg)->ds_size);
 			printf("Attribute name=%s\n", ((H5A_t *)mesg)->name);
@@ -3563,6 +3458,7 @@ decode_validate_messages(FILE *inputfd, H5O_t *oh)
 				((H5A_t *)mesg)->ds->extent.type, ((H5A_t *)mesg)->ds->extent.rank, 
 				((H5A_t *)mesg)->ds->extent.nelem);
 			printf("attr->data_size=%d\n", ((H5A_t *)mesg)->data_size);
+#endif
 
 #ifdef TEMP
 			/* IT MAY NOT BE a string, maybe global heap pointer or 
@@ -3575,42 +3471,39 @@ decode_validate_messages(FILE *inputfd, H5O_t *oh)
 /* SHULD CHECK for return status */
 			check_gheap(inputfd, shared_info, shared_info.base_addr+global, NULL);
 #endif
-			printf("END H5O_ATTR_ID=%d.\n", id);
 
 			break;
 		case H5O_STAB_ID:
-			printf("Done with decode/validate for Group message id=%d\n", id);
+#ifdef DEBUG
 			printf("stab->btree_addr=%lld,stab->heap_addr=%lld\n",
 				((H5O_stab_t *)mesg)->btree_addr, ((H5O_stab_t *)mesg)->heap_addr);
+#endif
 			status = check_btree(inputfd, shared_info, shared_info.base_addr+((H5O_stab_t *)mesg)->btree_addr, 0);
 			if (status != SUCCEED) {
+				H5E_push("decode_validate_messages", "Failure from check_btree()", -1);
 				H5E_print(stderr);
 				H5E_clear();
 				ret = SUCCEED;
 			}
 			status = check_lheap(inputfd, shared_info, shared_info.base_addr+((H5O_stab_t *)mesg)->heap_addr, NULL);
 			if (status != SUCCEED) {
+				H5E_push("decode_validate_messages", "Failure from check_lheap()", -1);
 				H5E_print(stderr);
 				H5E_clear();
 				ret = SUCCEED;
 			}
-			printf("END H5O_STAB_ID=%d.\n", id);
 			break;
 		case H5O_MTIME_NEW_ID:
-			printf("Done with decode/validate for Object Modification Date & Time message id=%d\n",id);
 #ifdef DEBUG
 			mtm = localtime((time_t *)mesg);
 			printf("month=%d, mday=%d, year=%d\n", 
 				mtm->tm_mon, mtm->tm_mday, mtm->tm_year);
 #endif
-			printf("END H5O_MTIME_NEW_ID=%d.\n", id);
 			break;
 		case H5O_NAME_ID:
-			printf("Done with decode/validate for Object Comment message id=%d\n",id);
 #ifdef DEBUG
 			printf("The comment string is %s\n", ((H5O_name_t *)mesg)->s);
 #endif
-			printf("END H5O_NAME_ID=%d.\n", id);
 			break;
 		
 		default:
@@ -3667,18 +3560,18 @@ H5O_find_in_ohdr(FILE *inputfd, H5O_t *oh, const H5O_class_t **type_p, int seque
 		if (--sequence < 0)
 			break;
     	}
+#ifdef DEBBUG
 	if (sequence >= 0)
 	printf("Unable to find object header messges\n");
+#endif
 	
     	/*
      	 * Decode the message if necessary.  If the message is shared then decode
      	 * a shared message, ignoring the message type.
      	 */
     	if (oh->mesg[u].flags & H5O_FLAG_SHARED) {
-		printf("find_in_Ohdr():IN flag shared\n");
         	type = H5O_SHARED;
     	} else {
-		printf("find_in_ohdr():NOT IN flag shared\n");
         	type = oh->mesg[u].type;
 	}
 
@@ -3686,6 +3579,7 @@ H5O_find_in_ohdr(FILE *inputfd, H5O_t *oh, const H5O_class_t **type_p, int seque
         	assert(type->decode);
         	oh->mesg[u].native = (type->decode) (oh->mesg[u].raw);
         	if (NULL == oh->mesg[u].native)
+/* NEED TO CHECK ON THIS */
             		printf("unable to decode message\n");
     	}
 
@@ -3784,15 +3678,10 @@ check_obj_header(FILE *inputfd, H5F_shared_t shared_info, haddr_t obj_head_addr,
 	ret = SUCCEED;
 	idx = table_search(obj_head_addr);
 	if (idx >= 0) { /* FOUND the object */
-		printf(" THE OBJECT FOUND....nlink=%d,id=%lld\n", 
-			obj_table->objs[idx].nlink, obj_table->objs[idx].objno);
 		if (obj_table->objs[idx].nlink > 0) {
 			obj_table->objs[idx].nlink--;
-			printf("This node %lld already visited.Return.\n", 
-				obj_table->objs[idx].objno);
 			return(ret);
 		} else {
-			printf("Error in reference count\n");
 			H5E_push("check_obj_header", "Inconsistent reference count.", obj_head_addr);
 			ret++;  /* SHOULD I return??? */
 			return(ret);
@@ -3801,7 +3690,7 @@ check_obj_header(FILE *inputfd, H5F_shared_t shared_info, haddr_t obj_head_addr,
     	hdr_size = H5O_SIZEOF_HDR(shared_info);
     	assert(hdr_size<=sizeof(buf));
 
-	printf("Validating the object header at %lld...\n", obj_head_addr);
+	printf("VALIDATING the object header at %lld...\n", obj_head_addr);
 
 #ifdef DEBUG
 	printf("obj_head_addr=%d, hdr_size=%d\n", 
@@ -3835,8 +3724,6 @@ check_obj_header(FILE *inputfd, H5F_shared_t shared_info, haddr_t obj_head_addr,
 	}
 
 	UINT32DECODE(p, oh->nlink);
-	printf("Going to insert obj_table:link count=%d,obj_head_addr=%lld\n", 
-		oh->nlink, obj_head_addr);
 
 	table_insert(obj_head_addr, oh->nlink-1);
 	
@@ -3900,7 +3787,6 @@ check_obj_header(FILE *inputfd, H5F_shared_t shared_info, haddr_t obj_head_addr,
 
             		/* Skip header messages we don't know about */
             		if (id >= NELMTS(message_type_g) || NULL == message_type_g[id]) {
-				printf("Unknown header message id=%d\n", id);
                 		continue;
 			}
 			 /* new message */
@@ -3923,7 +3809,6 @@ check_obj_header(FILE *inputfd, H5F_shared_t shared_info, haddr_t obj_head_addr,
         	/* decode next object header continuation message */
         	for (chunk_addr = HADDR_UNDEF; !H5F_addr_defined(chunk_addr) && curmesg < oh->nmesgs; ++curmesg) {
             		if (oh->mesg[curmesg].type->id == H5O_CONT_ID) {
-				printf("PROCESSING a continuation message id\n");
                 		cont = (H5O_CONT->decode) (shared_info.base_addr+oh->mesg[curmesg].raw);
 				if (cont == NULL) {
 					H5E_push("check_obj_header", "Corrupt continuation message...skipped.", 
@@ -3940,20 +3825,15 @@ check_obj_header(FILE *inputfd, H5F_shared_t shared_info, haddr_t obj_head_addr,
 	}  /* end while */
 
 	if (search) {
-		printf("Searching for the message in a shared message\n");
 		idx = H5O_find_in_ohdr(inputfd, oh, &type, 0);
-		printf("after H5O_find_in_ohdr() idx=%d\n",idx);
 		if (oh->mesg[idx].flags & H5O_FLAG_SHARED) {
 			H5O_shared_t *shared;
 			void	*ret_value;
 
-			printf("The pointed-to message is another shared message\n");
         		shared = (H5O_shared_t *)(oh->mesg[idx].native);
         		status = H5O_shared_read(inputfd, shared, type);
 		}
 	} else {
-		printf("Validating the messages (nmesgs=%d) found in object header at address %d\n",
-		oh->nmesgs, obj_head_addr);
 		status = decode_validate_messages(inputfd, oh);
 	}
 	if (status != SUCCEED)
@@ -3994,14 +3874,17 @@ int main(int argc, char **argv)
 
 	ret = check_superblock(inputfd, &shared_info);
 	if (ret != SUCCEED) {
+		H5E_push("Main", "Errors from check_superblock(). Validation stopped.", -1);
 		H5E_print(stderr);
 		H5E_clear();
-		ret = SUCCEED;
+		fclose(inputfd);
+		exit(1);
 	}
+
 
 	ret = table_init(&obj_table);
 	if (ret != SUCCEED) {
-		H5E_push("Main", "Hard link cannot be handled.", -1);
+		H5E_push("Main", "Errors from table_init().", -1);
 		H5E_print(stderr);
 		H5E_clear();
 		ret = SUCCEED;
@@ -4009,6 +3892,7 @@ int main(int argc, char **argv)
 
 	ret = check_obj_header(inputfd, shared_info, shared_info.base_addr+shared_info.root_grp->header, 0, NULL);
 	if (ret != SUCCEED) {
+		H5E_push("Main", "Errors from check_obj_header().", -1);
 		H5E_print(stderr);
 		H5E_clear();
 		ret = SUCCEED;
