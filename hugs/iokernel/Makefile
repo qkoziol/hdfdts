@@ -1,39 +1,12 @@
-# Makefile to build the IO speed measurement tool.
+# Makefile to build the HUGS IO Kernel benchmark.
 
-CC=icc -g
+# edit this with where your HDF5 library is.
+H5HOME=/scratch/users/acheng/HDF5/vdev/co/hdf5
 
-# Uncomment these if you want to use FFIO.
-#FFIO_CPPFLAGS=-DFFIO_MACHINE
-#FFIO_LIBS=-lffio -lrt
-
-# Uncomment these if you want to use gcc.
-#CC=gcc
-
-# If errors, such as integer overflow, occur for file size larger than 2GB,
-# you may want to uncomment the GCC_CPPFLAGS here.
-#GCC_CPPFLAGS=-D_LARGEFILE_SOURCE -D_LARGEFILE64_SOURCE -D_FILE_OFFSET_BITS=64
-
-/* need _XOPEN_SOURCE=600 to include the definition of posix_memalign().*/
-CPPFLAGS=-D_XOPEN_SOURCE=600 $(FFIO_CPPFLAGS) $(GCC_CPPFLAGS)
-CFLAGS=-DNDEBUG $(CPPFLAGS)
-
-INCLUDES= \
-	-I/u/ncsa/ymuqun/hugs/hdf5-2006-10-12/hdf5/include \
-	-I/u/ncsa/ymuqun/szipbin/include \
-
-LIBDIRS= \
-	-L/u/ncsa/ymuqun/hugs/hdf5-2006-10-12/hdf5/lib \
-	-L/u/ncsa/ymuqun/szipbin/lib \
-        -L/usr/lib
-
-LIBS= \
-	-lhdf5 \
-	-lsz \
-	-lz
-
+CC=$(H5HOME)/bin/h5cc
 
 iokernel: iokernel.c
-	$(CC) $(CFLAGS) $(INCLUDES) iokernel.c $(LIBDIRS) $(LIBS) -o $@
+	$(CC) iokernel.c -o $@
 
 clean:
-	rm -f iokernel *~
+	rm -f iokernel
