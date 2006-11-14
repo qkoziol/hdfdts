@@ -9,4 +9,4 @@ iokernel: iokernel.c
 	$(CC) iokernel.c -o $@
 
 clean:
-	rm -f iokernel
+	rm -f iokernel *.o
