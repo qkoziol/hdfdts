@@ -13,8 +13,6 @@
 #pragma warning(disable : 810)
 #pragma warning(disable : 981)
 
-/* need _XOPEN_SOURCE=600 to include the definition of posix_memalign().*/
-#define _XOPEN_SOURCE 600
 #include <sys/time.h>
 #include <time.h>
 #include <stdlib.h>
@@ -25,6 +23,8 @@
 #include <stdarg.h>
 #include <hdf5.h>
 #include "iokernel.h"
+
+#define _XOPEN_SOURCE 600
 
 void usage();
 static hid_t
@@ -279,9 +279,9 @@ int main(int argc, char **argv) {
 	int i, j, k,iclean;
 	int num_iter;
 	int page_size;
-	char vfd[4];
-	char meta_option[4];
-	short multi_meta;
+    char vfd[4];
+    char meta_option[4];
+    short multi_meta;
 	
 	/* Variables to read simulation file */
 	FILE *simFP;
@@ -311,9 +311,9 @@ int main(int argc, char **argv) {
 	hid_t meta256_type_id, meta2048_type_id;
 	hid_t metacom_type_id,str_256_id,str_2048_id;
 	unsigned int frame_count[MAXSTREAMS];
-	unsigned long long rawData_xfer[MAXSTREAMS], total_rawData_xfer=0;
-	unsigned long metadata_xfer[MAXSTREAMS];
-	unsigned long long total_xfer=0;
+    unsigned long long rawData_xfer[MAXSTREAMS], total_rawData_xfer=0;
+    unsigned long metadata_xfer[MAXSTREAMS];
+    unsigned long long total_xfer=0;
 	
     
 	/*timing variables */
@@ -328,20 +328,19 @@ int main(int argc, char **argv) {
 	if(argc!=7){
 		usage();
 		return 0;
-	}
-	    
-	strcpy(vfd, argv[5]);
-	strcpy(meta_option, argv[6]);       
-	    
-	if ( atol(argv[2])<=0 || atol(argv[3])<=0 || atol(argv[4])<=0 ||
-	    (strcmp(vfd,"s") && strcmp(vfd,"d")) || (strcmp(meta_option,"m") &&
-	    strcmp(meta_option,"c"))){
-		usage();
-		return 0;
-	}
+    }
+	
+    strcpy(vfd, argv[5]);
+    strcpy(meta_option, argv[6]);       
+	
+    if ( atol(argv[2])<=0 || atol(argv[3])<=0 || atol(argv[4])<=0
+		 || (strcmp(vfd,"s") && strcmp(vfd,"d")) || (strcmp(meta_option,"m") && strcmp(meta_option,"c"))){
+ 		usage();
+        return 0;
+    }
 	
 	/* Sets option to use multiple or compound */
-	multi_meta = (!strcmp(meta_option, "m"))?1:0;
+    multi_meta = (!strcmp(meta_option, "m"))?1:0;
 	
 	sprintf(hdf5_name, "%s", argv[1]); 
 	num_iter      = atol(argv[2]);
@@ -440,7 +439,7 @@ int main(int argc, char **argv) {
 		
 		/* If the sim file contains more lines than streams, time to stop reading the file */
 		i++;
-		if (i >= MAXSTREAMS - 1) {
+		if (i >= MAXSTREAMS + 1) {
 			
 			fprintf(stderr, "Sim input file too long, read first %d lines\n", i);
 			break;
@@ -1135,13 +1134,16 @@ int main(int argc, char **argv) {
 }
 
 void usage() {
-	printf("USAGE: iokernel <filename> <iteration> <rawsize> <metasize> <vfd> <metastruct>\n");
-	printf("\t<filename> is the HDF5 file name. \n");
-	printf("\t<iteration> is number of iterations.\n");
-	printf("\t<rawsize> is the raw data memory size in MB.\n");
-	printf("\t<metasize> is the metadata memory size in MB.\n");
-	printf("\t<vfd> selects the VFD to be used: (s)ec2, (d)irect I/O.\n");
-	printf("\t<metastruct> selects metadata structure: (m)ulti, (c)ompound.\n");
+	
+	printf("\n USAGE: \n\n");
+	printf("The first argument is the HDF5 file name. \n");
+	printf("The second argument is number of iteration.\n");
+	printf("The third argument is the raw data memory size in MB.\n");
+	printf("The fourth argument is the metadata memory size in MB. \n");
+	printf("The fifth argument selects the VFD to be used: (s)ec2, (d)irect I/O.\n");
+	printf("The sixth argument selects metadata structure: (m)ulti, (c)ompound.\n");
+	
+	
 }
 
 /*-------------------------------------------------------------------------
