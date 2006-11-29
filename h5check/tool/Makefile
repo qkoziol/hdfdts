@@ -4,3 +4,6 @@ h5check: h5checker.o h5error.o
 h5checker.o: h5checker.c h5_check.h
 
 h5error.o: h5error.c h5_error.h
+
+clean:
+	rm -f *.o h5check
