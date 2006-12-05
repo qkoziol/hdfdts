@@ -46,8 +46,8 @@ if [ -n "$DEBUGMODE" ]; then
     TOWHOM_PASSED=acheng
     TOWHOM_FAILED=acheng
 else
-    TOWHOM_PASSED="hdf5cvs@ncsa.uiuc.edu hdf5svn@ncsa.uiuc.edu"
-    TOWHOM_FAILED=hdf5lib@ncsa.uiuc.edu
+    TOWHOM_PASSED="hdf5cvs@hdfgroup.org hdf5svn@hdfgroup.org"
+    TOWHOM_FAILED=hdf5lib@hdfgroup.org
 fi
 
 # Setup test directories
@@ -107,7 +107,7 @@ if [ $HOSTNAME != gondolin ]; then
 
     echo cleaning $LOGDIR/OLDER by removing all files older than $nolder days.
     cd OLDER
-    find . -type f -mtime +$nolder -exec rm '{}' \;
+    find . -type f -mtime +$nolder -exec rm -f '{}' \;
 )
 fi
 
@@ -140,8 +140,8 @@ else
 fi
 
 # Make sure daily test has an mpich2 daemon running in echo of the following hosts.
-for h in heping colonelk; do
-    rsh $h -n /usr/sdt/bin/mpich2/mpd  --daemon
+for h in heping.hdfgroup.uiuc.edu colonelk.hdfgroup.uiuc.edu; do
+    ssh $h -n /usr/sdt/bin/mpich2/mpd  --daemon
 done
 
 if [ $HOSTNAME != gondolin ]; then

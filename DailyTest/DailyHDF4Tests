@@ -46,8 +46,8 @@ if [ -n "$DEBUGMODE" ]; then
     TOWHOM_PASSED=acheng
     TOWHOM_FAILED=acheng
 else
-    TOWHOM_PASSED="hdf-cvs@ncsa.uiuc.edu hdf5svn@ncsa.uiuc.edu"
-    TOWHOM_FAILED=hdf4lib@ncsa.uiuc.edu
+    TOWHOM_PASSED="hdf-cvs@hdfgroup.org hdf5svn@hdfgroup.org"
+    TOWHOM_FAILED=hdf4lib@hdfgroup.org
 fi
 
 # Setup test directories
@@ -106,7 +106,7 @@ if [ $HOSTNAME != gondolin ]; then
 
     echo cleaning $LOGDIR/OLDER by removing all files older than $nolder days.
     cd OLDER
-    find . -type f -mtime +$nolder -exec rm '{}' \;
+    find . -type f -mtime +$nolder -exec rm -f '{}' \;
 )
 fi
 
