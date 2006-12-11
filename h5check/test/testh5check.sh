@@ -52,8 +52,11 @@ TOOLPASS() {
 	nerrors="`expr $nerrors + 1`"
 	if [ yes = "$verbose" ]; then
 	    echo "test returned with exit code $exitcode"
+	    echo "test error output:"
+	    cat $tmperr
+	    echo "***end of test error output***"
 	    echo "test output: (up to $NLINES lines)"
-	    head -$NLINES $actual
+	    head -$NLINES $tmpout
 	    echo "***end of test output***"
 	    echo ""
 	fi
@@ -179,59 +182,39 @@ TOOLMATCH() {
 # test the help syntax
 
 TOOLPASS basic_types.h5
-exit 0
-TOOLTEST help-1.ls -w80 -h
-TOOLTEST help-2.ls -w80 -help
-TOOLTEST help-3.ls -w80 -?
-
-# test simple command
-TOOLTEST tall-1.ls -w80 tall.h5
-TOOLTEST tall-2.ls -w80 -r -d tall.h5
-TOOLTEST tgroup.ls -w80 tgroup.h5
-
-# test for displaying groups
-TOOLTEST tgroup-1.ls -w80 -r -g tgroup.h5
-
-# test for displaying simple space datasets
-TOOLTEST tdset-1.ls -w80 -r -d tdset.h5
-
-# test for displaying soft links
-TOOLTEST tslink-1.ls -w80 -r tslink.h5
-
-# tests for hard links
-TOOLTEST thlink-1.ls -w80 thlink.h5
-
-# tests for compound data types
-TOOLTEST tcomp-1.ls -w80 -r -d tcompound.h5
-
-#test for the nested compound type
-TOOLTEST tnestcomp-1.ls -w80 -r -d tnestedcomp.h5
-
-# test for loop detection
-TOOLTEST tloop-1.ls -w80 -r -d tloop.h5
-
-# test for string 
-TOOLTEST tstr-1.ls -w80 -r -d tstr.h5
-
-# test test file created from lib SAF team
-TOOLTEST tsaf.ls -w80 -r -d tsaf.h5
-
-# test for variable length data types
-TOOLTEST tvldtypes1.ls -w80 -r -d tvldtypes1.h5
-
-# test for array data types
-TOOLTEST tarray1.ls -w80 -r -d tarray1.h5
-
-# test for empty data
-TOOLTEST tempty.ls -w80 -d tempty.h5
-
-# test for all dataset types written to attributes
-# enable -S for avoiding printing NATIVE types
-TOOLTEST tattr2.ls -w80 -v -S tattr2.h5
-
-# tests for error handling.
-# test for non-existing file
-TOOLTEST nosuchfile.ls nosuchfile.h5
+TOOLPASS alternate_sb.h5
+TOOLPASS array.h5
+TOOLPASS attr.h5
+TOOLPASS basic_types.h5
+TOOLPASS compound.h5
+TOOLPASS cyclical.h5
+TOOLPASS enum.h5
+TOOLPASS external_empty.h5
+TOOLPASS external_full.h5
+TOOLPASS family00000.h5
+TOOLPASS family00001.h5
+TOOLPASS family00002.h5
+TOOLPASS filters.h5
+TOOLPASS group_dsets.h5
+TOOLPASS hierarchical.h5
+TOOLPASS linear.h5
+TOOLPASS log.h5
+TOOLPASS multi-b.h5
+TOOLPASS multi-g.h5
+TOOLPASS multi-l.h5
+TOOLPASS multi-o.h5
+TOOLPASS multipath.h5
+TOOLPASS multi-r.h5
+TOOLPASS multi-s.h5
+TOOLPASS rank_dsets_empty.h5
+TOOLPASS rank_dsets_full.h5
+TOOLPASS refer.h5
+TOOLPASS root.h5
+TOOLPASS split-m.h5
+TOOLPASS split-r.h5
+TOOLPASS stdio.h5
+TOOLPASS time.h5
+TOOLPASS vl.h5
 
 if test $nerrors -eq 0 ; then
 	echo "All $TOOL tests passed."
