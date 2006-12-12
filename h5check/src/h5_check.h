@@ -1,8 +1,9 @@
 /* need to take care of haddr_t and HADDR_UNDEF */
 /* see H5public.h for definition of haddr_t, H5pubconf.h */
 typedef	unsigned long long		haddr_t;
-
 #define	HADDR_UNDEF		((haddr_t)(-1))
+#define HADDR_MAX            (HADDR_UNDEF-1)
+
 
 /* need to take care of haddr_t and HADDR_UNDEF */
 /* see H5public.h for definition of hsize_t, H5pubconf.h */
@@ -16,6 +17,9 @@ typedef size_t                  hsize_t;
 #define H5F_SUPERBLOCK_SIZE  256
 #define H5F_DRVINFOBLOCK_SIZE  1024
 
+
+#define SEC2_DRIVER	1
+#define MULTI_DRIVER	2
 
 
 
@@ -197,6 +201,15 @@ typedef struct H5G_node_t {
     H5G_entry_t *entry;                 /*array of symbol table entries      */
 } H5G_node_t;
 
+/* copied from H5FDpublic.h */
+/* Forward declaration */
+typedef struct H5FD_t H5FD_t;
+
+
+typedef struct H5FD_class_t H5FD_class_t;
+
+typedef struct H5FD_multi_fapl_t	H5FD_multi_fapl_t;
+
 
 /* copied and modified from "typedef struct H5F_file_t" of H5Fpkg.h */
 /* NEED TO DETERMINE what info to be included on there */
@@ -217,6 +230,8 @@ typedef struct 	H5F_shared_t {
         haddr_t         stored_eoa;         /* end of file address */
         haddr_t         driver_addr;        /* file driver information block address*/
 	H5G_entry_t 	*root_grp;	    /* ?? */
+	int		driverid;	    /* the driver id to be used */
+	void		*fa;	    	    /* driver specific info */
 } H5F_shared_t;
 
 
@@ -1130,4 +1145,174 @@ typedef struct table_t {
     obj_t	*objs;
 } table_t;
 
+
+/*
+ *  Virtual file layer
+ */
+
+                    
+/* copied and modified from H5FDpublic.h */
+/* Class information for each file driver */
+struct H5FD_class_t { 
+    const char *name;
+    herr_t  (*sb_decode)(H5F_shared_t *_shared_info, const unsigned char *p);
+    H5FD_t *(*open)(const char *name, int driver_id);
+    herr_t  (*close)(H5FD_t *file);
+    haddr_t (*get_eoa)(H5FD_t *file);
+    herr_t  (*set_eoa)(H5FD_t *file, haddr_t addr);
+    herr_t  (*read)(H5FD_t *file, haddr_t addr, size_t size, void *buffer); 
+};
+
+
+
+/* copied and modified from H5FDpublic.h */
+/*
+ * The main datatype for each driver. Public fields common to all drivers
+ * are declared here and the driver appends private fields in memory.
+ */
+struct H5FD_t {
+    int			driver_id;      /*driver ID for this file   */
+    const H5FD_class_t *cls;            /*constant class info       */
+#if 0
+    unsigned long       fileno[2];      /* File serial number       */
+    unsigned long       feature_flags;  /* VFL Driver feature Flags */
+    hsize_t             threshold;      /* Threshold for alignment  */
+    hsize_t             alignment;      /* Allocation alignment     */
+    hsize_t             reserved_alloc; /* Space reserved for later alloc calls */
+
+    /* Metadata aggregation fields */
+    hsize_t             def_meta_block_size;  /* Metadata allocation
+                                               * block size (if
+                                               * aggregating metadata) */
+    hsize_t             cur_meta_block_size;  /* Current size of metadata
+                                               * allocation region left */
+    haddr_t             eoma;                 /* End of metadata
+                                               * allocated region */
+
+    /* "Small data" aggregation fields */
+    hsize_t             def_sdata_block_size;   /* "Small data"
+                                                 * allocation block size
+                                                 * (if aggregating "small
+                                                 * data") */
+    hsize_t             cur_sdata_block_size;   /* Current size of "small
+                                                 * data" allocation
+                                                 * region left */
+    haddr_t             eosda;                  /* End of "small data"
+                                                 * allocated region */
+
+    /* Metadata accumulator fields */
+    unsigned char      *meta_accum;     /* Buffer to hold the accumulated metadata */
+    haddr_t             accum_loc;      /* File location (offset) of the
+                                         * accumulated metadata */
+    size_t              accum_size;     /* Size of the accumulated
+                                         * metadata buffer used (in
+                                         * bytes) */
+    size_t              accum_buf_size; /* Size of the accumulated
+                                         * metadata buffer allocated (in
+                                         * bytes) */
+    unsigned            accum_dirty;    /* Flag to indicate that the
+                                         * accumulated metadata is dirty */
+    haddr_t             maxaddr;        /* For this file, overrides class */
+    H5FD_free_t        *fl[H5FD_MEM_NTYPES]; /* Freelist per allocation type */
+    hsize_t             maxsize;        /* Largest object on FL, or zero */
+#endif
+};
+
+/* copied and modified from H5FDsec2.c */
+typedef struct H5FD_sec2_t {
+    H5FD_t      pub;                    /*public stuff, must be first   */
+    int         fd;                     /*the unix file                 */
+    haddr_t     eoa;                    /*end of allocated region       */
+    haddr_t     eof;                    /*end of file; current file size*/
+    haddr_t     pos;                    /*current file I/O position     */
+    int         op;                     /*last operation                */
+#ifndef WIN32
+    /*
+     * On most systems the combination of device and i-node number uniquely
+     * identify a file.
+     */
+    dev_t       device;                 /*file device number            */
+    ino_t       inode;                  /*file i-node number            */
+#else
+    /*
+     * On WIN32 the low-order word of a unique identifier associated with the
+     * file and the volume serial number uniquely identify a file. This number
+     * (which, both? -rpm) may change when the system is restarted or when the
+     * file is opened. After a process opens a file, the identifier is
+     * constant until the file is closed. An application can use this
+     * identifier and the volume serial number to determine whether two
+     * handles refer to the same file.
+     */
+    DWORD fileindexlo;
+    DWORD fileindexhi;
+#endif
+} H5FD_sec2_t;
+
+
+/* copied and modified from H5FDfamily.c */
+/* The description of a file belonging to this driver. */
+typedef struct H5FD_family_t {
+    H5FD_t      pub;            /*public stuff, must be first           */
+#if 0
+    hid_t       memb_fapl_id;   /*file access property list for members */
+#endif
+    hsize_t     memb_size;      /*maximum size of each member file      */
+    unsigned    nmembs;         /*number of family members              */
+    unsigned    amembs;         /*number of member slots allocated      */
+    H5FD_t      **memb;         /*dynamic array of member pointers      */
+    haddr_t     eoa;            /*end of allocated addresses            */
+    char        *name;          /*name generator printf format          */
+    unsigned    flags;          /*flags for opening additional members  */
+} H5FD_family_t;
+
+
+/* copied from H5FDpublic.h */
+/*
+ * Types of allocation requests. The values larger than H5FD_MEM_DEFAULT
+ * should not change other than adding new types to the end. These numbers
+ * might appear in files.
+ */
+typedef enum H5FD_mem_t {
+    H5FD_MEM_NOLIST     = -1,                   /*must be negative*/
+    H5FD_MEM_DEFAULT    = 0,                    /*must be zero*/
+    H5FD_MEM_SUPER      = 1,
+    H5FD_MEM_BTREE      = 2,
+    H5FD_MEM_DRAW       = 3,
+    H5FD_MEM_GHEAP      = 4,
+    H5FD_MEM_LHEAP      = 5,
+    H5FD_MEM_OHDR       = 6,
+
+    H5FD_MEM_NTYPES                             /*must be last*/
+} H5FD_mem_t;
+
+
+/* copied and modified from H5FDmulti.c */
+/* Driver-specific file access properties */
+struct H5FD_multi_fapl_t {
+    H5FD_mem_t  memb_map[H5FD_MEM_NTYPES]; /*memory usage map           */
+#if 0
+    hid_t       memb_fapl[H5FD_MEM_NTYPES];/*member access properties   */
+#endif
+    char        *memb_name[H5FD_MEM_NTYPES];/*name generators           */
+    haddr_t     memb_addr[H5FD_MEM_NTYPES];/*starting addr per member   */
+    hbool_t     relax;                  /*less stringent error checking */
+};
+
+
+/* copied and modified from H5FDmulti.c */
+/*
+ * The description of a file belonging to this driver. The file access
+ * properties and member names do not have to be copied into this struct
+ * since they will be held open by the file access property list which is
+ * copied into the parent file struct in H5F_open().
+ */
+typedef struct H5FD_multi_t {
+    H5FD_t      pub;            /*public stuff, must be first           */
+    H5FD_multi_fapl_t fa;       /*driver-specific file access properties*/
+    haddr_t     memb_next[H5FD_MEM_NTYPES];/*addr of next member        */
+    H5FD_t      *memb[H5FD_MEM_NTYPES]; /*member pointers               */
+    haddr_t     eoa;            /*end of allocated addresses            */
+    unsigned    flags;          /*file open flags saved for debugging   */
+    char        *name;          /*name passed to H5Fopen or H5Fcreate   */
+}H5FD_multi_t;
 
