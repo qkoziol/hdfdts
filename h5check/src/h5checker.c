@@ -284,11 +284,10 @@ static const H5B_class_t *const node_key_g[] = {
 
 
 /* copied and modified from H5FDsec2.c */
-static haddr_t H5FD_sec2_get_eoa(H5FD_t *_file);
-static herr_t H5FD_sec2_set_eoa(H5FD_t *_file, haddr_t addr);
 static H5FD_t *H5FD_sec2_open(const char *name, int driver_id);
 static herr_t H5FD_sec2_read(H5FD_t *_file, haddr_t addr, size_t size, void *buf/*out*/);
 static herr_t H5FD_sec2_close(H5FD_t *_file);
+static haddr_t H5FD_sec2_get_eof(H5FD_t *_file);
 
 /* copied and modified from H5FDsec2.c */
 static const H5FD_class_t H5FD_sec2_g = {
@@ -313,11 +312,11 @@ static const H5FD_class_t H5FD_sec2_g = {
     NULL,                                       /*sb_decode             */
     H5FD_sec2_open,                             /*open                  */
     H5FD_sec2_close,                            /*close                 */
+    H5FD_sec2_read,                             /*read                  */
+    H5FD_sec2_get_eof,                          /*get_eof               */
+#if 0
     H5FD_sec2_get_eoa,                          /*get_eoa               */
     H5FD_sec2_set_eoa,                          /*set_eoa               */
-    H5FD_sec2_read,                             /*read                  */
-#if 0
-    H5FD_sec2_get_eof,                          /*get_eof               */
     H5FD_sec2_get_handle,                       /*get_handle            */
     H5FD_sec2_read,                             /*read                  */
     H5FD_sec2_write,                            /*write                 */
@@ -330,10 +329,9 @@ static const H5FD_class_t H5FD_sec2_g = {
 
 /* copied and modified from H5FDfamily.c */
 static herr_t H5FD_family_read(H5FD_t *_file, haddr_t addr, size_t size, void *buf/*out*/);
-static haddr_t H5FD_family_get_eoa(H5FD_t *_file);
-static herr_t H5FD_family_set_eoa(H5FD_t *_file, haddr_t addr);
 static H5FD_t *H5FD_family_open(const char *name, int driver_id);
 static herr_t H5FD_family_close(H5FD_t *_file);
+static haddr_t H5FD_family_get_eof(H5FD_t *_file);
 
 
 /* copied and modified from H5FDfamily.c */
@@ -362,10 +360,11 @@ static const H5FD_class_t H5FD_family_g = {
     NULL,                                       /*sb_decode             */
     H5FD_family_open,                           /*open                  */
     H5FD_family_close,                          /*close                 */
+    H5FD_family_read,                           /*read                  */
+    H5FD_family_get_eof,                        /*get_eof               */
+#if 0
     H5FD_family_get_eoa,                        /*get_eoa               */
     H5FD_family_set_eoa,                        /*set_eoa               */
-    H5FD_family_read,                           /*read                  */
-#if 0
     H5FD_family_get_eof,                        /*get_eof               */
     H5FD_family_get_handle,                     /*get_handle            */
     H5FD_family_read,                           /*read                  */
@@ -382,9 +381,9 @@ static const H5FD_class_t H5FD_family_g = {
 static herr_t H5FD_multi_sb_decode(H5F_shared_t *_shared_info, const unsigned char *buf);
 static H5FD_t *H5FD_multi_open(const char *name, int driver_id);
 static herr_t H5FD_multi_close(H5FD_t *_file);
-static haddr_t H5FD_multi_get_eoa(H5FD_t *_file);
-static herr_t H5FD_multi_set_eoa(H5FD_t *_file, haddr_t eoa);
 static herr_t H5FD_multi_read(H5FD_t *_file, haddr_t addr, size_t size, void *_buf/*out*/);
+static haddr_t H5FD_multi_get_eof(H5FD_t *_file);
+
 
 /* copied from H5FDmulti.c */
 static int compute_next(H5FD_multi_t *file);
@@ -414,11 +413,11 @@ static const H5FD_class_t H5FD_multi_g = {
     H5FD_multi_sb_decode,                       /*sb_decode             */
     H5FD_multi_open,                            /*open                  */
     H5FD_multi_close,                           /*close                 */
+    H5FD_multi_read,                            /*read                  */
+    H5FD_multi_get_eof,                         /*get_eof               */
+#if 0
     H5FD_multi_get_eoa,                         /*get_eoa               */
     H5FD_multi_set_eoa,                         /*set_eoa               */
-    H5FD_multi_read,                            /*read                  */
-#if 0
-    H5FD_multi_get_eof,                         /*get_eof               */
     H5FD_multi_get_handle,                      /*get_handle            */
     H5FD_multi_write,                           /*write                 */
     H5FD_multi_flush,                           /*flush                 */
@@ -2596,9 +2595,7 @@ set_driver(int *driverid, char *driver_name)
 {
 	if (strcmp(driver_name, "NCSAmult") == 0)  {
 		*driverid = MULTI_DRIVER;
-#ifdef DEBUG
 		printf("The driver to be used is MULTI\n");
-#endif
 	} else {
 		/* default driver */
 		*driverid = SEC2_DRIVER;
@@ -2674,9 +2671,6 @@ H5FD_open(const char *name, int driver_id)
 	H5FD_class_t 	*driver;
 
 /* probably check for callbck functions exists here too or in set_driver */
-#if 0
-	printf("FD_open() the file name=%s\n", name);
-#endif
 	driver = get_driver(driver_id);
 	file = driver->open(name, driver_id);
 	if (file != NULL) {
@@ -2707,16 +2701,40 @@ H5FD_read(H5FD_t *_file, haddr_t addr, size_t size, void *buf/*out*/)
 	return(ret);
 }
 
+haddr_t
+H5FD_get_eof(H5FD_t *file)
+{
+    	haddr_t     ret_value;
+
+    	assert(file && file->cls);
+
+    	if (file->cls->get_eof)
+		ret_value = file->cls->get_eof(file);
+	return(ret_value);
+#if 0
+    /* Dispatch to driver */
+    if (file->cls->get_eof) {
+        if (HADDR_UNDEF==(ret_value=(file->cls->get_eof)(file)))
+            printf("driver get_eof request failed");
+    } else {
+        ret_value = file->maxaddr;
+    }
+#endif
+}
+
+
 
 /*
  *  sec2 driver
  */
+/* copied and modified from H5FDsec2.c */
 static H5FD_t *
 H5FD_sec2_open(const char *name, int driver_id)
 {
 	H5FD_sec2_t	*file = NULL;
 	H5FD_t		*ret_value;
 	int		fd = -1;
+	struct stat	sb;
 
 	/* do unix open here */
 	fd = open(name, O_RDONLY);
@@ -2724,11 +2742,25 @@ H5FD_sec2_open(const char *name, int driver_id)
 		H5E_push("H5FD_sec2_open", "Unable to open the file.", -1);
 		goto done;
 	}
+	if (fstat(fd, &sb)<0) {
+		H5E_push("H5FD_sec2_open", "Unable to fstat file.", -1);
+		goto done;
+	}
 	file = calloc(1, sizeof(H5FD_sec2_t));
 	file->fd = fd;
+	file->eof = sb.st_size;
 done:
 	ret_value = (H5FD_t *)file;
 	return(ret_value);
+}
+
+static haddr_t
+H5FD_sec2_get_eof(H5FD_t *_file)
+{
+    H5FD_sec2_t *file = (H5FD_sec2_t*)_file;
+ 
+    return(file->eof);
+
 }
 
 static herr_t
@@ -2756,20 +2788,10 @@ H5FD_sec2_read(H5FD_t *_file, haddr_t addr, size_t size, void *buf/*out*/)
 }
 
 
-
-static herr_t
-H5FD_sec2_set_eoa(H5FD_t *_file, haddr_t addr)
-{
-}
-
-static haddr_t 
-H5FD_sec2_get_eoa(H5FD_t *_file)
-{
-}
-
 /*
  *  MULTI driver
  */
+/* copied and modified from H5FDmulti.c */
 
 /* Loop through all mapped files */
 #define UNIQUE_MEMBERS(MAP,LOOPVAR) {                                         \
@@ -2808,29 +2830,6 @@ set_multi_driver_properties(H5FD_multi_fapl_t **fa, H5FD_mem_t map[], const char
         } END_MEMBERS;
 }
 
-/* copied and modified from H5FDmulti.c */
-/*-------------------------------------------------------------------------
- * Function:    H5FD_multi_sb_decode
- *
- * Purpose:     Decodes the superblock information for this driver. The NAME
- *              argument is the eight-character (plus null termination) name
- *              stored in the file.
- *
- *              The FILE argument is updated according to the information in
- *              the superblock. This may mean that some member files are
- *              closed and others are opened.
- *
- * Return:      Success:        0
- *
- *              Failure:        -1
- *
- * Programmer:  Robb Matzke
- *              Monday, August 16, 1999
- *
- * Modifications:
- *
- *-------------------------------------------------------------------------
- */
 static herr_t
 H5FD_multi_sb_decode(H5F_shared_t * _shared_info, const unsigned char *buf)
 {
@@ -2892,23 +2891,6 @@ H5FD_multi_sb_decode(H5F_shared_t * _shared_info, const unsigned char *buf)
     	return 0;
 }
 
-/*-------------------------------------------------------------------------
- * Function:    H5FD_multi_open
- *
- * Purpose:     Creates and/or opens a multi HDF5 file.
- *
- * Return:      Success:        A pointer to a new file data structure. The
- *                              public fields will be initialized by the
- *                              caller, which is always H5FD_open().
- *
- *              Failure:        NULL
- *
- *              Wednesday, August  4, 1999
- *
- * Modifications:
- *
- *-------------------------------------------------------------------------
- */
 static H5FD_t *
 H5FD_multi_open(const char *name, int driver_id)
 {
@@ -2961,7 +2943,7 @@ H5FD_multi_open(const char *name, int driver_id)
 
 /* NEED To checkon this also, make shared_info to be _shared_info for pointer */
 /* need to check on return values for driver routines */
-/* error check at the end of each drier routine, also, free malloc space */
+/* error check at the end of each driver routine, also, free malloc space */
 #if 0
     if (H5FD_MEM_DEFAULT==(m=file->fa.memb_map[H5FD_MEM_SUPER]))
         m = H5FD_MEM_SUPER;
@@ -2985,25 +2967,6 @@ error:
     	return NULL;
 }
 
-/* copied and modified from H5FDmulti.c */
-/*-------------------------------------------------------------------------
- * Function:    H5FD_multi_close
- *
- * Purpose:     Closes a multi file.
- *
- * Return:      Success:        Non-negative
- *
- *              Failure:        Negative with as many members closed as
- *                              possible. The only subsequent operation
- *                              permitted on the file is a close operation.
- *
- * Programmer:  Robb Matzke
- *              Wednesday, August  4, 1999
- *
- * Modifications:
- *
- *-------------------------------------------------------------------------
- */
 static herr_t 
 H5FD_multi_close(H5FD_t *_file)
 {
@@ -3036,23 +2999,6 @@ H5FD_multi_close(H5FD_t *_file)
     	return 0;
 }
 
-/*-------------------------------------------------------------------------
- * Function:    compute_next
- *
- * Purpose:     Compute the memb_next[] values of the file based on the
- *              file's member map and the member starting addresses.
- *
- * Return:      Success:        0
- *
- *              Failure:        -1
- *
- * Programmer:  Robb Matzke
- *              Monday, August 23, 1999
- *
- * Modifications:
- *
- *-------------------------------------------------------------------------
- */
 static int
 compute_next(H5FD_multi_t *file)
 {
@@ -3078,22 +3024,6 @@ compute_next(H5FD_multi_t *file)
 }
 
 
-/*-------------------------------------------------------------------------
- * Function:    open_members
- *
- * Purpose:     Opens all members which are not opened yet.
- *
- * Return:      Success:        0
- *
- *              Failure:        -1
- *
- * Programmer:  Robb Matzke
- *              Monday, August 23, 1999
- *
- * Modifications:
- *
- *-------------------------------------------------------------------------
- */
 static int
 open_members(H5FD_multi_t *file)
 {
@@ -3115,7 +3045,6 @@ open_members(H5FD_multi_t *file)
 #endif
         	assert(file->fa.memb_name[mt]);
         	sprintf(tmp, file->fa.memb_name[mt], newname);
-		/* nEed to handle sec2 driver */
             	file->memb[mt] = H5FD_open(tmp, SEC2_DRIVER);
 		if (file->memb[mt] == NULL)
 			ret = FAIL;
@@ -3125,63 +3054,62 @@ open_members(H5FD_multi_t *file)
 }
 
 
-/* copied and modified from H5FDmulti.c */
-/*-------------------------------------------------------------------------
- * Function:    H5FD_multi_read
- *
- * Purpose:     Reads SIZE bytes of data from FILE beginning at address ADDR
- *              into buffer BUF according to data transfer properties in
- *              DXPL_ID.
- *
- * Return:      Success:        Zero. Result is stored in caller-supplied
- *                              buffer BUF.
- *
- *              Failure:        -1, contents of buffer BUF are undefined.
- *
- * Programmer:  Robb Matzke
- *              Wednesday, August  4, 1999
- *
- * Modifications:
- *
- *-------------------------------------------------------------------------
- */
 static herr_t
 H5FD_multi_read(H5FD_t *_file, haddr_t addr, size_t size, void *_buf/*out*/)
 {
-    H5FD_multi_t        *file = (H5FD_multi_t*)_file;
-    H5FD_mem_t          mt, mmt, hi=H5FD_MEM_DEFAULT;
-    haddr_t             start_addr=0;
+    	H5FD_multi_t        *file = (H5FD_multi_t*)_file;
+    	H5FD_mem_t          mt, mmt, hi=H5FD_MEM_DEFAULT;
+    	haddr_t             start_addr=0;
 
+    	/* Find the file to which this address belongs */
+    	for (mt=H5FD_MEM_SUPER; mt<H5FD_MEM_NTYPES; mt=(H5FD_mem_t)(mt+1)) {
+        	mmt = file->fa.memb_map[mt];
+        	if (H5FD_MEM_DEFAULT==mmt) 
+			mmt = mt;
+        	assert(mmt>0 && mmt<H5FD_MEM_NTYPES);
 
-    /* Find the file to which this address belongs */
-    for (mt=H5FD_MEM_SUPER; mt<H5FD_MEM_NTYPES; mt=(H5FD_mem_t)(mt+1)) {
-        mmt = file->fa.memb_map[mt];
-        if (H5FD_MEM_DEFAULT==mmt) mmt = mt;
-        assert(mmt>0 && mmt<H5FD_MEM_NTYPES);
+        	if (file->fa.memb_addr[mmt]>addr) 
+			continue;
+        	if (file->fa.memb_addr[mmt]>=start_addr) {
+            		start_addr = file->fa.memb_addr[mmt];
+            		hi = mmt;
+        	}
+    	}
+    	assert(hi>0);
 
-        if (file->fa.memb_addr[mmt]>addr) continue;
-        if (file->fa.memb_addr[mmt]>=start_addr) {
-            start_addr = file->fa.memb_addr[mmt];
-            hi = mmt;
-        }
-    }
-    assert(hi>0);
-
-    /* Read from that member */
-    return H5FD_read(file->memb[hi], addr-start_addr, size, _buf);
+    	/* Read from that member */
+    	return H5FD_read(file->memb[hi], addr-start_addr, size, _buf);
 }
 
 
-
-static herr_t
-H5FD_multi_set_eoa(H5FD_t *_file, haddr_t addr)
+static haddr_t
+H5FD_multi_get_eof(H5FD_t *_file)
 {
+    	H5FD_multi_t    *file = (H5FD_multi_t*)_file;
+    	haddr_t         eof=0, tmp;
+
+    	UNIQUE_MEMBERS(file->fa.memb_map, mt) {
+        	if (file->memb[mt]) {
+                	tmp = H5FD_get_eof(file->memb[mt]);
+            		if (tmp == HADDR_UNDEF) {
+				H5E_push("H5FD_multi_get_eof", "Member file has unknown eof.", -1);
+				return(HADDR_UNDEF);
+			}
+            		if (tmp > 0) 
+				tmp += file->fa.memb_addr[mt];
+        	} else {
+			H5E_push("H5FD_multi_get_eof", "Bad eof.", -1);
+			return(HADDR_UNDEF);
+        	}
+
+        	if (tmp > eof) 
+			eof = tmp;
+    	} END_MEMBERS;
+
+    return(eof);
 }
 
-static haddr_t 
-H5FD_multi_get_eoa(H5FD_t *_file)
-{
-}
+
 
 /*
  *  FAMILY file driver
@@ -3210,17 +3138,12 @@ H5FD_family_read(H5FD_t *_file, haddr_t addr, size_t size, void *buf/*out*/)
 
 }
 
-
-
-static herr_t
-H5FD_family_set_eoa(H5FD_t *_file, haddr_t addr)
+static haddr_t
+H5FD_family_get_eof(H5FD_t *_file)
 {
+
 }
 
-static haddr_t 
-H5FD_family_get_eoa(H5FD_t *_file)
-{
-}
 
 
 /* Based on H5F_read_superblock() in H5Fsuper.c */
@@ -4724,6 +4647,7 @@ check_obj_header(H5FD_t *_file, H5F_shared_t shared_info, haddr_t obj_head_addr,
 int main(int argc, char **argv)
 {
 	int	ret;
+	haddr_t	ss;
 	char	*prog_name;
 	haddr_t	gheap_addr;
 	FILE 	*inputfd;
@@ -4759,6 +4683,7 @@ int main(int argc, char **argv)
 		fclose(inputfd);
 		exit(1);
 	}
+
 	fclose(inputfd);
 
 	/* superblock validation has to be all passed before proceeding further */
@@ -4771,11 +4696,15 @@ int main(int argc, char **argv)
                 exit(1);
         }
 
-#if 0
-	if (_file->cls->read(_file, addr, size, buf) == FAIL)
-	if (thefile->cls->filesize(thefile) < eoa)
-		H5E_push("Main", "File size is smaller than end of file address.", shared_info.stored_eoa);
-#endif
+
+	ss = thefile->cls->get_eof(thefile);
+	printf("stored_eoa=%llu;ss=%llu\n", shared_info.stored_eoa, ss);
+	if ((ss==HADDR_UNDEF) || (ss<shared_info.stored_eoa)) {
+		H5E_push("Main", "Invalid file size or file size less than superblock eoa. Validation stopped.", -1);
+		H5E_print(stderr);
+		H5E_clear();
+                exit(1);
+	}
 
 	ret = table_init(&obj_table);
 	if (ret != SUCCEED) {
