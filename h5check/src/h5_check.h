@@ -1158,9 +1158,9 @@ struct H5FD_class_t {
     herr_t  (*sb_decode)(H5F_shared_t *_shared_info, const unsigned char *p);
     H5FD_t *(*open)(const char *name, int driver_id);
     herr_t  (*close)(H5FD_t *file);
-    haddr_t (*get_eoa)(H5FD_t *file);
-    herr_t  (*set_eoa)(H5FD_t *file, haddr_t addr);
     herr_t  (*read)(H5FD_t *file, haddr_t addr, size_t size, void *buffer); 
+    haddr_t (*get_eof)(H5FD_t *file);
+
 };
 
 
