@@ -4642,34 +4642,95 @@ check_obj_header(H5FD_t *_file, H5F_shared_t shared_info, haddr_t obj_head_addr,
 	return(ret);
 }
 
+print_version(const char *prog_name)
+{
+	fprintf(stdout, "%s: Version %d\n", prog_name, VERSION);
+}
+
+void
+usage(prog_name)
+{
+	fflush(stdout);
+    	fprintf(stdout, "usage: %s [OPTIONS] file\n", prog_name);
+    	fprintf(stdout, "  OPTIONS\n");
+    	fprintf(stdout, "     -h, --help   	Print a usage message and exit\n");
+    	fprintf(stdout, "     -v, --version	Print version number and exit\n");
+    	fprintf(stdout, "     -V, --verbose	Detail output of what is being done\n");
+	fprintf(stdout, "\n");
+
+}
+
+leave(int ret)
+{
+	exit(ret);
+}
 
 
 int main(int argc, char **argv)
 {
-	int	ret;
-	haddr_t	ss;
+	int		ret;
+	haddr_t		ss;
+	haddr_t		gheap_addr;
+	FILE 		*inputfd;
+	H5FD_t 		*thefile;
+
+
+	/* command line declarations */
+	int	argno;
+	const 	char *s = NULL;
 	char	*prog_name;
-	haddr_t	gheap_addr;
-	FILE 	*inputfd;
-	H5FD_t 	*thefile;
+	char	*fname;
+	
 
+	if ((prog_name=strrchr(argv[0], '/'))) 
+		prog_name++;
+	else 
+		prog_name = argv[0];
 
-	if (argc != 2) {
-		if ((prog_name=strrchr(argv[0], '/'))) 
-			prog_name++;
-		else 
-			prog_name = argv[0];
-		fprintf(stderr, "usage: %s h5file\n", prog_name);
-		exit(1);
+	for (argno=1; argno<argc && argv[argno][0]=='-'; argno++) {
+		if (!strcmp(argv[argno], "--help")) {
+			usage(prog_name);
+			leave(EXIT_SUCCESS);
+		} else if (!strcmp(argv[argno], "--version")) {
+			print_version(prog_name);
+			leave(EXIT_SUCCESS);
+		} else if (!strcmp(argv[argno], "--verbose"))
+			printf("VERBOSE is true\n");
+		else if (argv[argno][1] != '-') {
+			for (s=argv[argno]+1; *s; s++) {
+				switch (*s) {
+					case 'h':  /* --help */
+						usage(prog_name);
+						leave(EXIT_SUCCESS);
+					case 'v':  /* --version */
+						print_version(prog_name);
+						leave(EXIT_SUCCESS);
+					case 'V':  /* --verbose */
+						printf("single VERBOSE is true\n");
+						break;
+					default:
+						usage(prog_name);	
+						leave(EXIT_COMMAND_FAILURE);
+				}  /* end switch */
+			}  /* end for */
+		} else
+			printf("default is true, no option provided...\n");
 	}
 
-	ret = SUCCEED;
-	printf("\nVALIDATING %s\n\n", argv[1]);
+	if (argno >= argc) {
+		usage(prog_name);
+		leave(EXIT_COMMAND_FAILURE);
+	}
 
-	inputfd = fopen(argv[1], "r");
+
+	ret = SUCCEED;
+	fname = strdup(argv[argno]);
+	printf("\nVALIDATING %s\n\n", fname);
+
+	inputfd = fopen(fname, "r");
 
         if (inputfd == NULL) {
-                fprintf(stderr, "fopen(\"%s\") failed: %s\n", argv[1],
+                fprintf(stderr, "fopen(\"%s\") failed: %s\n", fname,
                                  strerror(errno));
                 exit(errno);
         }
@@ -4688,7 +4749,7 @@ int main(int argc, char **argv)
 
 	/* superblock validation has to be all passed before proceeding further */
 	/* from now on, use virtual file driver for opening/reading/closing */
-	thefile = H5FD_open(argv[1], shared_info.driverid);
+	thefile = H5FD_open(fname, shared_info.driverid);
 	if (thefile == NULL) {
 		H5E_push("Main", "Errors from H5FD_open(). Validation stopped.", -1);
 		H5E_print(stderr);
@@ -4698,7 +4759,6 @@ int main(int argc, char **argv)
 
 
 	ss = thefile->cls->get_eof(thefile);
-	printf("stored_eoa=%llu;ss=%llu\n", shared_info.stored_eoa, ss);
 	if ((ss==HADDR_UNDEF) || (ss<shared_info.stored_eoa)) {
 		H5E_push("Main", "Invalid file size or file size less than superblock eoa. Validation stopped.", -1);
 		H5E_print(stderr);
