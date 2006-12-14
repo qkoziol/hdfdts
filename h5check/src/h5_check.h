@@ -1,3 +1,8 @@
+#define         EXIT_COMMAND_SUCCESS	0
+#define         EXIT_COMMAND_FAILURE    1
+#define         EXIT_FORMAT_FAILURE     2
+#define		VERSION			1
+
 /* need to take care of haddr_t and HADDR_UNDEF */
 /* see H5public.h for definition of haddr_t, H5pubconf.h */
 typedef	unsigned long long		haddr_t;
