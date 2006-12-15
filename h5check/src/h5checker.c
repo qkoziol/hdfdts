@@ -23,11 +23,6 @@ int memcmp(const void *, const void *, size_t);
 char *strerror(int);
 
 
-void H5E_push(const char *, const char *, haddr_t );
-herr_t H5E_clear(void);
-void H5E_print(FILE *);
-
-
 herr_t  check_superblock(FILE *, H5F_shared_t *);
 herr_t 	check_obj_header(H5FD_t *, H5F_shared_t, haddr_t, int, const H5O_class_t *);
 herr_t 	check_btree(H5FD_t *, H5F_shared_t, haddr_t, unsigned);
@@ -4788,5 +4783,13 @@ int main(int argc, char **argv)
 		H5E_print(stderr);
 		H5E_clear();
 		exit(1);
+	}
+	
+	if (H5E_FoundError()){
+	    printf("non-compliance errors found\n");
+	    exit(2);
+	}else{
+	    printf("No non-compliance errors found\n");
+	    exit(0);
 	}
 }

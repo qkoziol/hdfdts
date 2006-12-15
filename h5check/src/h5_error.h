@@ -17,3 +17,9 @@ typedef struct H5E_t {
 /* the current error stack */
 H5E_t	H5E_stack_g[1];
 #define	H5E_get_my_stack()	(H5E_stack_g+0)
+void H5E_push(const char *, const char *, haddr_t );
+herr_t H5E_clear(void);
+void H5E_print(FILE *);
+int H5E_FoundError(void);
+
+

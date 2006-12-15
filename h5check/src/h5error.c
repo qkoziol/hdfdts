@@ -8,6 +8,8 @@
 #include "h5_check.h"
 #include "h5_error.h"
 
+static	int	nerrors=0;	/* number of errors found */
+
 /*-------------------------------------------------------------------------
  * Function:    H5E_push
  *
@@ -106,6 +108,8 @@ H5E_print(FILE *stream)
 
 	if (!stream) 
 		stream = stderr; 
+	fprintf(stream, "***Error***\n");
+	nerrors++;
 	for (i = estack->nused-1; i >=0; --i) {
 		if ((int)estack->slot[i].address == -1)
     		     fprintf(stream, "%s(): %s\n", 
@@ -116,7 +120,13 @@ H5E_print(FILE *stream)
 			     estack->slot[i].address,
 			     estack->slot[i].desc);
 	}
+	fprintf(stream, "***End of Error messages***\n");
 
 
 }
 
+int
+H5E_FoundError(void)
+{
+    return(nerrors!=0);
+}
