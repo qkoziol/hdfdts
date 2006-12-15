@@ -2,6 +2,7 @@ CC=h5cc
 
 testgen: testgen.c
 	$(CC) $< -o $@
+	./testgen
 
 check: testh5check.sh
 	sh $<
@@ -9,4 +10,4 @@ check: testh5check.sh
 testh5check.sh: testgen
 
 clean:
-	rm -f *.o testgen *.h5 *.data logfile.txt
+	rm -f *.o testgen *.h5 *.data logfile.txt h5check.*.out h5check.*.err
