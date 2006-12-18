@@ -108,20 +108,22 @@ H5E_print(FILE *stream)
 
 	if (!stream) 
 		stream = stderr; 
-	fprintf(stream, "***Error***\n");
 	nerrors++;
-	for (i = estack->nused-1; i >=0; --i) {
-		if ((int)estack->slot[i].address == -1)
-    		     fprintf(stream, "%s(): %s\n", 
+	if (g_verbose_num) {
+		fprintf(stream, "***Error***\n");
+		for (i = estack->nused-1; i >=0; --i) {
+			if ((int)estack->slot[i].address == -1)
+    		     	fprintf(stream, "%s(): %s\n", 
 			     estack->slot[i].func_name, 
 			     estack->slot[i].desc);
-    		else fprintf(stream, "%s(at %llu): %s\n", 
+    			else fprintf(stream, "%s(at %llu): %s\n", 
 			     estack->slot[i].func_name, 
 			     estack->slot[i].address,
 			     estack->slot[i].desc);
-	}
-	fprintf(stream, "***End of Error messages***\n");
+		}
+		fprintf(stream, "***End of Error messages***\n");
 
+	}
 
 }
 
@@ -130,3 +132,4 @@ H5E_FoundError(void)
 {
     return(nerrors!=0);
 }
+
