@@ -15,6 +15,8 @@ H5F_shared_t	shared_info;
 H5G_entry_t 	root_ent;
 table_t		*obj_table;
 
+int	g_verbose_num;
+
 size_t strlen(const char *);
 char *strcpy(char *, const char *);
 void *memcpy(void *, const void *, size_t);
@@ -47,119 +49,85 @@ int	table_search(haddr_t);
 void	table_insert(haddr_t, int);
 
 
-/* copied and modified from H5Onull.c */
+/* null */
 const H5O_class_t H5O_NULL[1] = {{
     H5O_NULL_ID,            /*message id number             */
-    "null",                 /*message name for debugging    */
-    0,                      /*native message size           */
     NULL                    /*no decode method              */
 }};
 
 
-/* copied and modified from H5Osdspace.c */
 static void *H5O_sdspace_decode(const uint8_t *);
 
-/* copied and modified from H5Osdspace.c */
-/* This message derives from H5O */
+/* simple_dspace */
 const H5O_class_t H5O_SDSPACE[1] = {{
     H5O_SDSPACE_ID,             /* message id number                    */
-    "simple_dspace",            /* message name for debugging           */
-    sizeof(H5S_extent_t),       /* native message size                  */
     H5O_sdspace_decode         	/* decode message                       */
 }};
 
 
 
-/* copied and modified from H5Odtype.c */
 static void *H5O_dtype_decode (const uint8_t *);
 
-/* copied and modified from H5Odtype.c */
-/* This message derives from H5O */
+/* data_type */
 const H5O_class_t H5O_DTYPE[1] = {{
     H5O_DTYPE_ID,               /* message id number            */
-    "data_type",                /* message name for debugging   */
-    sizeof(H5T_t),              /* native message size          */
     H5O_dtype_decode            /* decode message               */
 }};
 
 
-/* copied and modified from H5Ofill.c */
 static void  *H5O_fill_new_decode(const uint8_t *);
 
-/* copied and modified from H5Ofill.c */
-/* This message derives from H5O, for new fill value after version 1.4  */
+/* fill_new */
 const H5O_class_t H5O_FILL_NEW[1] = {{
     H5O_FILL_NEW_ID,            /*message id number                     */
-    "fill_new",                 /*message name for debugging            */
-    sizeof(H5O_fill_new_t),     /*native message size                   */
     H5O_fill_new_decode         /*decode message                        */
 }};
 
 static void *H5O_efl_decode(const uint8_t *p);
 
-/* copied and modified from H5Oefl.c */
-/* This message derives from H5O */
+/* external file list */
 const H5O_class_t H5O_EFL[1] = {{
     H5O_EFL_ID,                 /*message id number             */
-    "external file list",       /*message name for debugging    */
-    sizeof(H5O_efl_t),          /*native message size           */
     H5O_efl_decode,             /*decode message                */
 }};
 
 
-/* copied and modified from H5Olayout.c */
 static void *H5O_layout_decode(const uint8_t *);
 
 
-/* copied and modified from H5Olayout.c */
-/* This message derives from H5O */
+/* layout */
 const H5O_class_t H5O_LAYOUT[1] = {{
     H5O_LAYOUT_ID,              /*message id number             */
-    "layout",                   /*message name for debugging    */
-    sizeof(H5O_layout_t),       /*native message size           */
     H5O_layout_decode	        /*decode message                */
 }};
 
-/* copied and modified from H5Opline.c */
 static void *H5O_pline_decode (const uint8_t *);
 
-/* copied and modified from H5Opline.c */
-/* This message derives from H5O */
+/* filter pipeline */
 const H5O_class_t H5O_PLINE[1] = {{
     H5O_PLINE_ID,               /* message id number            */
-    "filter pipeline",          /* message name for debugging   */
-    sizeof(H5O_pline_t),        /* native message size          */
     H5O_pline_decode,           /* decode message               */
 }};
 
-/* copied and modified from H5Oattr.c */
 static void *H5O_attr_decode (const uint8_t *);
 
-/* copied and modified from H5Oattr.c */
-/* This message derives from H5O */
+/* attribute */
 const H5O_class_t H5O_ATTR[1] = {{
     H5O_ATTR_ID,                /* message id number            */
-    "attribute",                /* message name for debugging   */
-    sizeof(H5A_t),              /* native message size          */
     H5O_attr_decode             /* decode message               */
 }};
 
 
-/* copied and modified from H5Oname.c */
 static void *H5O_name_decode(const uint8_t *p);
 
-/* copied and modified from H5Oname.c */
-/* This message derives from H5O */
+/* name */
 const H5O_class_t H5O_NAME[1] = {{
     H5O_NAME_ID,                /*message id number             */
-    "name",                     /*message name for debugging    */
-    sizeof(H5O_name_t),         /*native message size           */
     H5O_name_decode,            /*decode message                */
 }};
 
 
 
-/* copied from H5Oshared.c */
 /* Old version, with full symbol table entry as link for object header sharing */
 #define H5O_SHARED_VERSION_1    1
 
@@ -168,61 +136,42 @@ const H5O_class_t H5O_NAME[1] = {{
 
 static void *H5O_shared_decode (const uint8_t*);
 
-/* copied and modified from H5Oshared.c */
-/* This message derives from H5O */
+/* shared */
 const H5O_class_t H5O_SHARED[1] = {{
     H5O_SHARED_ID,              /*message id number                     */
-    "shared",                   /*message name for debugging            */
-    sizeof(H5O_shared_t),       /*native message size                   */
     H5O_shared_decode,          /*decode method                         */
 }};
 
 
-/* copied and modified from H5Ocont.c */
 static void *H5O_cont_decode(const uint8_t *);
 
-/* copied and modified from H5Ocont.c */
-/* This message derives from H5O */
+/* hdr continuation */
 const H5O_class_t H5O_CONT[1] = {{
     H5O_CONT_ID,                /*message id number             */
-    "hdr continuation",         /*message name for debugging    */
-    sizeof(H5O_cont_t),         /*native message size           */
     H5O_cont_decode             /*decode message                */
 }};
 
 
-/* copied and modified from H5Ostab.c */
 static void *H5O_stab_decode(const uint8_t *);
 
-/* copied and modified from H5Ostab.c */
-/* This message derives from H5O */
+/* stab */
 const H5O_class_t H5O_STAB[1] = {{
     H5O_STAB_ID,               /*message id number             */
-    "stab",                    /*message name for debugging    */
-    sizeof(H5O_stab_t),        /*native message size           */
     H5O_stab_decode            /*decode message                */
 }};
 
 
 
 
-/* copied and modified from H5Omtime.c */
 static void *H5O_mtime_new_decode(const uint8_t *);
 
-/* copied and modified from H5Omtime.c */
-/* This message derives from H5O */
-/* (Only encode, decode & size routines are different from old mtime routines) */
+/* mtime_new */
 const H5O_class_t H5O_MTIME_NEW[1] = {{
     H5O_MTIME_NEW_ID,           /*message id number             */
-    "mtime_new",                /*message name for debugging    */
-    sizeof(time_t),             /*native message size           */
     H5O_mtime_new_decode,       /*decode message                */
 }};
 
 
-/* copied and modified from H5O.c */
-/* ID to type mapping */
-/* Only defined for H5O_NULL and H5O_STAB, NULL the rest for NOW */
 static const H5O_class_t *const message_type_g[] = {
     H5O_NULL,           /*0x0000 Null                                   */
     H5O_SDSPACE,        /*0x0001 Simple Dimensionality                  */
@@ -246,12 +195,9 @@ static const H5O_class_t *const message_type_g[] = {
 };
 
 
-/* copied and modified from H5Gnode.c */
 static size_t H5G_node_sizeof_rkey(H5F_shared_t, unsigned);
 static void *H5G_node_decode_key(H5F_shared_t, unsigned, const uint8_t **);
 
-/* copied and modified from H5Gnode.c */
-/* H5G inherits B-tree like properties from H5B */
 H5B_class_t H5B_SNODE[1] = {
     H5B_SNODE_ID,               /*id                    */
     sizeof(H5G_node_key_t),     /*sizeof_nkey           */
@@ -259,12 +205,9 @@ H5B_class_t H5B_SNODE[1] = {
     H5G_node_decode_key,        /*decode                */
 };
 
-/* copied and modified from H5Distore.c */
 static size_t H5D_istore_sizeof_rkey(H5F_shared_t, unsigned);
 static void *H5D_istore_decode_key(H5F_shared_t, unsigned, const uint8_t **);
 
-/* copied and modified from H5Distore.c */
-/* inherits B-tree like properties from H5B */
 H5B_class_t H5B_ISTORE[1] = {
     H5B_ISTORE_ID,              /*id                    */
     sizeof(H5D_istore_key_t),   /*sizeof_nkey           */
@@ -278,101 +221,21 @@ static const H5B_class_t *const node_key_g[] = {
 };
 
 
-/* copied and modified from H5FDsec2.c */
 static H5FD_t *H5FD_sec2_open(const char *name, int driver_id);
 static herr_t H5FD_sec2_read(H5FD_t *_file, haddr_t addr, size_t size, void *buf/*out*/);
 static herr_t H5FD_sec2_close(H5FD_t *_file);
 static haddr_t H5FD_sec2_get_eof(H5FD_t *_file);
 
-/* copied and modified from H5FDsec2.c */
 static const H5FD_class_t H5FD_sec2_g = {
     "sec2",                                     /*name                  */
-#if 0
-    MAXADDR,                                    /*maxaddr               */
-    H5F_CLOSE_WEAK,                             /* fc_degree            */
-    NULL,                                       /*sb_size               */
-    NULL,                                       /*sb_decode             */
-    0,                                          /*fapl_size             */
-    NULL,                                       /*fapl_get              */
-    NULL,                                       /*fapl_copy             */
-    NULL,                                       /*fapl_free             */
-    0,                                          /*dxpl_size             */
-    NULL,                                       /*dxpl_copy             */
-    NULL,                                       /*dxpl_free             */
-    H5FD_sec2_cmp,                              /*cmp                   */
-    H5FD_sec2_query,                            /*query                 */
-    NULL,                                       /*alloc                 */
-    NULL,                                       /*free                  */
-#endif
     NULL,                                       /*sb_decode             */
     H5FD_sec2_open,                             /*open                  */
     H5FD_sec2_close,                            /*close                 */
     H5FD_sec2_read,                             /*read                  */
     H5FD_sec2_get_eof,                          /*get_eof               */
-#if 0
-    H5FD_sec2_get_eoa,                          /*get_eoa               */
-    H5FD_sec2_set_eoa,                          /*set_eoa               */
-    H5FD_sec2_get_handle,                       /*get_handle            */
-    H5FD_sec2_read,                             /*read                  */
-    H5FD_sec2_write,                            /*write                 */
-    H5FD_sec2_flush,                            /*flush                 */
-    NULL,                                       /*lock                  */
-    NULL,                                       /*unlock                */
-    H5FD_FLMAP_SINGLE                           /*fl_map                */
-#endif
 };
 
-/* copied and modified from H5FDfamily.c */
-static herr_t H5FD_family_read(H5FD_t *_file, haddr_t addr, size_t size, void *buf/*out*/);
-static H5FD_t *H5FD_family_open(const char *name, int driver_id);
-static herr_t H5FD_family_close(H5FD_t *_file);
-static haddr_t H5FD_family_get_eof(H5FD_t *_file);
 
-
-/* copied and modified from H5FDfamily.c */
-/* The class struct */
-static const H5FD_class_t H5FD_family_g = {
-    "family",                                   /*name                  */
-#if 0
-    HADDR_MAX,                                  /*maxaddr               */
-    H5F_CLOSE_WEAK,                             /* fc_degree            */
-    NULL,                                       /*sb_size               */
-    NULL,                                       /*sb_encode             */
-    sizeof(H5FD_family_fapl_t),                 /*fapl_size             */
-    H5FD_family_fapl_get,                       /*fapl_get              */
-    H5FD_family_fapl_copy,                      /*fapl_copy             */
-    H5FD_family_fapl_free,                      /*fapl_free             */
-    sizeof(H5FD_family_dxpl_t),                 /*dxpl_size             */
-    H5FD_family_dxpl_copy,                      /*dxpl_copy             */
-    H5FD_family_dxpl_free,                      /*dxpl_free             */
-    H5FD_family_open,                           /*open                  */
-    H5FD_family_close,                          /*close                 */
-    H5FD_family_cmp,                            /*cmp                   */
-    H5FD_family_query,                          /*query                 */
-    NULL,                                       /*alloc                 */
-    NULL,                                       /*free                  */
-#endif
-    NULL,                                       /*sb_decode             */
-    H5FD_family_open,                           /*open                  */
-    H5FD_family_close,                          /*close                 */
-    H5FD_family_read,                           /*read                  */
-    H5FD_family_get_eof,                        /*get_eof               */
-#if 0
-    H5FD_family_get_eoa,                        /*get_eoa               */
-    H5FD_family_set_eoa,                        /*set_eoa               */
-    H5FD_family_get_eof,                        /*get_eof               */
-    H5FD_family_get_handle,                     /*get_handle            */
-    H5FD_family_read,                           /*read                  */
-    H5FD_family_write,                          /*write                 */
-    H5FD_family_flush,                          /*flush                 */
-    NULL,                                       /*lock                  */
-    NULL,                                       /*unlock                */
-    H5FD_FLMAP_SINGLE                           /*fl_map                */
-#endif
-};
- 
-
-/* copied and modified from H5FDmulti.c */
 static herr_t H5FD_multi_sb_decode(H5F_shared_t *_shared_info, const unsigned char *buf);
 static H5FD_t *H5FD_multi_open(const char *name, int driver_id);
 static herr_t H5FD_multi_close(H5FD_t *_file);
@@ -380,46 +243,16 @@ static herr_t H5FD_multi_read(H5FD_t *_file, haddr_t addr, size_t size, void *_b
 static haddr_t H5FD_multi_get_eof(H5FD_t *_file);
 
 
-/* copied from H5FDmulti.c */
 static int compute_next(H5FD_multi_t *file);
 static int open_members(H5FD_multi_t *file);
 
-/* copied and modified from H5FDmulti.c */
-/* The class struct */
 static const H5FD_class_t H5FD_multi_g = {
     "multi",                                    /*name                  */
-#if 0
-    HADDR_MAX,                                  /*maxaddr               */
-    H5F_CLOSE_WEAK,                             /* fc_degree            */
-    H5FD_multi_sb_size,                         /*sb_size               */
-    H5FD_multi_sb_encode,                       /*sb_encode             */
-    sizeof(H5FD_multi_fapl_t),                  /*fapl_size             */
-    H5FD_multi_fapl_get,                        /*fapl_get              */
-    H5FD_multi_fapl_copy,                       /*fapl_copy             */
-    H5FD_multi_fapl_free,                       /*fapl_free             */
-    sizeof(H5FD_multi_dxpl_t),                  /*dxpl_size             */
-    H5FD_multi_dxpl_copy,                       /*dxpl_copy             */
-    H5FD_multi_dxpl_free,                       /*dxpl_free             */
-    H5FD_multi_cmp,                             /*cmp                   */
-    H5FD_multi_query,                           /*query                 */
-    H5FD_multi_alloc,                           /*alloc                 */
-    H5FD_multi_free,                            /*free                  */
-#endif
     H5FD_multi_sb_decode,                       /*sb_decode             */
     H5FD_multi_open,                            /*open                  */
     H5FD_multi_close,                           /*close                 */
     H5FD_multi_read,                            /*read                  */
     H5FD_multi_get_eof,                         /*get_eof               */
-#if 0
-    H5FD_multi_get_eoa,                         /*get_eoa               */
-    H5FD_multi_set_eoa,                         /*set_eoa               */
-    H5FD_multi_get_handle,                      /*get_handle            */
-    H5FD_multi_write,                           /*write                 */
-    H5FD_multi_flush,                           /*flush                 */
-    NULL,                                       /*lock                  */
-    NULL,                                       /*unlock                */
-    H5FD_FLMAP_DEFAULT                          /*fl_map                */
-#endif
 };
 
 
@@ -446,7 +279,6 @@ table_init(table_t **obj_table)
 	return(SUCCEED);
 }
 
-/* copied and modified from tool/lib/h5trav_table.c */
 int
 table_search(haddr_t obj_id)
 {
@@ -461,7 +293,6 @@ table_search(haddr_t obj_id)
 	return(FAIL);
 }
 
-/* copied and modified from tool/lib/h5trav_table.c */
 void
 table_insert(haddr_t objno, int nlink)
 {
@@ -482,33 +313,513 @@ table_insert(haddr_t objno, int nlink)
 	obj_table->objs[i].nlink = nlink;
 }
 
-/* copied and modified from H5Osdspace.c */
-/*--------------------------------------------------------------------------
- NAME
-    H5O_sdspace_decode
- PURPOSE
-    Decode a simple dimensionality message and return a pointer to a memory
-        struct with the decoded information
- USAGE
-    void *H5O_sdspace_decode(f, raw_size, p)
-        H5F_t *f;         IN: pointer to the HDF5 file struct
-        size_t raw_size;        IN: size of the raw information buffer
-        const uint8 *p;         IN: the raw information buffer
- RETURNS
-    Pointer to the new message in native order on success, NULL on failure
- DESCRIPTION
-        This function decodes the "raw" disk form of a simple dimensionality
-    message into a struct in memory native format.  The struct is allocated
-    within this function using malloc() and is returned to the caller.
+/*
+ *  Virtual driver 
+ */
+void
+set_driver(int *driverid, char *driver_name) 
+{
+	if (strcmp(driver_name, "NCSAmult") == 0)  {
+		*driverid = MULTI_DRIVER;
+	} else {
+		/* default driver */
+		*driverid = SEC2_DRIVER;
+	}
+}
 
- MODIFICATIONS
-        Robb Matzke, 1998-04-09
-        The current and maximum dimensions are now H5F_SIZEOF_SIZET bytes
-        instead of just four bytes.
+H5FD_class_t *
+get_driver(int driver_id)
+{
+	H5FD_class_t	*driver = NULL;
+	size_t		size;
 
-        Robb Matzke, 1998-07-20
-        Added a version number and reformatted the message for aligment.
---------------------------------------------------------------------------*/
+	size = sizeof(H5FD_class_t);
+	driver = malloc(size);
+	
+	switch (driver_id) {
+	case SEC2_DRIVER:
+		memcpy(driver, &H5FD_sec2_g, size);
+		break;
+	case MULTI_DRIVER:
+		memcpy(driver, &H5FD_multi_g, size);
+		break;
+	default:
+		printf("Something is wrong\n");
+		break;
+	}  /* end switch */
+
+	return(driver);
+}
+
+
+void *
+get_driver_info(int driver_id)
+{
+	H5FD_multi_fapl_t 	*driverinfo;
+	size_t			size;
+
+	switch (driver_id) {
+	case SEC2_DRIVER:
+		driverinfo = NULL;
+		break;
+	case MULTI_DRIVER:
+		size = sizeof(H5FD_multi_fapl_t);
+		driverinfo = malloc(size);
+		memcpy(driverinfo, shared_info.fa, size);
+		break;
+	default:
+		printf("Something is wrong\n");
+		break;
+	}  /* end switch */
+	return(driverinfo);
+}
+
+
+/*
+ * The .h5 file is opened using fread etc.
+ * There is no FD_open() done yet at this point.
+ */
+static herr_t
+decode_driver(H5F_shared_t * _shared_info, const uint8_t *buf)
+{
+	if (_shared_info->driverid == MULTI_DRIVER)
+		H5FD_multi_sb_decode(_shared_info, buf);
+}
+
+static H5FD_t *
+H5FD_open(const char *name, int driver_id)
+{
+	H5FD_t	*file = NULL;
+	H5FD_class_t 	*driver;
+
+/* probably check for callbck functions exists here too or in set_driver */
+	driver = get_driver(driver_id);
+	file = driver->open(name, driver_id);
+	if (file != NULL) {
+		file->cls = driver;
+		file->driver_id = driver_id;
+	}
+	return(file);
+}
+
+static herr_t
+H5FD_close(H5FD_t *_file)
+{
+	int	ret = SUCCEED;
+
+	if(_file->cls->close(_file) == FAIL)
+		ret = FAIL;
+	return(ret);
+}
+
+static herr_t
+H5FD_read(H5FD_t *_file, haddr_t addr, size_t size, void *buf/*out*/)
+{
+	int	ret = SUCCEED;
+
+	if (_file->cls->read(_file, addr, size, buf) == FAIL)
+		ret = FAIL;
+
+	return(ret);
+}
+
+haddr_t
+H5FD_get_eof(H5FD_t *file)
+{
+    	haddr_t     ret_value;
+
+    	assert(file && file->cls);
+
+    	if (file->cls->get_eof)
+		ret_value = file->cls->get_eof(file);
+	return(ret_value);
+}
+
+
+
+/*
+ *  sec2 driver
+ */
+static H5FD_t *
+H5FD_sec2_open(const char *name, int driver_id)
+{
+	H5FD_sec2_t	*file = NULL;
+	H5FD_t		*ret_value;
+	int		fd = -1;
+	struct stat	sb;
+
+	/* do unix open here */
+	fd = open(name, O_RDONLY);
+	if (fd < 0) {
+		H5E_push("H5FD_sec2_open", "Unable to open the file.", -1);
+		goto done;
+	}
+	if (fstat(fd, &sb)<0) {
+		H5E_push("H5FD_sec2_open", "Unable to fstat file.", -1);
+		goto done;
+	}
+	file = calloc(1, sizeof(H5FD_sec2_t));
+	file->fd = fd;
+	file->eof = sb.st_size;
+done:
+	ret_value = (H5FD_t *)file;
+	return(ret_value);
+}
+
+static haddr_t
+H5FD_sec2_get_eof(H5FD_t *_file)
+{
+    H5FD_sec2_t *file = (H5FD_sec2_t*)_file;
+ 
+    return(file->eof);
+
+}
+
+static herr_t
+H5FD_sec2_close(H5FD_t *_file)
+{
+	int	ret;
+
+	ret = close(((H5FD_sec2_t *)_file)->fd);
+	return(ret);
+}
+
+
+static herr_t
+H5FD_sec2_read(H5FD_t *_file, haddr_t addr, size_t size, void *buf/*out*/)
+{
+	int	status;
+	int	ret = SUCCEED;
+	int	fd;
+
+	/* NEED To find out about lseek64??? */
+	fd = ((H5FD_sec2_t *)_file)->fd;
+	lseek(fd, addr, SEEK_SET);
+       	if (read(fd, buf, size)<0)
+		ret = FAIL;
+}
+
+
+/*
+ *  MULTI driver
+ */
+
+#define UNIQUE_MEMBERS(MAP,LOOPVAR) {                                         \
+    H5FD_mem_t _unmapped, LOOPVAR;                                            \
+    hbool_t _seen[H5FD_MEM_NTYPES];                                           \
+                                                                              \
+    memset(_seen, 0, sizeof _seen);                                           \
+    for (_unmapped=H5FD_MEM_SUPER; _unmapped<H5FD_MEM_NTYPES; _unmapped=(H5FD_mem_t)(_unmapped+1)) {  \
+        LOOPVAR = MAP[_unmapped];                                             \
+        if (H5FD_MEM_DEFAULT==LOOPVAR) LOOPVAR=_unmapped;                     \
+        assert(LOOPVAR>0 && LOOPVAR<H5FD_MEM_NTYPES);                         \
+        if (_seen[LOOPVAR]++) continue;
+
+
+#define ALL_MEMBERS(LOOPVAR) {                                                \
+    H5FD_mem_t LOOPVAR;                                                       \
+    for (LOOPVAR=H5FD_MEM_DEFAULT; LOOPVAR<H5FD_MEM_NTYPES; LOOPVAR=(H5FD_mem_t)(LOOPVAR+1)) {
+
+
+#define END_MEMBERS     }}
+
+
+void
+set_multi_driver_properties(H5FD_multi_fapl_t **fa, H5FD_mem_t map[], const char *memb_name[], haddr_t memb_addr[])
+{
+	*fa = malloc(sizeof(H5FD_multi_fapl_t));
+        /* Commit map */
+        ALL_MEMBERS(mt) {
+            	(*fa)->memb_map[mt] = map[mt];
+	    	(*fa)->memb_addr[mt] = memb_addr[mt];
+		if (memb_name[mt]) {
+	    		(*fa)->memb_name[mt] = malloc(strlen(memb_name[mt])+1);
+	    		strcpy((*fa)->memb_name[mt], memb_name[mt]);
+		} else 
+			(*fa)->memb_name[mt] = NULL;
+        } END_MEMBERS;
+}
+
+static herr_t
+H5FD_multi_sb_decode(H5F_shared_t * _shared_info, const unsigned char *buf)
+{
+    	char                x[2*H5FD_MEM_NTYPES*8];
+    	H5FD_mem_t          map[H5FD_MEM_NTYPES];
+    	int                 i;
+    	size_t              nseen=0;
+    	const char          *memb_name[H5FD_MEM_NTYPES];
+    	haddr_t             memb_addr[H5FD_MEM_NTYPES];
+    	haddr_t             memb_eoa[H5FD_MEM_NTYPES];
+	haddr_t	xx;
+/* handle memb_eoa[]?? */
+/* handle mt_in use??? */
+
+
+    	/* Set default values */
+    	ALL_MEMBERS(mt) {
+        	memb_addr[mt] = HADDR_UNDEF;
+        	memb_eoa[mt] = HADDR_UNDEF;
+        	memb_name[mt] = NULL;
+    	} END_MEMBERS;
+
+    	/*
+     	 * Read the map and count the unique members.
+      	 */
+    	memset(map, 0, sizeof map);
+    	for (i=0; i<6; i++) {
+        	map[i+1] = (H5FD_mem_t)buf[i];
+    	}
+    	UNIQUE_MEMBERS(map, mt) {
+        	nseen++;
+    	} END_MEMBERS;
+    	buf += 8;
+
+    	/* Decode Address and EOA values */
+    	assert(sizeof(haddr_t)<=8);
+    	UNIQUE_MEMBERS(map, mt) {
+        	UINT64DECODE(buf, xx);
+        	memb_addr[_unmapped] = xx;
+        	UINT64DECODE(buf, xx);
+        	memb_eoa[_unmapped] = xx;
+#ifdef DEBUG
+		printf("memb_addr[]=%llu;memb_eoa[]=%llu\n", 
+			memb_addr[_unmapped], memb_eoa[_unmapped]);
+#endif
+    	} END_MEMBERS;
+
+    	/* Decode name templates */
+    	UNIQUE_MEMBERS(map, mt) {
+        	size_t n = strlen((const char *)buf)+1;
+        	memb_name[_unmapped] = (const char *)buf;
+#ifdef DEBUG
+		printf("memb_name=%s\n", memb_name[_unmapped]);
+#endif
+        	buf += (n+7) & ~((unsigned)0x0007);
+    	} END_MEMBERS;
+
+	set_multi_driver_properties((H5FD_multi_fapl_t **)&(_shared_info->fa), map, memb_name, memb_addr);
+    	return 0;
+}
+
+static H5FD_t *
+H5FD_multi_open(const char *name, int driver_id)
+{
+    	H5FD_multi_t        	*file=NULL;
+    	H5FD_multi_fapl_t   	*fa;
+    	H5FD_mem_t          	m;
+
+	H5FD_t			*ret_value;
+	int			len, ret;
+
+
+	ret = SUCCEED;
+
+    	/* Check arguments */
+    	if (!name || !*name) {
+		H5E_push("H5FD_multi_open", "Invalid file name.", -1);
+		goto error;
+	}
+
+    	/*
+     	 * Initialize the file from the file access properties, using default
+       	 * values if necessary.
+      	 */
+    	if (NULL==(file=calloc(1, sizeof(H5FD_multi_t)))) {
+		H5E_push("H5FD_multi_open", "Memory allocation failed.", -1);
+		goto error;
+	}
+
+	fa = get_driver_info(driver_id);
+    	assert(fa);
+    	ALL_MEMBERS(mt) {
+        	file->fa.memb_map[mt] = fa->memb_map[mt];
+        	file->fa.memb_addr[mt] = fa->memb_addr[mt];
+        	if (fa->memb_name[mt]) {
+			file->fa.memb_name[mt] = malloc(strlen(fa->memb_name[mt]));
+            		strcpy(file->fa.memb_name[mt], fa->memb_name[mt]);
+        	} else
+            		file->fa.memb_name[mt] = NULL;
+    	} END_MEMBERS;
+
+	file->name = malloc(strlen(name)+1);
+    	strcpy(file->name, name);
+
+    	if (compute_next(file) <0 )
+        	printf("compute_next() failed\n");
+    	if (open_members(file) != SUCCEED) {
+		H5E_push("H5FD_multi_open", "Unable to open member files.", -1);
+		goto error;
+	}
+
+/* NEED To checkon this also, make shared_info to be _shared_info for pointer */
+/* need to check on return values for driver routines */
+/* error check at the end of each driver routine, also, free malloc space */
+#if 0
+    if (H5FD_MEM_DEFAULT==(m=file->fa.memb_map[H5FD_MEM_SUPER]))
+        m = H5FD_MEM_SUPER;
+    if (NULL==file->memb[m])
+        goto error;
+#endif
+
+	ret_value = (H5FD_t *)file;
+	return(ret_value);
+
+error:
+    	if (file) {
+       	 	ALL_MEMBERS(mt) {
+            		if (file->memb[mt]) (void)H5FD_close(file->memb[mt]);
+            		if (file->fa.memb_name[mt]) free(file->fa.memb_name[mt]);
+        	} END_MEMBERS;
+        	if (file->name) free(file->name);
+        	free(file);
+    	}
+    	return NULL;
+}
+
+static herr_t 
+H5FD_multi_close(H5FD_t *_file)
+{
+ 	H5FD_multi_t   	*file = (H5FD_multi_t*)_file;
+	int		errs = 0;
+
+
+    /* Close as many members as possible */
+    	ALL_MEMBERS(mt) {
+        	if (file->memb[mt]) {
+            		if (H5FD_close(file->memb[mt])<0)
+                		errs++;
+            	else
+                	file->memb[mt] = NULL;
+		}
+	} END_MEMBERS;
+
+    	if (errs) {
+		H5E_push("H5FD_multi_close", "Error closing member file(s).", -1);
+		return(FAIL);
+	}
+
+    	/* Clean up other stuff */
+    	ALL_MEMBERS(mt) {
+        if (file->fa.memb_name[mt]) 
+		free(file->fa.memb_name[mt]);
+    	} END_MEMBERS;
+    	free(file->name);
+    	free(file);
+    	return 0;
+}
+
+static int
+compute_next(H5FD_multi_t *file)
+{
+
+    ALL_MEMBERS(mt) {
+        file->memb_next[mt] = HADDR_UNDEF;
+    } END_MEMBERS;
+
+    UNIQUE_MEMBERS(file->fa.memb_map, mt1) {
+        UNIQUE_MEMBERS(file->fa.memb_map, mt2) {
+            if (file->fa.memb_addr[mt1]<file->fa.memb_addr[mt2] &&
+                (HADDR_UNDEF==file->memb_next[mt1] ||
+                 file->memb_next[mt1]>file->fa.memb_addr[mt2])) {
+                file->memb_next[mt1] = file->fa.memb_addr[mt2];
+            }
+        } END_MEMBERS;
+        if (HADDR_UNDEF==file->memb_next[mt1]) {
+            file->memb_next[mt1] = HADDR_MAX; /*last member*/
+        }
+    } END_MEMBERS;
+
+    return 0;
+}
+
+
+static int
+open_members(H5FD_multi_t *file)
+{
+    	char    tmp[1024], newname[1024];
+	char	*ptr;
+	int	ret;
+
+
+	/* fix the name */
+	strcpy(newname, file->name);
+	ptr = strchr(newname, '-');
+	*ptr = '\0';
+
+	ret = SUCCEED;
+
+    	UNIQUE_MEMBERS(file->fa.memb_map, mt) {
+        	assert(file->fa.memb_name[mt]);
+        	sprintf(tmp, file->fa.memb_name[mt], newname);
+            	file->memb[mt] = H5FD_open(tmp, SEC2_DRIVER);
+		if (file->memb[mt] == NULL)
+			ret = FAIL;
+    	} END_MEMBERS;
+
+    	return(ret);
+}
+
+
+static herr_t
+H5FD_multi_read(H5FD_t *_file, haddr_t addr, size_t size, void *_buf/*out*/)
+{
+    	H5FD_multi_t        *file = (H5FD_multi_t*)_file;
+    	H5FD_mem_t          mt, mmt, hi=H5FD_MEM_DEFAULT;
+    	haddr_t             start_addr=0;
+
+    	/* Find the file to which this address belongs */
+    	for (mt=H5FD_MEM_SUPER; mt<H5FD_MEM_NTYPES; mt=(H5FD_mem_t)(mt+1)) {
+        	mmt = file->fa.memb_map[mt];
+        	if (H5FD_MEM_DEFAULT==mmt) 
+			mmt = mt;
+        	assert(mmt>0 && mmt<H5FD_MEM_NTYPES);
+
+        	if (file->fa.memb_addr[mmt]>addr) 
+			continue;
+        	if (file->fa.memb_addr[mmt]>=start_addr) {
+            		start_addr = file->fa.memb_addr[mmt];
+            		hi = mmt;
+        	}
+    	}
+    	assert(hi>0);
+
+    	/* Read from that member */
+    	return H5FD_read(file->memb[hi], addr-start_addr, size, _buf);
+}
+
+
+static haddr_t
+H5FD_multi_get_eof(H5FD_t *_file)
+{
+    	H5FD_multi_t    *file = (H5FD_multi_t*)_file;
+    	haddr_t         eof=0, tmp;
+
+    	UNIQUE_MEMBERS(file->fa.memb_map, mt) {
+        	if (file->memb[mt]) {
+                	tmp = H5FD_get_eof(file->memb[mt]);
+            		if (tmp == HADDR_UNDEF) {
+				H5E_push("H5FD_multi_get_eof", "Member file has unknown eof.", -1);
+				return(HADDR_UNDEF);
+			}
+            		if (tmp > 0) 
+				tmp += file->fa.memb_addr[mt];
+        	} else {
+			H5E_push("H5FD_multi_get_eof", "Bad eof.", -1);
+			return(HADDR_UNDEF);
+        	}
+
+        	if (tmp > eof) 
+			eof = tmp;
+    	} END_MEMBERS;
+
+    return(eof);
+}
+
+/*
+ * End virtual driver
+ */
+
+
 static void *
 H5O_sdspace_decode(const uint8_t *p)
 {
@@ -600,22 +911,6 @@ done:
 }
 
 
-/* copied and modified from H5Odtype.c */
-/*-------------------------------------------------------------------------
- * Function:    H5O_dtype_decode_helper
- *
- * Purpose:     Decodes a datatype
- *
- * Return:      Non-negative on success/Negative on failure
- *
- * Programmer:  Robb Matzke
- *              Monday, December  8, 1997
- *
- * Modifications:
- *              Robb Matzke, Thursday, May 20, 1999
- *              Added support for bitfields and opaque datatypes.
- *-------------------------------------------------------------------------
- */
 static herr_t
 H5O_dtype_decode_helper(const uint8_t **pp, H5T_t *dt)
 {
@@ -871,23 +1166,12 @@ H5O_dtype_decode_helper(const uint8_t **pp, H5T_t *dt)
 		    ret++;
                     return(ret);
                 }
-		/* delete for NOW */
-		/* Go create the array datatype now, for older versions of the datatype message */
-
-		/* delete for NOW */
-                /*
-                 * Set the "force conversion" flag if VL datatype fields exist in this
-                 * type or any component types
-                 */
 
                 /* Member size */
                 dt->shared->u.compnd.memb[i].size = temp_type->shared->size;
 
-                /* Set the field datatype (finally :-) */
                 dt->shared->u.compnd.memb[i].type = temp_type;
 
-		/* delete for now */
-		/* Check if the datatype stayed packed */
             }
             break;
 
@@ -1012,11 +1296,6 @@ H5O_dtype_decode_helper(const uint8_t **pp, H5T_t *dt)
 		return(ret);
 	    }
 
-	    /* delete for NOW */
-            /* dt->shared->force_conv=TRUE; */
-
-	    /* delete for NOW */
-            /* Mark this type as on disk (via H5T_vlen_mark()) */
             break;
 
 
@@ -1053,11 +1332,6 @@ H5O_dtype_decode_helper(const uint8_t **pp, H5T_t *dt)
 	    }
 
 
-	    /* delete for NOW */
-            /*
-             * Set the "force conversion" flag if a VL base datatype is used or
-             * or if any components of the base datatype are VL types.
-             */
             break;
 
 	   default:
@@ -1069,25 +1343,6 @@ H5O_dtype_decode_helper(const uint8_t **pp, H5T_t *dt)
 }
 
 
-/* copied and modified from H5Odtype.c */
-/*--------------------------------------------------------------------------
- NAME
-    H5O_dtype_decode
- PURPOSE
-    Decode a message and return a pointer to a memory struct
-        with the decoded information
- USAGE
-    void *H5O_dtype_decode(f, raw_size, p)
-        H5F_t *f;               IN: pointer to the HDF5 file struct
-        size_t raw_size;        IN: size of the raw information buffer
-        const uint8 *p;         IN: the raw information buffer
- RETURNS
-    Pointer to the new message in native order on success, NULL on failure
- DESCRIPTION
-        This function decodes the "raw" disk form of a simple datatype message
-    into a struct in memory native format.  The struct is allocated within this
-    function using malloc() and is returned to the caller.
---------------------------------------------------------------------------*/
 static void *
 H5O_dtype_decode(const uint8_t *p)
 {
@@ -1125,25 +1380,6 @@ H5O_dtype_decode(const uint8_t *p)
 }
 
 
-/* copied and modified from H5Ofill.c */
-/*-------------------------------------------------------------------------
- * Function:    H5O_fill_new_decode
- *
- * Purpose:     Decode a new fill value message.  The new fill value
- *              message is fill value plus space allocation time and
- *              fill value writing time and whether fill value is defined.
- *
- * Return:      Success:        Ptr to new message in native struct.
- *
- *              Failure:        NULL
- *
- * Programmer:  Raymond Lu
- *              Feb 26, 2002
- *
- * Modifications:
- *
- *-------------------------------------------------------------------------
- */
 static void *
 H5O_fill_new_decode(const uint8_t *p)
 {
@@ -1225,25 +1461,6 @@ done:
     	return(ret_value);
 }
 
-/*-------------------------------------------------------------------------
- * Function:    H5O_efl_decode
- *
- * Purpose:     Decode an external file list message and return a pointer to
- *              the message (and some other data).
- *
- * Return:      Success:        Ptr to a new message struct.
- *
- *              Failure:        NULL
- *
- * Programmer:  Robb Matzke
- *              Tuesday, November 25, 1997
- *
- * Modifications:
- *      Robb Matzke, 1998-07-20
- *      Rearranged the message to add a version number near the beginning.
- *
- *-------------------------------------------------------------------------
- */
 static void *
 H5O_efl_decode(const uint8_t *p)
 {
@@ -1323,30 +1540,6 @@ done:
 
 
 
-/* copied and modified from H5Olayout.c */
-/*-------------------------------------------------------------------------
- * Function:    H5O_layout_decode
- *
- * Purpose:     Decode an data layout message and return a pointer to a
- *              new one created with malloc().
- *
- * Return:      Success:        Ptr to new message in native order.
- *
- *              Failure:        NULL
- *
- * Programmer:  Robb Matzke
- *              Wednesday, October  8, 1997
- *
- * Modifications:
- *      Robb Matzke, 1998-07-20
- *      Rearranged the message to add a version number at the beginning.
- *
- *      Raymond Lu, 2002-2-26
- *      Added version number 2 case depends on if space has been allocated
- *      at the moment when layout header message is updated.
- *
- *-------------------------------------------------------------------------
- */
 static void *
 H5O_layout_decode(const uint8_t *p)
 {
@@ -1405,13 +1598,6 @@ H5O_layout_decode(const uint8_t *p)
 
             		for (u = 0; u < ndims; u++)
                 		UINT32DECODE(p, mesg->unused.dim[u]);
-
-            	/* Don't compute size of contiguous storage here, due to possible
-             	 * truncation of the dimension sizes when they were stored in this
-             	 * version of the layout message.  Compute the contiguous storage
-             	 * size in the dataset code, where we've got the dataspace
-             	 * information available also.  - QAK 5/26/04
-             	 */
         	} else {
             		mesg->u.chunk.ndims=ndims;
             		for (u = 0; u < ndims; u++) {
@@ -1497,23 +1683,6 @@ printf("CHUNKED_STORAGE:btree address=%lld, chunk size=%d, ndims=%d\n",
 }
 
 
-/* copied and modified from H5Opline.c */
-/*-------------------------------------------------------------------------
- * Function:    H5O_pline_decode
- *
- * Purpose:     Decodes a filter pipeline message.
- *
- * Return:      Success:        Ptr to the native message.
- *
- *              Failure:        NULL
- *
- * Programmer:  Robb Matzke
- *              Wednesday, April 15, 1998
- *
- * Modifications:
- *
- *-------------------------------------------------------------------------
- */
 static void *
 H5O_pline_decode(const uint8_t *p)
 {
@@ -1568,32 +1737,24 @@ H5O_pline_decode(const uint8_t *p)
         	UINT16DECODE(p, pline->filter[i].flags);
         	UINT16DECODE(p, pline->filter[i].cd_nelmts);
         	if (name_length) {
-            		/*
-             		 * Get the name, allocating an extra byte for an extra null
-             		 * terminator just in case there isn't one in the file (there
-             		 * should be, but to be safe...)
-             		 */
             		pline->filter[i].name = malloc(name_length+1);
             		memcpy(pline->filter[i].name, p, name_length);
             		pline->filter[i].name[name_length] = '\0';
             		p += name_length;
         	}
         	if ((n=pline->filter[i].cd_nelmts)) {
-            	/*
-             	 * Read the client data values and the padding
-             	 */
-            	pline->filter[i].cd_values = malloc(n*sizeof(unsigned));
-            	if (pline->filter[i].cd_values==NULL) {
-			H5E_push("H5O_pline_decode", "Couldn't malloc() cd_values.", -1);
-			ret++;
-			goto done;
-		}
+            		pline->filter[i].cd_values = malloc(n*sizeof(unsigned));
+            		if (pline->filter[i].cd_values==NULL) {
+				H5E_push("H5O_pline_decode", "Couldn't malloc() cd_values.", -1);
+				ret++;
+				goto done;
+			}
 
-            	for (j=0; j<pline->filter[i].cd_nelmts; j++)
-                	UINT32DECODE(p, pline->filter[i].cd_values[j]);
+            		for (j=0; j<pline->filter[i].cd_nelmts; j++)
+                		UINT32DECODE(p, pline->filter[i].cd_values[j]);
 
-            	if (pline->filter[i].cd_nelmts % 2)
-               		p += 4; /*padding*/
+            		if (pline->filter[i].cd_nelmts % 2)
+               			p += 4; /*padding*/
         	}
     	}
 
@@ -1620,36 +1781,6 @@ done:
 
 
 
-/* copied and modified from H5Oattr.c */
-/*--------------------------------------------------------------------------
- NAME
-    H5O_attr_decode
- PURPOSE
-    Decode a attribute message and return a pointer to a memory struct
-        with the decoded information
- USAGE
-    void *H5O_attr_decode(f, raw_size, p)
-        H5F_t *f;               IN: pointer to the HDF5 file struct
-        size_t raw_size;        IN: size of the raw information buffer
-        const uint8_t *p;         IN: the raw information buffer
- RETURNS
-    Pointer to the new message in native order on success, NULL on failure
- DESCRIPTION
-        This function decodes the "raw" disk form of a attribute message
-    into a struct in memory native format.  The struct is allocated within this
-    function using malloc() and is returned to the caller.
- *
- * Modifications:
- *      Robb Matzke, 17 Jul 1998
- *      Added padding for alignment.
- *
- *      Robb Matzke, 20 Jul 1998
- *      Added a version number at the beginning.
- *
- *      Raymond Lu, 8 April 2004
- *      Changed Dataspace operation on H5S_simple_t to H5S_extent_t.
- *
---------------------------------------------------------------------------*/
 static void *
 H5O_attr_decode(const uint8_t *p)
 {
@@ -1774,25 +1905,6 @@ done:
 }
 
 
-/* copied and modified from H5Oname.c */
-/*-------------------------------------------------------------------------
- * Function:    H5O_name_decode
- *
- * Purpose:     Decode a name message and return a pointer to a new
- *              native message struct.
- *
- * Return:      Success:        Ptr to new message in native struct.
- *
- *              Failure:        NULL
- *
- * Programmer:  Robb Matzke
- *              matzke@llnl.gov
- *              Aug 12 1997
- *
- * Modifications:
- *
- *-------------------------------------------------------------------------
- */
 static void *
 H5O_name_decode(const uint8_t *p)
 {
@@ -1835,23 +1947,6 @@ done:
 
 
 
-/*-------------------------------------------------------------------------
- * Function:    H5O_shared_decode
- *
- * Purpose:     Decodes a shared object message and returns it.
- *
- * Return:      Success:        Ptr to a new shared object message.
- *
- *              Failure:        NULL
- *
- * Programmer:  Robb Matzke
- *              Thursday, April  2, 1998
- *
- * Modifications:
- *      Robb Matzke, 1998-07-20
- *      Added a version number to the beginning of the message.
- *-------------------------------------------------------------------------
- */
 static void *
 H5O_shared_decode (const uint8_t *buf)
 {
@@ -1938,24 +2033,6 @@ done:
 
 
 
-/* copied and modified from H5Ocont.c */
-/*-------------------------------------------------------------------------
- * Function:    H5O_cont_decode
- *
- * Purpose:     Decode the raw header continuation message.
- *
- * Return:      Success:        Ptr to the new native message
- *
- *              Failure:        NULL
- *
- * Programmer:  Robb Matzke
- *              matzke@llnl.gov
- *              Aug  6 1997
- *
- * Modifications:
- *
- *-------------------------------------------------------------------------
- */
 static void *
 H5O_cont_decode(const uint8_t *p)
 {
@@ -2000,25 +2077,6 @@ done:
 }
 
 
-/* copied and modified from H5Ostab.c */
-/*-------------------------------------------------------------------------
- * Function:    H5O_stab_decode
- *
- * Purpose:     Decode a symbol table message and return a pointer to
- *              a newly allocated one.
- *
- * Return:      Success:        Ptr to new message in native order.
- *
- *              Failure:        NULL
- *
- * Programmer:  Robb Matzke
- *              matzke@llnl.gov
- *              Aug  6 1997
- *
- * Modifications:
- *
- *-------------------------------------------------------------------------
- */
 static void *
 H5O_stab_decode(const uint8_t *p)
 {
@@ -2063,24 +2121,6 @@ done:
 
 
 
-/*-------------------------------------------------------------------------
- * Function:    H5O_mtime_new_decode
- *
- * Purpose:     Decode a new modification time message and return a pointer to a
- *              new time_t value.
- *
- * Return:      Success:        Ptr to new message in native struct.
- *
- *              Failure:        NULL
- *
- * Programmer:  Quincey Koziol
- *              koziol@ncsa.uiuc.edu
- *              Jan  3 2002
- *
- * Modifications:
- *
- *-------------------------------------------------------------------------
- */
 static void *
 H5O_mtime_new_decode(const uint8_t *p)
 {
@@ -2124,21 +2164,6 @@ done:
     	return(ret_value);
 }
 
-/* copied and modified from H5T.c */
-/*-------------------------------------------------------------------------
- * Function:    H5T_alloc
- *
- * Purpose:     Allocates a new H5T_t structure, initializing it correctly.
- *
- * Return:      Pointer to new H5T_t on success/NULL on failure
- *
- * Programmer:  Quincey Koziol
- *              Monday, August 29, 2005
- *
- * Modifications:
- *
- *-------------------------------------------------------------------------
- */
 H5T_t *
 H5T_alloc(void)
 {
@@ -2169,24 +2194,6 @@ H5T_alloc(void)
 
 
 
-/* copied and modified from H5Gnode.c */
-/*-------------------------------------------------------------------------
- * Function:    H5G_node_size
- *
- * Purpose:     Returns the total size of a symbol table node.
- *
- * Return:      Success:        Total size of the node in bytes.
- *
- *              Failure:        Never fails.
- *
- * Programmer:  Robb Matzke
- *              matzke@llnl.gov
- *              Jun 23 1997
- *
- * Modifications:
- *
- *-------------------------------------------------------------------------
- */
 static size_t
 H5G_node_size(H5F_shared_t shared_info)
 {
@@ -2195,31 +2202,6 @@ H5G_node_size(H5F_shared_t shared_info)
             (2 * H5F_SYM_LEAF_K(shared_info)) * H5G_SIZEOF_ENTRY(shared_info));
 }
 
-/*
- *  Copied and modified from H5G_ent_decode() of H5Gent.c
- */
-/*-------------------------------------------------------------------------
- * Function:    H5G_ent_decode
- *
- * Purpose:     Decodes a symbol table entry pointed to by `*pp'.
- *
- * Errors:
- *
- * Return:      Success:        Non-negative with *pp pointing to the first byte
- *                              following the symbol table entry.
- *
- *              Failure:        Negative
- *
- * Programmer:  Robb Matzke
- *              matzke@llnl.gov
- *              Jul 18 1997
- *
- * Modifications:
- *      Robb Matzke, 17 Jul 1998
- *      Added a 4-byte padding field for alignment and future expansion.
- *
- *-------------------------------------------------------------------------
- */
 herr_t
 H5G_ent_decode(H5F_shared_t shared_info, const uint8_t **pp, H5G_entry_t *ent)
 {
@@ -2261,29 +2243,6 @@ H5G_ent_decode(H5F_shared_t shared_info, const uint8_t **pp, H5G_entry_t *ent)
 }
 
 
-/* copied and modified from H5Gent.c */
-/*-------------------------------------------------------------------------
- * Function:    H5G_ent_decode_vec
- *
- * Purpose:     Same as H5G_ent_decode() except it does it for an array of
- *              symbol table entries.
- *
- * Errors:
- *              SYM       CANTDECODE    Can't decode.
- *
- * Return:      Success:        Non-negative, with *pp pointing to the first byte
- *                              after the last symbol.
- *
- *              Failure:        Negative
- *
- * Programmer:  Robb Matzke
- *              matzke@llnl.gov
- *              Jul 18 1997
- *
- * Modifications:
- *
- *-------------------------------------------------------------------------
- */
 herr_t
 H5G_ent_decode_vec(H5F_shared_t shared_info, const uint8_t **pp, H5G_entry_t *ent, unsigned n)
 {
@@ -2303,22 +2262,6 @@ H5G_ent_decode_vec(H5F_shared_t shared_info, const uint8_t **pp, H5G_entry_t *en
 	return(ret_value);
 }
 
-/*
- *  Copied and modified from H5F_locate_signature() of H5F.c
- */
-/*-------------------------------------------------------------------------
- * Function:    locate_super_signature
- *
- * Purpose:     Finds the HDF5 super block signature in a file. The signature
- *              can appear at address 0, or any power of two beginning with
- *              512.
- *
- * Return:      Success:        The absolute format address of the signature.
- *
- *              Failure:        HADDR_UNDEF
- *
- *-------------------------------------------------------------------------
- */
 
 haddr_t
 locate_super_signature(FILE *inputfd)
@@ -2361,7 +2304,8 @@ locate_super_signature(FILE *inputfd)
 		}
 		ret = memcmp(buf, H5F_SIGNATURE, (size_t)H5F_SIGNATURE_LEN);
 		if (ret == 0) {
-			printf("FOUND super block signature\n");
+			if (debug_verbose())
+				printf("FOUND super block signature\n");
             		break;
 		}
     	}
@@ -2377,26 +2321,6 @@ locate_super_signature(FILE *inputfd)
 }
 
 
-/* copied and modified from H5F_addr_decode() of H5F.c */
-/*-------------------------------------------------------------------------
- * Function:    H5F_addr_decode
- *
- * Purpose:     Decodes an address from the buffer pointed to by *PP and
- *              updates the pointer to point to the next byte after the
- *              address.
- *
- *              If the value read is all 1's then the address is returned
- *              with an undefined value.
- *
- * Return:      void
- *
- * Programmer:  Robb Matzke
- *              Friday, November  7, 1997
- *
- * Modifications:
- *
- *-------------------------------------------------------------------------
- */
 void
 H5F_addr_decode(H5F_shared_t shared_info, const uint8_t **pp/*in,out*/, haddr_t *addr_p/*out*/)
 {
@@ -2429,25 +2353,6 @@ H5F_addr_decode(H5F_shared_t shared_info, const uint8_t **pp/*in,out*/, haddr_t 
 }
 
 
-/* copied and modified from H5Gnode.c */
-/*-------------------------------------------------------------------------
- * Function:    H5G_node_sizeof_rkey
- *
- * Purpose:     Returns the size of a raw B-link tree key for the specified
- *              file.
- *
- * Return:      Success:        Size of the key.
- *
- *              Failure:        never fails
- *
- * Programmer:  Robb Matzke
- *              matzke@llnl.gov
- *              Jul 14 1997
- *
- * Modifications:
- *
- *-------------------------------------------------------------------------
- */
 static size_t
 H5G_node_sizeof_rkey(H5F_shared_t shared_info, unsigned UNUSED)
 {
@@ -2455,21 +2360,6 @@ H5G_node_sizeof_rkey(H5F_shared_t shared_info, unsigned UNUSED)
     return (H5F_SIZEOF_SIZE(shared_info));       /*the name offset */
 }
 
-/*-------------------------------------------------------------------------
- * Function:    H5G_node_decode_key
- *
- * Purpose:     Decodes a raw key into a native key.
- *
- * Return:      Non-negative on success/Negative on failure
- *
- * Programmer:  Robb Matzke
- *              matzke@llnl.gov
- *              Jul  8 1997
- *
- * Modifications:
- *
- *-------------------------------------------------------------------------
- */
 static void *
 H5G_node_decode_key(H5F_shared_t shared_info, unsigned UNUSED, const uint8_t **p/*in,out*/)
 {
@@ -2495,20 +2385,6 @@ H5G_node_decode_key(H5F_shared_t shared_info, unsigned UNUSED, const uint8_t **p
     	return(ret_value);
 }
 
-/*-------------------------------------------------------------------------
- * Function:    H5D_istore_decode_key
- *
- * Purpose:     Decodes a raw key into a native key for the B-tree
- *
- * Return:      Non-negative on success/Negative on failure
- *
- * Programmer:  Robb Matzke
- *              Friday, October 10, 1997
- *
- * Modifications:
- *
- *-------------------------------------------------------------------------
- */
 static void *
 H5D_istore_decode_key(H5F_shared_t shared_info, size_t ndims, const uint8_t **p)
 {
@@ -2546,27 +2422,6 @@ H5D_istore_decode_key(H5F_shared_t shared_info, size_t ndims, const uint8_t **p)
 
 
 
-/* copied and modified from H5Distore.c */
-/*-------------------------------------------------------------------------
- * Function:    H5D_istore_sizeof_rkey
- *
- * Purpose:     Returns the size of a raw key for the specified UDATA.  The
- *              size of the key is dependent on the number of dimensions for
- *              the object to which this B-tree points.  The dimensionality
- *              of the UDATA is the only portion that's referenced here.
- *
- * Return:      Success:        Size of raw key in bytes.
- *
- *              Failure:        abort()
- *
- * Programmer:  Robb Matzke
- *              Wednesday, October  8, 1997
- *
- * Modifications:
- *
- *-------------------------------------------------------------------------
- */
-/* ARGSUSED */
 static size_t
 H5D_istore_sizeof_rkey(H5F_shared_t shared_data, unsigned ndims)
 {
@@ -2582,566 +2437,9 @@ H5D_istore_sizeof_rkey(H5F_shared_t shared_data, unsigned ndims)
 	return(nbytes);
 }
 
-/*
- *  Virtual driver 
- */
-void
-set_driver(int *driverid, char *driver_name) 
-{
-	if (strcmp(driver_name, "NCSAmult") == 0)  {
-		*driverid = MULTI_DRIVER;
-		printf("The driver to be used is MULTI\n");
-	} else {
-		/* default driver */
-		*driverid = SEC2_DRIVER;
-#ifdef DEBUG
-		printf("The driver to be used is SEC2\n");
-#endif
-	}
-}
 
-H5FD_class_t *
-get_driver(int driver_id)
-{
-	H5FD_class_t	*driver = NULL;
-	size_t		size;
 
-	size = sizeof(H5FD_class_t);
-	driver = malloc(size);
-	
-	switch (driver_id) {
-	case SEC2_DRIVER:
-		memcpy(driver, &H5FD_sec2_g, size);
-		break;
-	case MULTI_DRIVER:
-		memcpy(driver, &H5FD_multi_g, size);
-		break;
-	default:
-		printf("Something is wrong\n");
-		break;
-	}  /* end switch */
 
-	return(driver);
-}
-
-
-void *
-get_driver_info(int driver_id)
-{
-	H5FD_multi_fapl_t 	*driverinfo;
-	size_t			size;
-
-	switch (driver_id) {
-	case SEC2_DRIVER:
-		driverinfo = NULL;
-		break;
-	case MULTI_DRIVER:
-		size = sizeof(H5FD_multi_fapl_t);
-		driverinfo = malloc(size);
-		memcpy(driverinfo, shared_info.fa, size);
-		break;
-	default:
-		printf("Something is wrong\n");
-		break;
-	}  /* end switch */
-	return(driverinfo);
-}
-
-
-/*
- * A modified version: the .h5 file is opened using fread etc.
- * There is no FD_open() done yet at this point.
- */
-static herr_t
-decode_driver(H5F_shared_t * _shared_info, const uint8_t *buf)
-{
-	if (_shared_info->driverid == MULTI_DRIVER)
-		H5FD_multi_sb_decode(_shared_info, buf);
-}
-
-static H5FD_t *
-H5FD_open(const char *name, int driver_id)
-{
-	H5FD_t	*file = NULL;
-	H5FD_class_t 	*driver;
-
-/* probably check for callbck functions exists here too or in set_driver */
-	driver = get_driver(driver_id);
-	file = driver->open(name, driver_id);
-	if (file != NULL) {
-		file->cls = driver;
-		file->driver_id = driver_id;
-	}
-	return(file);
-}
-
-static herr_t
-H5FD_close(H5FD_t *_file)
-{
-	int	ret = SUCCEED;
-
-	if(_file->cls->close(_file) == FAIL)
-		ret = FAIL;
-	return(ret);
-}
-
-static herr_t
-H5FD_read(H5FD_t *_file, haddr_t addr, size_t size, void *buf/*out*/)
-{
-	int	ret = SUCCEED;
-
-	if (_file->cls->read(_file, addr, size, buf) == FAIL)
-		ret = FAIL;
-
-	return(ret);
-}
-
-haddr_t
-H5FD_get_eof(H5FD_t *file)
-{
-    	haddr_t     ret_value;
-
-    	assert(file && file->cls);
-
-    	if (file->cls->get_eof)
-		ret_value = file->cls->get_eof(file);
-	return(ret_value);
-#if 0
-    /* Dispatch to driver */
-    if (file->cls->get_eof) {
-        if (HADDR_UNDEF==(ret_value=(file->cls->get_eof)(file)))
-            printf("driver get_eof request failed");
-    } else {
-        ret_value = file->maxaddr;
-    }
-#endif
-}
-
-
-
-/*
- *  sec2 driver
- */
-/* copied and modified from H5FDsec2.c */
-static H5FD_t *
-H5FD_sec2_open(const char *name, int driver_id)
-{
-	H5FD_sec2_t	*file = NULL;
-	H5FD_t		*ret_value;
-	int		fd = -1;
-	struct stat	sb;
-
-	/* do unix open here */
-	fd = open(name, O_RDONLY);
-	if (fd < 0) {
-		H5E_push("H5FD_sec2_open", "Unable to open the file.", -1);
-		goto done;
-	}
-	if (fstat(fd, &sb)<0) {
-		H5E_push("H5FD_sec2_open", "Unable to fstat file.", -1);
-		goto done;
-	}
-	file = calloc(1, sizeof(H5FD_sec2_t));
-	file->fd = fd;
-	file->eof = sb.st_size;
-done:
-	ret_value = (H5FD_t *)file;
-	return(ret_value);
-}
-
-static haddr_t
-H5FD_sec2_get_eof(H5FD_t *_file)
-{
-    H5FD_sec2_t *file = (H5FD_sec2_t*)_file;
- 
-    return(file->eof);
-
-}
-
-static herr_t
-H5FD_sec2_close(H5FD_t *_file)
-{
-	int	ret;
-
-	ret = close(((H5FD_sec2_t *)_file)->fd);
-	return(ret);
-}
-
-
-static herr_t
-H5FD_sec2_read(H5FD_t *_file, haddr_t addr, size_t size, void *buf/*out*/)
-{
-	int	status;
-	int	ret = SUCCEED;
-	int	fd;
-
-	/* NEED To find out about lseek64??? */
-	fd = ((H5FD_sec2_t *)_file)->fd;
-	lseek(fd, addr, SEEK_SET);
-       	if (read(fd, buf, size)<0)
-		ret = FAIL;
-}
-
-
-/*
- *  MULTI driver
- */
-/* copied and modified from H5FDmulti.c */
-
-/* Loop through all mapped files */
-#define UNIQUE_MEMBERS(MAP,LOOPVAR) {                                         \
-    H5FD_mem_t _unmapped, LOOPVAR;                                            \
-    hbool_t _seen[H5FD_MEM_NTYPES];                                           \
-                                                                              \
-    memset(_seen, 0, sizeof _seen);                                           \
-    for (_unmapped=H5FD_MEM_SUPER; _unmapped<H5FD_MEM_NTYPES; _unmapped=(H5FD_mem_t)(_unmapped+1)) {  \
-        LOOPVAR = MAP[_unmapped];                                             \
-        if (H5FD_MEM_DEFAULT==LOOPVAR) LOOPVAR=_unmapped;                     \
-        assert(LOOPVAR>0 && LOOPVAR<H5FD_MEM_NTYPES);                         \
-        if (_seen[LOOPVAR]++) continue;
-
-
-#define ALL_MEMBERS(LOOPVAR) {                                                \
-    H5FD_mem_t LOOPVAR;                                                       \
-    for (LOOPVAR=H5FD_MEM_DEFAULT; LOOPVAR<H5FD_MEM_NTYPES; LOOPVAR=(H5FD_mem_t)(LOOPVAR+1)) {
-
-
-#define END_MEMBERS     }}
-
-
-void
-set_multi_driver_properties(H5FD_multi_fapl_t **fa, H5FD_mem_t map[], const char *memb_name[], haddr_t memb_addr[])
-{
-	*fa = malloc(sizeof(H5FD_multi_fapl_t));
-        /* Commit map */
-        ALL_MEMBERS(mt) {
-            	(*fa)->memb_map[mt] = map[mt];
-	    	(*fa)->memb_addr[mt] = memb_addr[mt];
-		if (memb_name[mt]) {
-	    		(*fa)->memb_name[mt] = malloc(strlen(memb_name[mt])+1);
-	    		strcpy((*fa)->memb_name[mt], memb_name[mt]);
-		} else 
-			(*fa)->memb_name[mt] = NULL;
-        } END_MEMBERS;
-}
-
-static herr_t
-H5FD_multi_sb_decode(H5F_shared_t * _shared_info, const unsigned char *buf)
-{
-    	char                x[2*H5FD_MEM_NTYPES*8];
-    	H5FD_mem_t          map[H5FD_MEM_NTYPES];
-    	int                 i;
-    	size_t              nseen=0;
-    	const char          *memb_name[H5FD_MEM_NTYPES];
-    	haddr_t             memb_addr[H5FD_MEM_NTYPES];
-    	haddr_t             memb_eoa[H5FD_MEM_NTYPES];
-	haddr_t	xx;
-/* handle memb_eoa[]?? */
-/* handle mt_in use??? */
-
-
-    	/* Set default values */
-    	ALL_MEMBERS(mt) {
-        	memb_addr[mt] = HADDR_UNDEF;
-        	memb_eoa[mt] = HADDR_UNDEF;
-        	memb_name[mt] = NULL;
-    	} END_MEMBERS;
-
-    	/*
-     	 * Read the map and count the unique members.
-      	 */
-    	memset(map, 0, sizeof map);
-    	for (i=0; i<6; i++) {
-        	map[i+1] = (H5FD_mem_t)buf[i];
-    	}
-    	UNIQUE_MEMBERS(map, mt) {
-        	nseen++;
-    	} END_MEMBERS;
-    	buf += 8;
-
-    	/* Decode Address and EOA values */
-    	assert(sizeof(haddr_t)<=8);
-    	UNIQUE_MEMBERS(map, mt) {
-        	UINT64DECODE(buf, xx);
-        	memb_addr[_unmapped] = xx;
-        	UINT64DECODE(buf, xx);
-        	memb_eoa[_unmapped] = xx;
-#ifdef DEBUG
-		printf("memb_addr[]=%llu;memb_eoa[]=%llu\n", 
-			memb_addr[_unmapped], memb_eoa[_unmapped]);
-#endif
-    	} END_MEMBERS;
-
-    	/* Decode name templates */
-    	UNIQUE_MEMBERS(map, mt) {
-        	size_t n = strlen((const char *)buf)+1;
-        	memb_name[_unmapped] = (const char *)buf;
-#ifdef DEBUG
-		printf("memb_name=%s\n", memb_name[_unmapped]);
-#endif
-        	buf += (n+7) & ~((unsigned)0x0007);
-    	} END_MEMBERS;
-
-	set_multi_driver_properties((H5FD_multi_fapl_t **)&(_shared_info->fa), map, memb_name, memb_addr);
-    	return 0;
-}
-
-static H5FD_t *
-H5FD_multi_open(const char *name, int driver_id)
-{
-    	H5FD_multi_t        	*file=NULL;
-    	H5FD_multi_fapl_t   	*fa;
-    	H5FD_mem_t          	m;
-
-	H5FD_t			*ret_value;
-	int			len, ret;
-
-
-	ret = SUCCEED;
-
-    	/* Check arguments */
-    	if (!name || !*name) {
-		H5E_push("H5FD_multi_open", "Invalid file name.", -1);
-		goto error;
-	}
-
-    	/*
-     	 * Initialize the file from the file access properties, using default
-       	 * values if necessary.
-      	 */
-    	if (NULL==(file=calloc(1, sizeof(H5FD_multi_t)))) {
-		H5E_push("H5FD_multi_open", "Memory allocation failed.", -1);
-		goto error;
-	}
-
-	fa = get_driver_info(driver_id);
-    	assert(fa);
-    	ALL_MEMBERS(mt) {
-        	file->fa.memb_map[mt] = fa->memb_map[mt];
-        	file->fa.memb_addr[mt] = fa->memb_addr[mt];
-        	if (fa->memb_name[mt]) {
-			file->fa.memb_name[mt] = malloc(strlen(fa->memb_name[mt]));
-            		strcpy(file->fa.memb_name[mt], fa->memb_name[mt]);
-        	} else
-            		file->fa.memb_name[mt] = NULL;
-    	} END_MEMBERS;
-
-	file->name = malloc(strlen(name)+1);
-    	strcpy(file->name, name);
-
-    	if (compute_next(file) <0 )
-        	printf("compute_next() failed\n");
-    	if (open_members(file) != SUCCEED) {
-		H5E_push("H5FD_multi_open", "Unable to open member files.", -1);
-		goto error;
-	}
-
-/* NEED To checkon this also, make shared_info to be _shared_info for pointer */
-/* need to check on return values for driver routines */
-/* error check at the end of each driver routine, also, free malloc space */
-#if 0
-    if (H5FD_MEM_DEFAULT==(m=file->fa.memb_map[H5FD_MEM_SUPER]))
-        m = H5FD_MEM_SUPER;
-    if (NULL==file->memb[m])
-        goto error;
-#endif
-
-	ret_value = (H5FD_t *)file;
-	return(ret_value);
-
-error:
-    	/* Cleanup and fail */
-    	if (file) {
-       	 	ALL_MEMBERS(mt) {
-            		if (file->memb[mt]) (void)H5FD_close(file->memb[mt]);
-            		if (file->fa.memb_name[mt]) free(file->fa.memb_name[mt]);
-        	} END_MEMBERS;
-        	if (file->name) free(file->name);
-        	free(file);
-    	}
-    	return NULL;
-}
-
-static herr_t 
-H5FD_multi_close(H5FD_t *_file)
-{
- 	H5FD_multi_t   	*file = (H5FD_multi_t*)_file;
-	int		nerrors = 0;
-
-
-    /* Close as many members as possible */
-    	ALL_MEMBERS(mt) {
-        	if (file->memb[mt]) {
-            		if (H5FD_close(file->memb[mt])<0)
-                		nerrors++;
-            	else
-                	file->memb[mt] = NULL;
-		}
-	} END_MEMBERS;
-
-    	if (nerrors) {
-		H5E_push("H5FD_multi_close", "Error closing member file(s).", -1);
-		return(FAIL);
-	}
-
-    	/* Clean up other stuff */
-    	ALL_MEMBERS(mt) {
-        if (file->fa.memb_name[mt]) 
-		free(file->fa.memb_name[mt]);
-    	} END_MEMBERS;
-    	free(file->name);
-    	free(file);
-    	return 0;
-}
-
-static int
-compute_next(H5FD_multi_t *file)
-{
-
-    ALL_MEMBERS(mt) {
-        file->memb_next[mt] = HADDR_UNDEF;
-    } END_MEMBERS;
-
-    UNIQUE_MEMBERS(file->fa.memb_map, mt1) {
-        UNIQUE_MEMBERS(file->fa.memb_map, mt2) {
-            if (file->fa.memb_addr[mt1]<file->fa.memb_addr[mt2] &&
-                (HADDR_UNDEF==file->memb_next[mt1] ||
-                 file->memb_next[mt1]>file->fa.memb_addr[mt2])) {
-                file->memb_next[mt1] = file->fa.memb_addr[mt2];
-            }
-        } END_MEMBERS;
-        if (HADDR_UNDEF==file->memb_next[mt1]) {
-            file->memb_next[mt1] = HADDR_MAX; /*last member*/
-        }
-    } END_MEMBERS;
-
-    return 0;
-}
-
-
-static int
-open_members(H5FD_multi_t *file)
-{
-    	char    tmp[1024], newname[1024];
-	char	*ptr;
-	int	ret;
-
-
-	/* fix the name */
-	strcpy(newname, file->name);
-	ptr = strchr(newname, '-');
-	*ptr = '\0';
-
-	ret = SUCCEED;
-
-    	UNIQUE_MEMBERS(file->fa.memb_map, mt) {
-#if 0
-        if (file->memb[mt]) continue; /*already open*/
-#endif
-        	assert(file->fa.memb_name[mt]);
-        	sprintf(tmp, file->fa.memb_name[mt], newname);
-            	file->memb[mt] = H5FD_open(tmp, SEC2_DRIVER);
-		if (file->memb[mt] == NULL)
-			ret = FAIL;
-    	} END_MEMBERS;
-
-    	return(ret);
-}
-
-
-static herr_t
-H5FD_multi_read(H5FD_t *_file, haddr_t addr, size_t size, void *_buf/*out*/)
-{
-    	H5FD_multi_t        *file = (H5FD_multi_t*)_file;
-    	H5FD_mem_t          mt, mmt, hi=H5FD_MEM_DEFAULT;
-    	haddr_t             start_addr=0;
-
-    	/* Find the file to which this address belongs */
-    	for (mt=H5FD_MEM_SUPER; mt<H5FD_MEM_NTYPES; mt=(H5FD_mem_t)(mt+1)) {
-        	mmt = file->fa.memb_map[mt];
-        	if (H5FD_MEM_DEFAULT==mmt) 
-			mmt = mt;
-        	assert(mmt>0 && mmt<H5FD_MEM_NTYPES);
-
-        	if (file->fa.memb_addr[mmt]>addr) 
-			continue;
-        	if (file->fa.memb_addr[mmt]>=start_addr) {
-            		start_addr = file->fa.memb_addr[mmt];
-            		hi = mmt;
-        	}
-    	}
-    	assert(hi>0);
-
-    	/* Read from that member */
-    	return H5FD_read(file->memb[hi], addr-start_addr, size, _buf);
-}
-
-
-static haddr_t
-H5FD_multi_get_eof(H5FD_t *_file)
-{
-    	H5FD_multi_t    *file = (H5FD_multi_t*)_file;
-    	haddr_t         eof=0, tmp;
-
-    	UNIQUE_MEMBERS(file->fa.memb_map, mt) {
-        	if (file->memb[mt]) {
-                	tmp = H5FD_get_eof(file->memb[mt]);
-            		if (tmp == HADDR_UNDEF) {
-				H5E_push("H5FD_multi_get_eof", "Member file has unknown eof.", -1);
-				return(HADDR_UNDEF);
-			}
-            		if (tmp > 0) 
-				tmp += file->fa.memb_addr[mt];
-        	} else {
-			H5E_push("H5FD_multi_get_eof", "Bad eof.", -1);
-			return(HADDR_UNDEF);
-        	}
-
-        	if (tmp > eof) 
-			eof = tmp;
-    	} END_MEMBERS;
-
-    return(eof);
-}
-
-
-
-/*
- *  FAMILY file driver
- */
-static H5FD_t *
-H5FD_family_open(const char *name, int driver_id)
-{
-	H5FD_family_t	*file = NULL;
-	H5FD_t		*ret_value;
-
-}
-
-static herr_t
-H5FD_family_close(H5FD_t *_file)
-{
-	/* NEEDTO CHANGE THAT */
-	return(SUCCEED);
-}
-
-
-static herr_t
-H5FD_family_read(H5FD_t *_file, haddr_t addr, size_t size, void *buf/*out*/)
-{
-	int	ret = SUCCEED;
-	int	fd;
-
-}
-
-static haddr_t
-H5FD_family_get_eof(H5FD_t *_file)
-{
-
-}
-
-
-
-/* Based on H5F_read_superblock() in H5Fsuper.c */
 /*
  * 1. Read in the information from the superblock
  * 2. Validate the information obtained.
@@ -3181,7 +2479,8 @@ check_superblock(FILE *inputfd, H5F_shared_t *_shared_info)
 		_shared_info->super_addr = 0;
 	}
 	
-	printf("VALIDATING the super block at %llu...\n", _shared_info->super_addr);
+	if (debug_verbose())
+		printf("VALIDATING the super block at %llu...\n", _shared_info->super_addr);
 
 	fseek(inputfd, _shared_info->super_addr, SEEK_SET);
 	fread(buf, 1, fixed_size, inputfd);
@@ -3423,7 +2722,6 @@ check_superblock(FILE *inputfd, H5F_shared_t *_shared_info)
 }
 
 
-/* Based on H5G_node_load() in H5Gnode.c */
 herr_t
 check_sym(H5FD_t *_file, H5F_shared_t shared_info, haddr_t sym_addr) 
 {
@@ -3437,7 +2735,8 @@ check_sym(H5FD_t *_file, H5F_shared_t shared_info, haddr_t sym_addr)
 
 	assert(H5F_addr_defined(sym_addr));
 
-	printf("VALIDATING the SNOD at %llu...\n", sym_addr);
+	if (debug_verbose())
+		printf("VALIDATING the SNOD at %llu...\n", sym_addr);
 	size = H5G_node_size(shared_info);
 	ret = SUCCEED;
 
@@ -3471,21 +2770,13 @@ check_sym(H5FD_t *_file, H5F_shared_t shared_info, haddr_t sym_addr)
 		ret++;
 		goto done;
 	}
-#if 0
-	fseek(inputfd, sym_addr, SEEK_SET);
-       	if (fread(buf, 1, size, inputfd)<0) {
-		H5E_push("check_sym", "Unable to read in the symbol table node.", sym_addr);
-		ret++;
-		goto done;
-	}
-#endif
 
 	p = buf;
     	ret = memcmp(p, H5G_NODE_MAGIC, H5G_NODE_SIZEOF_MAGIC);
 	if (ret != 0) {
 		H5E_push("check_sym", "Couldn't find SNOD signature.", sym_addr);
 		ret++;
-	} else
+	} else if (debug_verbose())
 		printf("FOUND SNOD signature.\n");
 
     	p += 4;
@@ -3574,7 +2865,8 @@ check_btree(H5FD_t *_file, H5F_shared_t shared_info, haddr_t btree_addr, unsigne
     	hdr_size = H5B_SIZEOF_HDR(shared_info);
 	ret = SUCCEED;
 
-	printf("VALIDATING the btree at %llu...\n", btree_addr);
+	if (debug_verbose())
+		printf("VALIDATING the btree at %llu...\n", btree_addr);
 
 	buf = malloc(hdr_size);
 	if (buf == NULL) {
@@ -3588,15 +2880,6 @@ check_btree(H5FD_t *_file, H5F_shared_t shared_info, haddr_t btree_addr, unsigne
 		ret++;
 		goto done;
 	}
-#if 0
-	 /* read fixed-length part of object header */
-	fseek(inputfd, btree_addr, SEEK_SET);
-       	if (fread(buf, 1, (size_t)hdr_size, inputfd)<0) {
-		H5E_push("check_btree", "Unable to read btree header.", btree_addr);
-		ret++;
-		goto done;
-	}
-#endif
 	p = buf;
 
 	/* magic number */
@@ -3605,7 +2888,7 @@ check_btree(H5FD_t *_file, H5F_shared_t shared_info, haddr_t btree_addr, unsigne
 		H5E_push("check_btree", "Couldn't find btree signature.", btree_addr);
 		ret++;
 		goto done;
-	} else
+	} else if (debug_verbose())
 		printf("FOUND btree signature.\n");
 
 	p+=4;
@@ -3665,14 +2948,6 @@ check_btree(H5FD_t *_file, H5F_shared_t shared_info, haddr_t btree_addr, unsigne
 		goto done;
 	}
 
-#if 0
-	fseek(inputfd, btree_addr+hdr_size, SEEK_SET);
-       	if (fread(buffer, 1, key_ptr_size, inputfd)<0) {
-		H5E_push("check_btree", "Unable to read key+child.", btree_addr);
-		ret++;
-		goto done;
-	}
-#endif
 	p = buffer;
 		
 	for (u = 0; u < entries; u++) {
@@ -3733,7 +3008,6 @@ done:
 }
 
 
-/* copied and modified from H5HL_load() of H5HL.c */
 herr_t
 check_lheap(H5FD_t *_file, H5F_shared_t shared_info, haddr_t lheap_addr, uint8_t **ret_heap_chunk)
 {
@@ -3752,7 +3026,8 @@ check_lheap(H5FD_t *_file, H5F_shared_t shared_info, haddr_t lheap_addr, uint8_t
     	hdr_size = H5HL_SIZEOF_HDR(shared_info);
     	assert(hdr_size<=sizeof(hdr));
 
-	printf("VALIDATING the local heap at %llu...\n", lheap_addr);
+	if (debug_verbose())
+		printf("VALIDATING the local heap at %llu...\n", lheap_addr);
 	ret = SUCCEED;
 
 	if (H5FD_read(_file, lheap_addr, hdr_size, hdr) == FAIL) {
@@ -3760,14 +3035,6 @@ check_lheap(H5FD_t *_file, H5F_shared_t shared_info, haddr_t lheap_addr, uint8_t
 		ret++;
 		goto done;
 	}
-#if 0
-	fseek(inputfd, lheap_addr, SEEK_SET);
-       	if (fread(hdr, 1, (size_t)hdr_size, inputfd)<0) {
-		H5E_push("check_lheap", "Unable to read local heap header.", lheap_addr);
-		ret++;
-		goto done;
-	}
-#endif
     	p = hdr;
 
 	/* magic number */
@@ -3776,7 +3043,7 @@ check_lheap(H5FD_t *_file, H5F_shared_t shared_info, haddr_t lheap_addr, uint8_t
 		H5E_push("check_lheap", "Couldn't find local heap signature.", lheap_addr);
 		ret++;
 		goto done;
-	} else
+	} else if (debug_verbose())
 		printf("FOUND local heap signature.\n");
 
 	p += H5HL_SIZEOF_MAGIC;
@@ -3836,14 +3103,6 @@ check_lheap(H5FD_t *_file, H5F_shared_t shared_info, haddr_t lheap_addr, uint8_t
 			ret++;
 			goto done;
 		}
-#if 0
-		fseek(inputfd, addr_data_seg, SEEK_SET);
-       		if (fread(heap_chunk+hdr_size, 1, data_seg_size, inputfd)<0) {
-			H5E_push("check_lheap", "Unable to read local heap data segment.", lheap_addr);
-			ret++;
-			goto done;
-		}
-#endif
 	} 
 
 
@@ -3889,28 +3148,6 @@ done:
 }
 
 
-/* copied and modified from H5HG_load() of H5HG.c */
-/*-------------------------------------------------------------------------
- * Function:    H5HG_load
- *
- * Purpose:     Loads a global heap collection from disk.
- *
- * Return:      Success:        Ptr to a global heap collection.
- *
- *              Failure:        NULL
- *
- * Programmer:  Robb Matzke
- *              Friday, March 27, 1998
- *
- * Modifications:
- *              Robb Matzke, 1999-07-28
- *              The ADDR argument is passed by value.
- *
- *      Quincey Koziol, 2002-7-180
- *      Added dxpl parameter to allow more control over I/O from metadata
- *      cache.
- *-------------------------------------------------------------------------
- */
 herr_t
 check_gheap(H5FD_t *_file, H5F_shared_t shared_info, haddr_t gheap_addr, uint8_t **ret_heap_chunk)
 {
@@ -3939,27 +3176,20 @@ check_gheap(H5FD_t *_file, H5F_shared_t shared_info, haddr_t gheap_addr, uint8_t
 		goto done;
 	}
 
- 	printf("VALIDATING the global heap at %llu...\n", gheap_addr);
+ 	if (debug_verbose())
+		printf("VALIDATING the global heap at %llu...\n", gheap_addr);
         
 	if (H5FD_read(_file, gheap_addr, H5HG_MINSIZE, heap->chunk) == FAIL) {
 		H5E_push("check_gheap", "Unable to read global heap collection.", gheap_addr);
 		ret++;
 		goto done;
 	}
-#if 0
-        fseek(inputfd, gheap_addr, SEEK_SET);
-        if (fread(heap->chunk, 1, H5HG_MINSIZE, inputfd)<0) {
-                H5E_push("check_gheap", "Unable to read global heap collection.", gheap_addr);
-                ret++;
-		goto done;
-	}
-#endif
 
     	/* Magic number */
     	if (memcmp(heap->chunk, H5HG_MAGIC, H5HG_SIZEOF_MAGIC)) {
 		H5E_push("check_gheap", "Couldn't find GCOL signature.", gheap_addr);
 		ret++;
-	} else
+	} else if (debug_verbose())
 		printf("FOUND GLOBAL HEAP SIGNATURE\n");
 
     	p = heap->chunk + H5HG_SIZEOF_MAGIC;
@@ -3978,10 +3208,6 @@ check_gheap(H5FD_t *_file, H5F_shared_t shared_info, haddr_t gheap_addr, uint8_t
     	H5F_DECODE_LENGTH(shared_info, p, heap->size);
     	assert (heap->size>=H5HG_MINSIZE);
 
-    	/*
-     	 * If we didn't read enough in the first try, then read the rest of the
-         * collection now.
-     	 */
     	if (heap->size > H5HG_MINSIZE) {
         	haddr_t next_addr = gheap_addr + (hsize_t)H5HG_MINSIZE;
 
@@ -3995,14 +3221,6 @@ check_gheap(H5FD_t *_file, H5F_shared_t shared_info, haddr_t gheap_addr, uint8_t
 			ret++;
 			goto done;
 		}
-#if 0
-        	fseek(inputfd, next_addr, SEEK_SET);
-        	if (fread(heap->chunk+H5HG_MINSIZE, 1, heap->size-H5HG_MINSIZE, inputfd)<0) {
-                	H5E_push("check_gheap", "Unable to read global heap collection.", gheap_addr);
-                	ret++;
-			goto done;
-    		}
-#endif
 	}  /* end if */
 
     	/* Decode each object */
@@ -4152,136 +3370,62 @@ decode_validate_messages(H5FD_t *_file, H5O_t *oh)
 	    }
 	    switch (id) {
 		case H5O_SDSPACE_ID:
-#ifdef DEBUG
-			printf("sdim->type=%d, sdim->nelem=%d, sdim->rank=%d\n",
-				((H5S_extent_t *)mesg)->type, ((H5S_extent_t *)mesg)->nelem, 
-				((H5S_extent_t *)mesg)->rank);
-                	for (j = 0; j < ((H5S_extent_t *)mesg)->rank; j++)
-                    		printf("size=%d\n", ((H5S_extent_t *)mesg)->size[j]);
-			if (((H5S_extent_t *)mesg)->max == NULL)
-				printf("NULL pointer for sdim->max\n");
-			else {
-                		for (j = 0; j < ((H5S_extent_t *)mesg)->rank; j++)
-                    			printf("max=%d\n", ((H5S_extent_t *)mesg)->max[j]);
-			}
-#endif
-			break;
 		case H5O_DTYPE_ID:
-#ifdef DEBUG
-			printf("type=%d, size=%d\n", ((H5T_t *)mesg)->shared->type, 
-				((H5T_t *)mesg)->shared->size);
-#endif
+		case H5O_FILL_NEW_ID:
+    		case H5O_PLINE_ID:
+		case H5O_MTIME_NEW_ID:
+		case H5O_NAME_ID:
+    		case H5O_ATTR_ID:
 			break;
 
-		case H5O_FILL_NEW_ID:
-			break;
     		case H5O_EFL_ID:
-			status = check_lheap(_file, shared_info, shared_info.base_addr+((H5O_efl_t *)mesg)->heap_addr, &heap_chunk);
+			status = check_lheap(_file, shared_info, 
+			  shared_info.base_addr+((H5O_efl_t *)mesg)->heap_addr, &heap_chunk);
 			if (status != SUCCEED) {
 				H5E_push("decode_validate_messages", "Failure from check_lheap()", -1);
 				H5E_print(stderr);
 				H5E_clear();
 				ret = SUCCEED;
 			}
-#if 0
-        assert(mesg->slot[u].name);
-#endif
 			/* should be linked together as else when status == SUCCEED */
     			for (k = 0; k < ((H5O_efl_t *)mesg)->nused; k++) {
 			
 				s = heap_chunk+H5HL_SIZEOF_HDR(shared_info)+((H5O_efl_t *)mesg)->slot[k].name_offset;
         			assert (s && *s);
-#ifdef DEBUG
-				printf("External name_offset:%d\n", 
-					((H5O_efl_t *)mesg)->slot[k].name_offset);
-				printf("Externalfile:%s\n", s);
-#endif
 			}
 			if (heap_chunk) free(heap_chunk);
 			break;
 		case H5O_LAYOUT_ID:
-#ifdef DEBUG
-			printf("type=%d\n", ((H5O_layout_t *)mesg)->version, ((H5O_layout_t *)mesg)->type);
-			printf("contig address=%d, ndims=%d\n", 
-				((H5O_layout_t *)mesg)->u.contig.addr, ((H5O_layout_t *)mesg)->unused.ndims);
-			for (u = 0; u < ((H5O_layout_t *)mesg)->unused.ndims; u++)
-				printf("dim=%d\n", ((H5O_layout_t *)mesg)->unused.dim[u]);
-#endif
 			if (((H5O_layout_t *)mesg)->type == H5D_CHUNKED) {
 				unsigned	ndims;
 				haddr_t		btree_addr;
 				
 				ndims = ((H5O_layout_t *)mesg)->u.chunk.ndims;
 				btree_addr = ((H5O_layout_t *)mesg)->u.chunk.addr;
-/* NEED TO CHECK ON THIS */
-				status = check_btree(_file, shared_info, shared_info.base_addr+btree_addr, ndims);
+				/* NEED TO CHECK ON THIS */
+				status = check_btree(_file, shared_info, 
+				     shared_info.base_addr+btree_addr, ndims);
 			}
 
 			break;
-    		case H5O_PLINE_ID:
-#ifdef DEBUG
-			for (j=0; j<((H5O_pline_t *)mesg)->nused; j++) {
-				printf("plinename=%s;\n", ((H5O_pline_t *)mesg)->filter[j].name);
-			}
-#endif
-			break;
-    		case H5O_ATTR_ID:
-#ifdef DEBUG
-			printf("Attribute dt_size=%d,ds_size=%d\n", 
-				((H5A_t *)mesg)->dt_size, ((H5A_t *)mesg)->ds_size);
-			printf("Attribute name=%s\n", ((H5A_t *)mesg)->name);
-			printf("attribute type=%d, attribute size=%d\n", 
-				((H5A_t *)mesg)->dt->shared->type, ((H5A_t *)mesg)->dt->shared->size);
-			printf("attr->ds->extent:type=%d, :rank=%d, :nelem=%d\n", 
-				((H5A_t *)mesg)->ds->extent.type, ((H5A_t *)mesg)->ds->extent.rank, 
-				((H5A_t *)mesg)->ds->extent.nelem);
-			printf("attr->data_size=%d\n", ((H5A_t *)mesg)->data_size);
-#endif
 
-#ifdef TEMP
-			/* IT MAY NOT BE a string, maybe global heap pointer or 
-			   some others but for now can i say get type if string print string, 
-			   otherwise print integer */
-			pp = ((H5A_t*)mesg)->data;
-            		UINT32DECODE(pp, global1);
-		H5F_addr_decode(shared_info, (const uint8_t **)&pp, &global);
-			printf("global1=%ld, global=%lld\n", global1, global);
-/* SHULD CHECK for return status */
-			check_gheap(_file, shared_info, shared_info.base_addr+global, NULL);
-#endif
-
-			break;
 		case H5O_STAB_ID:
-#ifdef DEBUG
-			printf("stab->btree_addr=%lld,stab->heap_addr=%lld\n",
-				((H5O_stab_t *)mesg)->btree_addr, ((H5O_stab_t *)mesg)->heap_addr);
-#endif
-			status = check_btree(_file, shared_info, shared_info.base_addr+((H5O_stab_t *)mesg)->btree_addr, 0);
+			status = check_btree(_file, shared_info, 
+			     shared_info.base_addr+((H5O_stab_t *)mesg)->btree_addr, 0);
 			if (status != SUCCEED) {
 				H5E_push("decode_validate_messages", "Failure from check_btree()", -1);
 				H5E_print(stderr);
 				H5E_clear();
 				ret = SUCCEED;
 			}
-			status = check_lheap(_file, shared_info, shared_info.base_addr+((H5O_stab_t *)mesg)->heap_addr, NULL);
+			status = check_lheap(_file, shared_info, 
+			     shared_info.base_addr+((H5O_stab_t *)mesg)->heap_addr, NULL);
 			if (status != SUCCEED) {
 				H5E_push("decode_validate_messages", "Failure from check_lheap()", -1);
 				H5E_print(stderr);
 				H5E_clear();
 				ret = SUCCEED;
 			}
-			break;
-		case H5O_MTIME_NEW_ID:
-#ifdef DEBUG
-			mtm = localtime((time_t *)mesg);
-			printf("month=%d, mday=%d, year=%d\n", 
-				mtm->tm_mon, mtm->tm_mday, mtm->tm_year);
-#endif
-			break;
-		case H5O_NAME_ID:
-#ifdef DEBUG
-			printf("The comment string is %s\n", ((H5O_name_t *)mesg)->s);
-#endif
 			break;
 		
 		default:
@@ -4296,29 +3440,6 @@ decode_validate_messages(H5FD_t *_file, H5O_t *oh)
 
 
 
-/* copied and modified from H5O.c */
-/*-------------------------------------------------------------------------
- * Function:    H5O_find_in_ohdr
- *
- * Purpose:     Find a message in the object header without consulting
- *              a symbol table entry.
- *
- * Return:      Success:    Index number of message.
- *              Failure:    Negative
- *
- * Programmer:  Robb Matzke
- *              matzke@llnl.gov
- *              Aug  6 1997
- *
- * Modifications:
- *      Robb Matzke, 1999-07-28
- *      The ADDR argument is passed by value.
- *
- *      Bill Wendling, 2003-09-30
- *      Modified so that the object header needs to be AC_protected
- *      before calling this function.
- *-------------------------------------------------------------------------
- */
 static unsigned
 H5O_find_in_ohdr(H5FD_t *_file, H5O_t *oh, const H5O_class_t **type_p, int sequence)
 {
@@ -4373,28 +3494,6 @@ H5O_find_in_ohdr(H5FD_t *_file, H5O_t *oh, const H5O_class_t **type_p, int seque
 }
 
 
-/* copied and modified from H5Oshared.c */
-/*-------------------------------------------------------------------------
- * Function:    H5O_shared_read
- *
- * Purpose:     Reads a message referred to by a shared message.
- *
- * Return:      Success:        Ptr to message in native format.  The message
- *                              should be freed by calling H5O_reset().  If
- *                              MESG is a null pointer then the caller should
- *                              also call H5MM_xfree() on the return value
- *                              after calling H5O_reset().
- *
- *              Failure:        NULL
- *
- * Programmer:  Quincey Koziol
- *              koziol@ncsa.uiuc.edu
- *              Sep 24 2003
- *
- * Modifications:
- *
- *-------------------------------------------------------------------------
- */
 herr_t
 H5O_shared_read(H5FD_t *_file, H5O_shared_t *shared, const H5O_class_t *type)
 {
@@ -4428,7 +3527,6 @@ H5O_shared_read(H5FD_t *_file, H5O_shared_t *shared, const H5O_class_t *type)
 
 
 
-/* copied and modified from H5O_load() of H5O.c */
 herr_t
 check_obj_header(H5FD_t *_file, H5F_shared_t shared_info, haddr_t obj_head_addr, int search, const H5O_class_t *type)
 {
@@ -4468,7 +3566,8 @@ check_obj_header(H5FD_t *_file, H5F_shared_t shared_info, haddr_t obj_head_addr,
     	hdr_size = H5O_SIZEOF_HDR(shared_info);
     	assert(hdr_size<=sizeof(buf));
 
-	printf("VALIDATING the object header at %llu...\n", obj_head_addr);
+	if (debug_verbose())
+		printf("VALIDATING the object header at %llu...\n", obj_head_addr);
 
 #ifdef DEBUG
 	printf("obj_head_addr=%d, hdr_size=%d\n", 
@@ -4486,15 +3585,6 @@ check_obj_header(H5FD_t *_file, H5F_shared_t shared_info, haddr_t obj_head_addr,
 		ret++;
 		return(ret);
 	}
-#if 0
-	 /* read fixed-length part of object header */
-	fseek(inputfd, obj_head_addr, SEEK_SET);
-       	if (fread(buf, 1, (size_t)hdr_size, inputfd)<0) {
-		H5E_push("check_obj_header", "Unable to read object header.", obj_head_addr);
-		ret++;
-		return(ret);
-	}
-#endif 
 
     	p = buf;
 	oh->version = *p++;
@@ -4556,15 +3646,6 @@ check_obj_header(H5FD_t *_file, H5F_shared_t shared_info, haddr_t obj_head_addr,
 			ret++;
 			return(ret);
 		}
-
-#if 0
-		fseek(inputfd, chunk_addr, SEEK_SET);
-       		if (fread(oh->chunk[chunkno].image, 1, (size_t)chunk_size, inputfd)<0) {
-			H5E_push("check_obj_header", "Unable to read object header data.", obj_head_addr);
-			ret++;
-			return(ret);
-		}  /* end if */
-#endif
 
 
 		for (p = oh->chunk[chunkno].image; p < oh->chunk[chunkno].image+chunk_size; p += mesg_size) {
@@ -4648,9 +3729,12 @@ usage(prog_name)
 	fflush(stdout);
     	fprintf(stdout, "usage: %s [OPTIONS] file\n", prog_name);
     	fprintf(stdout, "  OPTIONS\n");
-    	fprintf(stdout, "     -h, --help   	Print a usage message and exit\n");
-    	fprintf(stdout, "     -v, --version	Print version number and exit\n");
-    	fprintf(stdout, "     -V, --verbose	Detail output of what is being done\n");
+    	fprintf(stdout, "     -h,  --help   	Print a usage message and exit\n");
+    	fprintf(stdout, "     -V,  --version	Print version number and exit\n");
+    	fprintf(stdout, "     -vn, --verbose=n	Verboseness mode\n");
+    	fprintf(stdout, "     		n=0	Terse--only indicates if the file is compliant or not\n");
+    	fprintf(stdout, "     		n=1	Default--prints its progress and all errors found\n");
+    	fprintf(stdout, "     		n=2	Verbose--prints everything it knows, usually for debugging\n");
 	fprintf(stdout, "\n");
 
 }
@@ -4658,6 +3742,12 @@ usage(prog_name)
 leave(int ret)
 {
 	exit(ret);
+}
+
+int
+debug_verbose(void)
+{
+        return(g_verbose_num==DEBUG_VERBOSE);
 }
 
 
@@ -4675,6 +3765,7 @@ int main(int argc, char **argv)
 	const 	char *s = NULL;
 	char	*prog_name;
 	char	*fname;
+	char	*rest;
 	
 
 	if ((prog_name=strrchr(argv[0], '/'))) 
@@ -4682,6 +3773,7 @@ int main(int argc, char **argv)
 	else 
 		prog_name = argv[0];
 
+	g_verbose_num = DEFAULT_VERBOSE;
 	for (argno=1; argno<argc && argv[argno][0]=='-'; argno++) {
 		if (!strcmp(argv[argno], "--help")) {
 			usage(prog_name);
@@ -4689,30 +3781,44 @@ int main(int argc, char **argv)
 		} else if (!strcmp(argv[argno], "--version")) {
 			print_version(prog_name);
 			leave(EXIT_SUCCESS);
-		} else if (!strcmp(argv[argno], "--verbose"))
+		} else if (!strncmp(argv[argno], "--verbose=", 10)) {
 			printf("VERBOSE is true\n");
-		else if (argv[argno][1] != '-') {
+			g_verbose_num = strtol(argv[argno]+10, NULL, 0);
+			printf("verbose_num=%d\n", g_verbose_num);
+		} else if (!strncmp(argv[argno], "--verbose", 10)) {
+			printf("no number provided, assume default verbose\n");
+			g_verbose_num = DEFAULT_VERBOSE;
+		} else if (!strncmp(argv[argno], "-v", 2)) {
+			if (argv[argno][2]) {
+				s = argv[argno]+2;
+				g_verbose_num = strtol(s, NULL, 0);
+				printf("single verbose_num=%d\n", g_verbose_num);
+			} else {
+				usage(prog_name);
+				leave(EXIT_COMMAND_FAILURE);
+			}
+		} else if (argv[argno][1] != '-') {
 			for (s=argv[argno]+1; *s; s++) {
 				switch (*s) {
 					case 'h':  /* --help */
 						usage(prog_name);
 						leave(EXIT_SUCCESS);
-					case 'v':  /* --version */
+					case 'V':  /* --version */
 						print_version(prog_name);
 						leave(EXIT_SUCCESS);
-					case 'V':  /* --verbose */
-						printf("single VERBOSE is true\n");
 						break;
 					default:
 						usage(prog_name);	
 						leave(EXIT_COMMAND_FAILURE);
 				}  /* end switch */
 			}  /* end for */
-		} else
-			printf("default is true, no option provided...\n");
+		} else {
+			printf("default is true, no option provided...assume default verbose\n");
+		}
 	}
 
-	if (argno >= argc) {
+	printf("verboseness is %d\n", g_verbose_num);
+	if ((argno >= argc) || (g_verbose_num > DEBUG_VERBOSE)) {
 		usage(prog_name);
 		leave(EXIT_COMMAND_FAILURE);
 	}
@@ -4727,7 +3833,7 @@ int main(int argc, char **argv)
         if (inputfd == NULL) {
                 fprintf(stderr, "fopen(\"%s\") failed: %s\n", fname,
                                  strerror(errno));
-                exit(errno);
+		goto done;
         }
 
 
@@ -4737,7 +3843,7 @@ int main(int argc, char **argv)
 		H5E_print(stderr);
 		H5E_clear();
 		fclose(inputfd);
-		exit(1);
+		goto done;
 	}
 
 	fclose(inputfd);
@@ -4749,7 +3855,7 @@ int main(int argc, char **argv)
 		H5E_push("Main", "Errors from H5FD_open(). Validation stopped.", -1);
 		H5E_print(stderr);
 		H5E_clear();
-                exit(1);
+		goto done;
         }
 
 
@@ -4758,7 +3864,7 @@ int main(int argc, char **argv)
 		H5E_push("Main", "Invalid file size or file size less than superblock eoa. Validation stopped.", -1);
 		H5E_print(stderr);
 		H5E_clear();
-                exit(1);
+		goto done;
 	}
 
 	ret = table_init(&obj_table);
@@ -4782,14 +3888,14 @@ int main(int argc, char **argv)
 		H5E_push("Main", "Errors from H5FD_close().", -1);
 		H5E_print(stderr);
 		H5E_clear();
-		exit(1);
 	}
 	
+done:
 	if (H5E_FoundError()){
 	    printf("non-compliance errors found\n");
-	    exit(2);
+	    leave(EXIT_FORMAT_FAILURE);
 	}else{
 	    printf("No non-compliance errors found\n");
-	    exit(0);
+	    leave(EXIT_SUCCESS);
 	}
 }
