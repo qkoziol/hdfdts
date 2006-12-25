@@ -216,7 +216,8 @@ echo ========================================
 echo The following tests are expected to fail.
 echo ========================================
 TOOLFAIL invalidfiles/base_addr.h5
-TOOLFAIL invalidfiles/leaf_internal_k.h5
+# Temporary block out since this file is not really inavlid.
+#TOOLFAIL invalidfiles/leaf_internal_k.h5
 TOOLFAIL invalidfiles/offsets_lengths.h5
 TOOLFAIL invalidfiles/sb_version.h5
 TOOLFAIL invalidfiles/signature.h5
