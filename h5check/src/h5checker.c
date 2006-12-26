@@ -3746,7 +3746,7 @@ int search, const obj_class_t *type)
 
 print_version(const char *prog_name)
 {
-	fprintf(stdout, "%s: Version %d\n", prog_name, VERSION);
+	fprintf(stdout, "%s: Version %s\n", prog_name, H5Check_VERSION);
 }
 
 void
