@@ -10,28 +10,8 @@
 
 static	int	nerrors=0;	/* number of errors found */
 
-/*-------------------------------------------------------------------------
- * Function:    H5E_push
- *
- * Purpose:     Pushes a new error record onto error stack.
- *              The name of a function where the error was detected
- *              and an error description string. 
- *              The function name and error description strings must
- *              be statically allocated (the FUNC_ENTER() macro takes care of
- *              the function name but the
- *              programmer is responsible for the description string.
- *
- * Return:      Non-negative on success/Negative on failure
- *
- * Programmer:  Robb Matzke
- *              Friday, December 12, 1997
- *
- * Modifications:
- *
- *-------------------------------------------------------------------------
- */
 void
-H5E_push(const char *function_name, const char *desc, haddr_t address)
+error_push(const char *function_name, const char *desc, haddr_t address)
 {
 	
     	H5E_t   *estack = H5E_get_my_stack ();
@@ -70,23 +50,8 @@ H5E_push(const char *function_name, const char *desc, haddr_t address)
 
 
 
-/*-------------------------------------------------------------------------
- * Function:    H5E_clear
- *
- * Purpose:     Clears the error stack for the current thread.
- *		Free the memory for function and description holders
- *
- * Return:      Non-negative on success/Negative on failure
- *
- * Programmer:  Robb Matzke
- *              Friday, February 27, 1998
- *
- * Modifications:
- *
- *-------------------------------------------------------------------------
- */
 herr_t
-H5E_clear(void)
+error_clear(void)
 {
 	int	i;
     	H5E_t   *estack = H5E_get_my_stack ();
@@ -101,7 +66,7 @@ H5E_clear(void)
 }
 
 void
-H5E_print(FILE *stream)
+error_print(FILE *stream)
 {
 	int	i;
 	H5E_t   *estack = H5E_get_my_stack ();
@@ -128,7 +93,7 @@ H5E_print(FILE *stream)
 }
 
 int
-H5E_FoundError(void)
+found_error(void)
 {
     return(nerrors!=0);
 }
