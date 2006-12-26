@@ -402,6 +402,7 @@ static hid_t create_file(char *name, char *driver, char *superblock)
     h5_fixname(fname, fapl);
 
     /* create a file */  
+    printf("Create %s: ", fname);
     fid = H5Fcreate(fname, H5F_ACC_TRUNC, fcpl, fapl);
     VRFY((fid>=0), "H5Fcreate");
 
@@ -1966,132 +1967,157 @@ int main(int argc, char *argv[])
     unsigned i=0;
 
     /* initial message */
-    printf("Generating test files for H5check...");
+    printf("Generating test files for H5check...\n");
     fflush(stdout);
     
     /* root group is created along with the file */
     fid = create_file(fname[i++], driver, superblock);
+    printf("just the root group\n");
     close_file(fid, "");
 
     /* create a linear group structure */
     fid = create_file(fname[i++], driver, superblock);
+    printf("a linear group structure\n");
     gen_linear(fid);
     close_file(fid, "");
 
     /* create a treelike structure */
     fid = create_file(fname[i++], driver, superblock);
+    printf("a treelike structure\n");
     gen_group_struct(fid, GROUP_PREFIX, HEIGHT, HIERARCHICAL);
     close_file(fid, "");
 
     /* create a multipath structure */
     fid = create_file(fname[i++], driver, superblock);
+    printf("a multipath structure\n");
     gen_group_struct(fid, GROUP_PREFIX, HEIGHT, MULTIPATH);
     close_file(fid, "");
     
     /* create a cyclical structure */
     fid = create_file(fname[i++], driver, superblock);
+    printf("a cyclical structure\n");
     gen_group_struct(fid, GROUP_PREFIX, HEIGHT, CYCLICAL);
     close_file(fid, "");
 
     /* create an empty dataset for each possible rank */
     fid = create_file(fname[i++], driver, superblock);
+    printf("an empty dataset for each possible rank\n");
     gen_rank_datasets(fid, EMPTY);
     close_file(fid, "");
 
     /* create a full dataset for each possible rank */
     fid = create_file(fname[i++], driver, superblock);
+    printf("a full dataset for each possible rank\n");
     gen_rank_datasets(fid, FULL);
     close_file(fid, "");
 
     /* create a tree like structure where some groups are empty
     while others contain a dataset */
     fid = create_file(fname[i++], driver, superblock);
+    printf("a tree like structure where some groups are empty while others contain a dataset\n");
     gen_group_datasets(fid, GROUP_PREFIX, HEIGHT, RIGHT);
     close_file(fid, "");
 
     /* creates a file with datasets using different
     basic datatypes */
     fid = create_file(fname[i++], driver, superblock);
+    printf("datasets using different basic datatypes\n");
     gen_basic_types(fid, FULL);
     close_file(fid, "");
 
     /* create a file with a dataset using a compound datatype */
     fid = create_file(fname[i++], driver, superblock);
+    printf("a dataset using a compound datatype\n");
     gen_compound(fid, FULL);
     close_file(fid, "");
 
     /* create a file with a dataset using a VL datatype */
     fid = create_file(fname[i++], driver, superblock);
+    printf("a dataset using a VL datatype\n");
     gen_vl(fid, FULL);
     close_file(fid, "");
 
     /* create a file with a dataset using an enumerated datatype */
     fid = create_file(fname[i++], driver, superblock);
+    printf("a dataset using an enumerated datatype\n");
     gen_enum(fid, FULL);
     close_file(fid, "");
     
     /* create a file with a dataset using reference datatype */
     fid = create_file(fname[i++], driver, superblock);
+    printf("a dataset using reference datatype\n");
     gen_reference(fid);
     close_file(fid, "");
 
     /* create a file with an array datatype */
     fid = create_file(fname[i++], driver, superblock);
+    printf("an array datatype\n");
     gen_array(fid, FULL);
     close_file(fid, "");
 
     /* create a file with several datasets using different filters */
     fid = create_file(fname[i++], driver, superblock);
+    printf("several datasets using different filters\n");
     gen_filters(fid);
     close_file(fid, "");
 
     /* create a file using stdio file driver */
     fid = create_file(fname[i++], "stdio", superblock);
+    printf("using stdio file driver\n");
     gen_group_datasets(fid, GROUP_PREFIX, HEIGHT, RIGHT);
     close_file(fid, "");
 
     /* create a file using split file driver */
     fid = create_file(fname[i++], "split", superblock);
+    printf("using split file driver\n");
     gen_group_datasets(fid, GROUP_PREFIX, HEIGHT, RIGHT);
     close_file(fid, "");
 
     /* create a file using multi file driver */
     fid = create_file(fname[i++], "multi", superblock);
+    printf("using multi file driver\n");
     gen_group_datasets(fid, GROUP_PREFIX, HEIGHT, RIGHT);
     close_file(fid, "");
 
     /* create a file using family file driver */
     fid = create_file(fname[i++], "family", superblock);
+    printf("using family file driver\n");
     gen_group_datasets(fid, GROUP_PREFIX, HEIGHT, RIGHT);
     close_file(fid, "");
 
     /* create a file using log file driver */
     fid = create_file(fname[i++], "log", superblock);
+    printf("using log file driver\n");
     gen_group_datasets(fid, GROUP_PREFIX, HEIGHT, RIGHT);
     close_file(fid, "");
 
     /* create a file with several datasets using attributes */
     fid = create_file(fname[i++], driver, superblock);
+    printf("several datasets using attributes\n");
     gen_attr(fid);
     close_file(fid, "");
 
     /* create a file using time datatype */
     fid = create_file(fname[i++], driver, superblock);
+    printf("using time datatype\n");
     gen_time(fid);
     close_file(fid, "");
 
     /* create an external file without data (no raw data files)*/
     fid = create_file(fname[i++], driver, superblock);
+    printf("an external file without data (no raw data files)\n");
     gen_external(fid, EMPTY);
     close_file(fid, "");
 
     /* create an external file with data */
     fid = create_file(fname[i++], driver, superblock);
+    printf("an external file with data\n");
     gen_external(fid, FULL);
     close_file(fid, "");
 
     /* create a file with a non-standard superblock */
     fid = create_file(fname[i++], driver, "alternate");
+    printf("non-standard superblock\n");
     gen_group_datasets(fid, GROUP_PREFIX, HEIGHT, RIGHT);
     close_file(fid, "");
    
