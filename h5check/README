@@ -1,0 +1,8 @@
+README
+------
+This is the alpha1 release of the HDF5 format checker.
+
+tool/ holds the source code of the h5check tool.
+test/ holds the test suite of the h5check tool.
+doc/  holds all document related to the tool
+
