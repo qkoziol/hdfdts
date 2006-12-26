@@ -1,13 +1,17 @@
+/* exit status */
 #define         EXIT_SUCCESS		0
 #define         EXIT_COMMAND_FAILURE    1
 #define         EXIT_FORMAT_FAILURE     2
-#define		VERSION			1
 
+/* command line options */
 #define DEFAULT_VERBOSE 1
 #define TERSE_VERBOSE   0
 #define DEBUG_VERBOSE   2
-
 extern int	g_verbose_num;
+
+/* release version of h5checker */
+#define		VERSION			1
+
 
 /* need to take care of haddr_t and HADDR_UNDEF */
 /* see H5public.h for definition of haddr_t, H5pubconf.h */
@@ -20,16 +24,28 @@ typedef	unsigned long long		haddr_t;
 /* see H5public.h for definition of hsize_t, H5pubconf.h */
 typedef size_t                  hsize_t;
 
+typedef unsigned int hbool_t;
+typedef int herr_t;
 
 
-#define H5F_SIGNATURE     "\211HDF\r\n\032\n"
-#define H5F_SIGNATURE_LEN 8
-#define H5F_SUPERBLOCK_SIZE  256
-#define H5F_DRVINFOBLOCK_SIZE  1024
+/* for handling hard links */
+typedef struct obj_t {
+    haddr_t 	objno;
+    int	  	nlink;
+} obj_t;
 
 
-#define SEC2_DRIVER	1
-#define MULTI_DRIVER	2
+typedef struct table_t {
+    size_t 	size;
+    size_t 	nobjs; 
+    obj_t	*objs;
+} table_t;
+
+
+#define HDF_SIGNATURE     "\211HDF\r\n\032\n"
+#define HDF_SIGNATURE_LEN 8
+#define SUPERBLOCK_SIZE  256
+#define DRVINFOBLOCK_SIZE  1024
 
 
 
@@ -58,7 +74,7 @@ typedef size_t                  hsize_t;
 }
 
 
-#define H5F_DECODE_LENGTH(F,p,l) switch(H5F_SIZEOF_SIZE(F)) {     			      \
+#define DECODE_LENGTH(F,p,l) switch(SIZEOF_SIZE(F)) {     			      \
    case 4: UINT32DECODE(p,l); break;                                          \
    case 8: UINT64DECODE(p,l); break;                                          \
    case 2: UINT16DECODE(p,l); break;                                          \
@@ -72,31 +88,26 @@ typedef size_t                  hsize_t;
                    ((*(p) & 0x80) ? ~0xffffffff : 0x0))); (p)++;             \
 }
 
-#define H5_CHECK_OVERFLOW(var,vartype,casttype) \
+#define CHECK_OVERFLOW(var,vartype,casttype) \
 {                                               \
     casttype _tmp_overflow=(casttype)(var);     \
     assert((var)==(vartype)_tmp_overflow);      \
 }
 
 
-#define H5F_addr_defined(X)     (X!=HADDR_UNDEF)
+#define addr_defined(X)     (X!=HADDR_UNDEF)
+
+#define SIZEOF_ADDR(F)      ((F).size_offsets)
+#define SIZEOF_SIZE(F)      ((F).size_lengths)
+#define SYM_LEAF_K(F)       ((F).gr_leaf_node_k)
 
 
-#define H5F_SIZEOF_ADDR(F)      ((F).size_offsets)
-#define H5F_SIZEOF_SIZE(F)      ((F).size_lengths)
-#define H5F_SYM_LEAF_K(F)       ((F).gr_leaf_node_k)
-
-
-typedef unsigned int hbool_t;
-typedef int herr_t;
-
-
-#define HDF5_SUPERBLOCK_VERSION_DEF     0       /* The default super block format         */
-#define HDF5_SUPERBLOCK_VERSION_MAX     1       /* The maximum super block format         */
-#define HDF5_FREESPACE_VERSION  0       /* of the Free-Space Info         */
-#define HDF5_OBJECTDIR_VERSION  0       /* of the Object Directory format */
-#define HDF5_SHAREDHEADER_VERSION 0     /* of the Shared-Header Info      */
-#define HDF5_DRIVERINFO_VERSION 0       /* of the Driver Information Block*/
+#define SUPERBLOCK_VERSION_DEF     0       /* The default super block format         */
+#define SUPERBLOCK_VERSION_MAX     1       /* The maximum super block format         */
+#define FREESPACE_VERSION  0       /* of the Free-Space Info         */
+#define OBJECTDIR_VERSION  0       /* of the Object Directory format */
+#define SHAREDHEADER_VERSION 0     /* of the Shared-Header Info      */
+#define DRIVERINFO_VERSION 0       /* of the Driver Information Block*/
 
 #define SUCCEED         0
 #define FAIL            (-1)
@@ -113,13 +124,13 @@ typedef int herr_t;
 
 #define NELMTS(X)           (sizeof(X)/sizeof(X[0]))
 
-#define H5G_SIZEOF_SCRATCH      16
-#define H5G_SIZEOF_ENTRY(F) 			\
-   (H5F_SIZEOF_SIZE(F) +   /* name offset */    		\
-    H5F_SIZEOF_ADDR(F) +   /* object header address */    	\
+#define GP_SIZEOF_SCRATCH      16
+#define GP_SIZEOF_ENTRY(F) 			\
+   (SIZEOF_SIZE(F) +   /* name offset */    		\
+    SIZEOF_ADDR(F) +   /* object header address */    	\
     4 +        /* cache type */    				\
     4 +        /* reserved   */    				\
-    H5G_SIZEOF_SCRATCH) /* scratch pad space */
+    GP_SIZEOF_SCRATCH) /* scratch pad space */
 
 
 typedef enum H5G_type_t {
@@ -143,33 +154,25 @@ typedef union H5G_cache_t {
 } H5G_cache_t;
 
 
-typedef struct H5G_entry_t {
+typedef struct GP_entry_t {
     H5G_type_t  type;                   /*type of information cached         */
     H5G_cache_t cache;                  /*cached data from object header     */
     size_t      name_off;               /*offset of name within name heap    */
     haddr_t     header;                 /*file address of object header      */
-} H5G_entry_t;
+} GP_entry_t;
 
 
 typedef struct H5G_node_t {
     unsigned nsyms;                     /*number of symbols                  */
-    H5G_entry_t *entry;                 /*array of symbol table entries      */
+    GP_entry_t *entry;                 /*array of symbol table entries      */
 } H5G_node_t;
 
-typedef struct H5FD_t H5FD_t;
 
-
-typedef struct H5FD_class_t H5FD_class_t;
-
-typedef struct H5FD_multi_fapl_t	H5FD_multi_fapl_t;
-
-
-/* NEED TO DETERMINE what info to be included on there */
 /*
  *  A global structure for storing the information obtained
  *  from the superblock to be shared by all routines.
  */
-typedef struct 	H5F_shared_t {
+typedef struct 	global_shared_t {
 	haddr_t		super_addr;	    /* absolute address of the super block */
         size_t          size_offsets;       /* size of offsets: sizeof_addr */
         size_t          size_lengths;       /* size of lengths: sizeof_size */
@@ -181,10 +184,10 @@ typedef struct 	H5F_shared_t {
         haddr_t         freespace_addr;     /* relative address of free-space info  */
         haddr_t         stored_eoa;         /* end of file address */
         haddr_t         driver_addr;        /* file driver information block address*/
-	H5G_entry_t 	*root_grp;	    /* ?? */
+	GP_entry_t 	*root_grp;	    /* ?? */
 	int		driverid;	    /* the driver id to be used */
 	void		*fa;	    	    /* driver specific info */
-} H5F_shared_t;
+} global_shared_t;
 
 
 #define H5O_ALIGN(X)            (8*(((X)+8-1)/8))
@@ -199,55 +202,59 @@ typedef struct 	H5F_shared_t {
 
 
 
-#define H5O_NULL_ID     0x0000          /* Null Message.  */
-#define H5O_SDSPACE_ID  0x0001          /* Simple Dataspace Message.  */
-#define H5O_DTYPE_ID    0x0003          /* Datatype Message.  */
-#define H5O_FILL_ID     0x0004          /* Fill Value Message. (Old)  */
-#define H5O_FILL_NEW_ID 0x0005          /* Fill Value Message. (New)  */
-#define H5O_EFL_ID      0x0007          /* External File List Message  */
-#define H5O_LAYOUT_ID   0x0008          /* Data Storage Layout Message.  */
-#define H5O_BOGUS_ID    0x0009          /* "Bogus" Message.  */
-#define H5O_PLINE_ID    0x000b          /* Filter pipeline message.  */
-#define H5O_ATTR_ID     0x000c          /* Attribute Message.  */
-#define H5O_NAME_ID     0x000d          /* Object name message.  */
-#define H5O_MTIME_ID    0x000e          /* Modification time message. (Old)  */
-#define H5O_SHARED_ID   0x000f          /* Shared object message.  */
-#define H5O_CONT_ID     0x0010          /* Object header continuation message.  */
-#define H5O_STAB_ID     0x0011          /* Symbol table message.  */
-#define H5O_MTIME_NEW_ID 0x0012         /* Modification time message. (New)  */
+/* Object Header Message IDs */
+#define OBJ_NIL_ID       0x0000          /* NIL 				  */
+#define OBJ_SDS_ID  	 0x0001          /* Simple Dataspace  			  */
+#define OBJ_DT_ID    	 0x0003          /* Datatype   				  */
+#define OBJ_FILL_OLD_ID  0x0004          /* Data Storage - Fill Value (Old)  	  */
+#define OBJ_FILL_ID 	 0x0005          /* Data Storage - Fill Value 		  */
+#define OBJ_EDF_ID       0x0007          /* Data Storage - External Data Files 	  */
+#define OBJ_LAYOUT_ID    0x0008          /* Data Storage - Layout 		  */
+#define OBJ_FILTER_ID    0x000b          /* Data Storage - Filter pipeline  	  */
+#define OBJ_ATTR_ID      0x000c          /* Attribute 				  */
+#define OBJ_COMM_ID  	 0x000d          /* Object Comment 			  */
+#define OBJ_MDT_OLD_ID   0x000e          /* Object Modification Date & time (Old) */
+#define OBJ_SHARED_ID    0x000f          /* Shared Object Message 		  */
+#define OBJ_CONT_ID      0x0010          /* Object Header Continuation 		  */
+#define OBJ_GROUP_ID     0x0011          /* Group Message.  			  */
+#define OBJ_MDT_ID 	 0x0012          /* Object Modification Date & Time 	  */
 
 
-#define H5S_MAX_RANK    32
+/* 
+ * Simple Dataspace 
+ */
+#define SDS_MAX_RANK    32
 
-typedef enum H5S_class_t {
-    H5S_NO_CLASS         = -1,  /*error                                      */
-    H5S_SCALAR           = 0,   /*scalar variable                            */
-    H5S_SIMPLE           = 1,   /*simple data space                          */
-    H5S_COMPLEX          = 2    /*complex data space                         */
-} H5S_class_t;
+typedef enum SDS_class_t {
+    SDS_NO_CLASS         = -1,  /*error                                      */
+    SDS_SCALAR           = 0,   /*scalar variable                            */
+    SDS_SIMPLE           = 1,   /*simple data space                          */
+    SDS_COMPLEX          = 2    /*complex data space                         */
+} SDS_class_t;
 
 
-#define H5O_SDSPACE_VERSION        1
-
-#define H5S_VALID_MAX   0x01
+#define SDS_VERSION        1
+#define SDS_VALID_MAX   0x01
 
 
 typedef struct {
-    H5S_class_t type;   /* Type of extent */
+    SDS_class_t type;   /* Type of extent */
     hsize_t nelem;      /* Number of elements in extent */
 
     unsigned rank;      /* Number of dimensions */
     hsize_t *size;      /* Current size of the dimensions */
     hsize_t *max;       /* Maximum size of the dimensions */
-} H5S_extent_t;
+} SDS_extent_t;
+
+/* end Simple Dataspace */
 
 
-#define H5O_DTYPE_VERSION_COMPAT        1
 
-#define H5O_DTYPE_VERSION_UPDATED       2
+/* Datatype : TO BE PROCESSED */
 
-#define H5T_OPAQUE_TAG_MAX      256     /* Maximum length of an opaque tag */
-                                        /* This could be raised without too much difficulty */
+#define DT_VERSION_COMPAT        1
+#define DT_VERSION_UPDATED       2
+#define DT_OPAQUE_TAG_MAX      256   
 
 typedef enum H5T_order_t {
     H5T_ORDER_ERROR      = -1,  /*error                                      */
@@ -337,20 +344,20 @@ typedef enum {
 
 
 typedef enum H5T_class_t {
-    H5T_NO_CLASS         = -1,  /*error                                      */
-    H5T_INTEGER          = 0,   /*integer types                              */
-    H5T_FLOAT            = 1,   /*floating-point types                       */
-    H5T_TIME             = 2,   /*date and time types                        */
-    H5T_STRING           = 3,   /*character string types                     */
-    H5T_BITFIELD         = 4,   /*bit field types                            */
-    H5T_OPAQUE           = 5,   /*opaque types                               */
-    H5T_COMPOUND         = 6,   /*compound types                             */
-    H5T_REFERENCE        = 7,   /*reference types                            */
-    H5T_ENUM             = 8,   /*enumeration types                          */
-    H5T_VLEN             = 9,   /*Variable-Length types                      */
-    H5T_ARRAY            = 10,  /*Array types                                */
+    DT_NO_CLASS         = -1,  /* error                                      */
+    DT_INTEGER          = 0,   /* integer types                              */
+    DT_FLOAT            = 1,   /* floating-point types                       */
+    DT_TIME             = 2,   /* date and time types                        */
+    DT_STRING           = 3,   /* character string types                     */
+    DT_BITFIELD         = 4,   /* bit field types                            */
+    DT_OPAQUE           = 5,   /* opaque types                               */
+    DT_COMPOUND         = 6,   /* compound types                             */
+    DT_REFERENCE        = 7,   /* reference types                            */
+    DT_ENUM             = 8,   /* enumeration types                          */
+    DT_VLEN             = 9,   /* variable-Length types                      */
+    DT_ARRAY            = 10,  /* array types                                */
 
-    H5T_NCLASSES                /*this must be last                          */
+    DT_NCLASSES                /* this must be last                          */
 } H5T_class_t;
 
 
@@ -434,15 +441,15 @@ typedef struct H5T_opaque_t {
 typedef struct H5T_array_t {
     size_t      nelem;          /* total number of elements in array */
     int         ndims;          /* member dimensionality        */
-    size_t      dim[H5S_MAX_RANK];  /* size in each dimension       */
-    int         perm[H5S_MAX_RANK]; /* index permutation            */
+    size_t      dim[SDS_MAX_RANK];  /* size in each dimension       */
+    int         perm[SDS_MAX_RANK]; /* index permutation            */
 } H5T_array_t;
 
 typedef struct H5T_shared_t {
     hsize_t             fo_count; /* number of references to this file object */
     H5T_class_t         type;   /*which class of type is this?               */
     size_t              size;   /*total size of an instance of this type     */
-    struct H5T_t        *parent;/*parent type for derived datatypes          */
+    struct type_t        *parent;/*parent type for derived datatypes          */
     union {
         H5T_atomic_t    atomic; /* an atomic datatype              */
         H5T_compnd_t    compnd;
@@ -453,10 +460,10 @@ typedef struct H5T_shared_t {
     } u;
 } H5T_shared_t;
 
-typedef struct H5T_t H5T_t;
+typedef struct type_t type_t;
 
-struct H5T_t {
-    H5G_entry_t     ent;    /* entry information if the type is a named type */
+struct type_t {
+    GP_entry_t     ent;    /* entry information if the type is a named type */
     H5T_shared_t   *shared; /* all other information */
 };
 
@@ -464,205 +471,229 @@ typedef struct H5T_cmemb_t {
     char                *name;          /*name of this member                */
     size_t              offset;         /*offset from beginning of struct    */
     size_t              size;           /*total size: dims * type_size       */
-    struct H5T_t        *type;          /*type of this member                */
+    struct type_t        *type;          /*type of this member                */
 } H5T_cmemb_t;
 
+/* end Datatype : TO BE PROCESSED */
+
+/* 
+ * Data Storage -  Fill Value 
+ */
+#define OBJ_FILL_VERSION      1
+#define OBJ_FILL_VERSION_2    2
+
+typedef enum fill_alloc_time_t {
+    FILL_ALLOC_TIME_ERROR        =-1,
+    FILL_ALLOC_TIME_DEFAULT      =0,
+    FILL_ALLOC_TIME_EARLY        =1,
+    FILL_ALLOC_TIME_LATE =2,
+    FILL_ALLOC_TIME_INCR =3
+} fill_alloc_time_t;
+
+typedef enum fill_time_t {
+    FILL_TIME_ERROR =-1,
+    FILL_TIME_ALLOC =0,
+    FILL_TIME_NEVER =1,
+    FILL_TIME_IFSET =2
+} fill_time_t;
 
 
-#define H5O_FILL_VERSION      1
-#define H5O_FILL_VERSION_2    2
-
-
-typedef enum H5D_alloc_time_t {
-    H5D_ALLOC_TIME_ERROR        =-1,
-    H5D_ALLOC_TIME_DEFAULT      =0,
-    H5D_ALLOC_TIME_EARLY        =1,
-    H5D_ALLOC_TIME_LATE =2,
-    H5D_ALLOC_TIME_INCR =3
-} H5D_alloc_time_t;
-
-typedef enum H5D_fill_time_t {
-    H5D_FILL_TIME_ERROR =-1,
-    H5D_FILL_TIME_ALLOC =0,
-    H5D_FILL_TIME_NEVER =1,
-    H5D_FILL_TIME_IFSET =2
-} H5D_fill_time_t;
-
-
-typedef struct H5O_fill_new_t {
+typedef struct obj_fill_t {
     ssize_t             size;           /*number of bytes in the fill value  */
     void                *buf;           /*the fill value                     */
-    H5D_alloc_time_t    alloc_time;     /* time to allocate space            */
-    H5D_fill_time_t     fill_time;      /* time to write fill value          */
+    fill_alloc_time_t    alloc_time;     /* time to allocate space            */
+    fill_time_t     fill_time;      /* time to write fill value          */
     hbool_t             fill_defined;   /* whether fill value is defined     */
-} H5O_fill_new_t;
+} obj_fill_t;
+
+/* end Data Storage - Fill Value */
 
 
-#define H5O_EFL_VERSION         1
+/* 
+ * Data Storage - External Data Files
+ */
+#define OBJ_EDF_VERSION         1
+#define OBJ_EDF_ALLOC           16      /*number of slots to alloc at once   */
+#define OBJ_EDF_UNLIMITED       H5F_UNLIMITED /*max possible file size       */
 
-#define H5O_EFL_ALLOC           16      /*number of slots to alloc at once   */
-#define H5O_EFL_UNLIMITED       H5F_UNLIMITED /*max possible file size       */
-
-typedef struct H5O_efl_entry_t {
+typedef struct obj_edf_entry_t {
     size_t      name_offset;            /*offset of name within heap         */
     char        *name;                  /*malloc'd name                      */
     off_t       offset;                 /*offset of data within file         */
     hsize_t     size;                   /*size allocated within file         */
-} H5O_efl_entry_t;
+} obj_edf_entry_t;
 
-typedef struct H5O_efl_t {
+typedef struct obj_edf_t {
     haddr_t     heap_addr;              /*address of name heap               */
     size_t      nalloc;                 /*number of slots allocated          */
     size_t      nused;                  /*number of slots used               */
-    H5O_efl_entry_t *slot;              /*array of external file entries     */
-} H5O_efl_t;
+    obj_edf_entry_t *slot;              /*array of external file entries     */
+} obj_edf_t;
+
+/* end Data Storage - External Data Files */
 
 
+/*
+ * Data Storage: layout 
+ */
+#define OBJ_LAYOUT_VERSION_1    1
+#define OBJ_LAYOUT_VERSION_2    2
+#define OBJ_LAYOUT_VERSION_3    3
 
-#define H5O_LAYOUT_VERSION_1    1
-#define H5O_LAYOUT_VERSION_2    2
-#define H5O_LAYOUT_VERSION_3    3
-
-#define H5O_LAYOUT_NDIMS        (H5S_MAX_RANK+1)
-
-
-typedef enum H5D_layout_t {
-    H5D_LAYOUT_ERROR    = -1,
-    H5D_COMPACT         = 0,    /*raw data is very small                     */
-    H5D_CONTIGUOUS      = 1,    /*the default                                */
-    H5D_CHUNKED         = 2,    /*slow and fancy                             */
-    H5D_NLAYOUTS        = 3     /*this one must be last!                     */
-} H5D_layout_t;
+#define OBJ_LAYOUT_NDIMS        (SDS_MAX_RANK+1)
 
 
-typedef struct H5O_layout_contig_t {
+typedef enum DATA_layout_t {
+    DATA_LAYOUT_ERROR    = -1,
+    DATA_COMPACT         = 0,    /*raw data is very small                     */
+    DATA_CONTIGUOUS      = 1,    /*the default                                */
+    DATA_CHUNKED         = 2,    /*slow and fancy                             */
+    DATA_NLAYOUTS        = 3     /*this one must be last!                     */
+} DATA_layout_t;
+
+
+typedef struct OBJ_layout_contig_t {
     haddr_t     addr;                   /* File address of data              */
     hsize_t     size;                   /* Size of data in bytes             */
-} H5O_layout_contig_t;
+} OBJ_layout_contig_t;
 
 
-typedef struct H5O_layout_chunk_t {
+typedef struct OBJ_layout_chunk_t {
     haddr_t     addr;                   /* File address of B-tree            */
     unsigned    ndims;                  /* Num dimensions in chunk           */
-    size_t      dim[H5O_LAYOUT_NDIMS];  /* Size of chunk in elements         */
+    size_t      dim[OBJ_LAYOUT_NDIMS];  /* Size of chunk in elements         */
     size_t      size;                   /* Size of chunk in bytes            */
 #if 0
     H5RC_t     *btree_shared;           /* Ref-counted info for B-tree nodes */
 #endif
-} H5O_layout_chunk_t;
+} OBJ_layout_chunk_t;
 
 
-typedef struct H5O_layout_compact_t {
+typedef struct OBJ_layout_compact_t {
     hbool_t     dirty;                  /* Dirty flag for compact dataset    */
     size_t      size;                   /* Size of buffer in bytes           */
     void        *buf;                   /* Buffer for compact dataset        */
-} H5O_layout_compact_t;
+} OBJ_layout_compact_t;
 
 
-typedef struct H5O_layout_t {
-    H5D_layout_t type;                  /* Type of layout                    */
+typedef struct OBJ_layout_t {
+    DATA_layout_t type;                  /* Type of layout                    */
     unsigned version;                   /* Version of message                */
     /* Structure for "unused" dimension information */
     struct {
         unsigned ndims;                 /*num dimensions in stored data      */
-        hsize_t dim[H5O_LAYOUT_NDIMS];  /*size of data or chunk in bytes     */
+        hsize_t dim[OBJ_LAYOUT_NDIMS];  /*size of data or chunk in bytes     */
     } unused;
     union {
-        H5O_layout_contig_t contig;     /* Information for contiguous layout */
-        H5O_layout_chunk_t chunk;       /* Information for chunked layout    */
-        H5O_layout_compact_t compact;   /* Information for compact layout    */
+        OBJ_layout_contig_t contig;     /* Information for contiguous layout */
+        OBJ_layout_chunk_t chunk;       /* Information for chunked layout    */
+        OBJ_layout_compact_t compact;   /* Information for compact layout    */
     } u;
-} H5O_layout_t;
+} OBJ_layout_t;
+
+/* end Data Storage: layout  */
+
+/* 
+ * Data Storage: Filter Pipeline
+ */
+#define OBJ_FILTER_VERSION       1
+
+#define OBJ_MAX_NFILTERS        32      /* Maximum number of filters allowed in a pipeline (should probably be allowed to be an unlimited amount) */
 
 
-
-#define H5O_PLINE_VERSION       1
-
-#define H5Z_MAX_NFILTERS        32      /* Maximum number of filters allowed in a pipeline (should probably be allowed to be an unlimited amount) */
-
-
-typedef int H5Z_filter_t;
 
 typedef struct {
-    H5Z_filter_t        id;             /*filter identification number       */
-    unsigned            flags;          /*defn and invocation flags          */
-    char                *name;          /*optional filter name               */
-    size_t              cd_nelmts;      /*number of elements in cd_values[]  */
-    unsigned            *cd_values;     /*client data values                 */
-} H5Z_filter_info_t;
+    int		id;             /* filter identification number       */
+    unsigned    flags;          /* defn and invocation flags          */
+    char        *name;          /* optional filter name               */
+    size_t      cd_nelmts;      /* number of elements in cd_values[]  */
+    unsigned    *cd_values;     /* client data values                 */
+} OBJ_filter_info_t;
 
 
-typedef struct H5O_pline_t {
+typedef struct OBJ_filter_t {
     size_t      nalloc;                 /*num elements in `filter' array     */
     size_t      nused;                  /*num filters defined                */
-    H5Z_filter_info_t *filter;          /*array of filters                   */
-} H5O_pline_t;
+    OBJ_filter_info_t *filter;          /*array of filters                   */
+} OBJ_filter_t;
+
+/* end Data Storage: Filter Pipeline */
 
 
-
+/* 
+ * Attribute
+ */
 #define H5O_ATTR_VERSION        1
 #define H5O_ATTR_VERSION_NEW    2
 #define H5O_ATTR_FLAG_TYPE_SHARED       0x01
 
-struct H5S_t {
-    H5S_extent_t extent;                /* Dataspace extent */
+struct OBJ_space_t {
+    SDS_extent_t extent;                /* Dataspace extent */
     void 	 *select;               /* ??? DELETED for now: Dataspace selection */
 };
 
 
 
-typedef struct H5S_t H5S_t;
+typedef struct OBJ_space_t OBJ_space_t;
 
-typedef struct H5A_t H5A_t;
+typedef struct OBJ_attr_t OBJ_attr_t;
 
-struct H5A_t {
-    char        *name;      /* Attribute's name */
-    H5T_t       *dt;        /* Attribute's datatype */
-    size_t      dt_size;    /* Size of datatype on disk */
-    H5S_t       *ds;        /* Attribute's dataspace */
-    size_t      ds_size;    /* Size of dataspace on disk */
-    void        *data;      /* Attribute data (on a temporary basis) */
-    size_t      data_size;  /* Size of data on disk */
+struct OBJ_attr_t {
+    char        	*name;      /* Attribute's name */
+    type_t       	*dt;        /* Attribute's datatype */
+    size_t      	dt_size;    /* Size of datatype on disk */
+    OBJ_space_t       	*ds;        /* Attribute's dataspace */
+    size_t      	ds_size;    /* Size of dataspace on disk */
+    void        	*data;      /* Attribute data (on a temporary basis) */
+    size_t      	data_size;  /* Size of data on disk */
 };
 
+/* end Attribute */
 
+/* 
+ * Object Comment
+ */
 
-typedef struct H5O_name_t {
+typedef struct OBJ_comm_t {
     char        *s;                     /*ptr to malloc'd memory             */
-} H5O_name_t;
+} OBJ_comm_t;
 
+/* end Object Commnet */
 
-typedef struct H5HG_t {
+/*
+ * Shared Object Message
+ */
+typedef struct GH_t {
     haddr_t             addr;           /*address of collection         */
     size_t              idx;            /*object ID within collection   */
-} H5HG_t;
+} GH_t;
 
 
+#define OBJ_FLAG_SHARED         0x02u
+#define OBJ_SHARED_VERSION_1    1
+#define OBJ_SHARED_VERSION      2
 
-#define H5O_FLAG_SHARED         0x02u
-
-
-#define H5O_SHARED_VERSION_1    1
-#define H5O_SHARED_VERSION      2
-
-typedef struct H5O_shared_t {
-    hbool_t             in_gh;          /*shared by global heap?             */
+typedef struct OBJ_shared_t {
+    hbool_t             in_gh;       /* shared by global heap?             */
     union {
-        H5HG_t          gh;             /*global heap info                   */
-        H5G_entry_t     ent;            /*symbol table entry info            */
+        GH_t          gh;            /* global heap info                   */
+        GP_entry_t    ent;           /* symbol table entry info            */
     } u;
-} H5O_shared_t;
+} OBJ_shared_t;
+
+/* end Shared Object Message */
 
 
-
-typedef struct H5O_cont_t {
+/* Object Header Continuation */
+typedef struct OBJ_cont_t {
     haddr_t     addr;                   /*address of continuation block      */
     size_t      size;                   /*size of continuation block         */
 
     /* the following field(s) do not appear on disk */
     unsigned    chunkno;                /*chunk this mesg refers to          */
-} H5O_cont_t;
+} OBJ_cont_t;
 
+/* end Object Header Continuation */
 
 typedef struct H5O_stab_t {
     haddr_t     btree_addr;             /*address of B-tree                  */
@@ -672,14 +703,14 @@ typedef struct H5O_stab_t {
 #define H5O_MTIME_VERSION       1
 
 
-typedef struct H5O_class_t {
-    int id;                             /*message ID */
-    void        *(*decode)(const uint8_t*);
-} H5O_class_t;
+typedef struct obj_class_t {
+    int id;                            		/* header message ID */
+    void        *(*decode)(const uint8_t*);	/* decode method */
+} obj_class_t;
 
 
 typedef struct H5O_mesg_t {
-    const H5O_class_t   *type;          /*type of message                    */
+    const obj_class_t   *type;          /*type of message                    */
     hbool_t             dirty;          /*raw out of date wrt native         */
     uint8_t             flags;          /*message flags                      */
     unsigned            chunkno;        /*chunk number for this mesg         */
@@ -718,7 +749,7 @@ typedef struct H5O_t {
 #define H5B_SIZEOF_HDR(F)                                                     \
    (H5B_SIZEOF_MAGIC +          /* magic number                            */  \
     4 +                         /* type, level, num entries                */  \
-    2*H5F_SIZEOF_ADDR(F)) /* left and right sibling addresses    */
+    2*SIZEOF_ADDR(F)) /* left and right sibling addresses    */
 
 #define H5B_MAGIC  "TREE"          /* tree node magic number */
 
@@ -742,9 +773,9 @@ typedef struct H5O_t {
 #define H5HL_SIZEOF_HDR(F)                                                    \
     H5HL_ALIGN(H5HL_SIZEOF_MAGIC +      /*heap signature                */    \
                4 +                      /*reserved                      */    \
-               H5F_SIZEOF_SIZE (F) +    /*data size                     */    \
-               H5F_SIZEOF_SIZE (F) +    /*free list head                */    \
-               H5F_SIZEOF_ADDR (F))     /*data address                  */
+               SIZEOF_SIZE (F) +    /*data size                     */    \
+               SIZEOF_SIZE (F) +    /*free list head                */    \
+               SIZEOF_ADDR (F))     /*data address                  */
 
 #define H5HG_MINSIZE     4096
 #define H5HG_VERSION     1
@@ -758,7 +789,7 @@ typedef struct H5O_t {
     H5HG_ALIGN(4 +                      /*magic number          */            \
                1 +                      /*version number        */            \
                3 +                      /*reserved              */            \
-               H5F_SIZEOF_SIZE(F))      /*collection size       */
+               SIZEOF_SIZE(F))      /*collection size       */
 
 #define H5HG_ALIGNMENT  8
 #define H5HG_ALIGN(X)   (H5HG_ALIGNMENT*(((X)+H5HG_ALIGNMENT-1)/              \
@@ -768,7 +799,7 @@ typedef struct H5O_t {
     H5HG_ALIGN(2 +                      /*object id number      */            \
                2 +                      /*reference count       */            \
                4 +                      /*reserved              */            \
-               H5F_SIZEOF_SIZE(F))      /*object data size      */
+               SIZEOF_SIZE(F))      /*object data size      */
 
 #define H5HG_NOBJS(F,z) (int)((((z)-H5HG_SIZEOF_HDR(F))/                      \
                                H5HG_SIZEOF_OBJHDR(F)+2))
@@ -812,9 +843,9 @@ typedef enum H5B_subid_t {
 typedef struct H5B_class_t {
     H5B_subid_t id;                                     /*id as found in file*/
     size_t      sizeof_nkey;                    /*size of native (memory) key*/
-    size_t      (*get_sizeof_rkey)(H5F_shared_t, unsigned);    /*raw key size   */
+    size_t      (*get_sizeof_rkey)(global_shared_t, unsigned);    /*raw key size   */
     /* encode, decode, debug key values */
-    void *	(*decode)(H5F_shared_t, unsigned, const uint8_t **);
+    void *	(*decode)(global_shared_t, unsigned, const uint8_t **);
 } H5B_class_t;
 
 typedef struct H5G_node_key_t {
@@ -823,90 +854,74 @@ typedef struct H5G_node_key_t {
 
 typedef struct H5D_istore_key_t {
     size_t      nbytes;                         /*size of stored data   */
-    hsize_t     offset[H5O_LAYOUT_NDIMS];       /*logical offset to start*/
+    hsize_t     offset[OBJ_LAYOUT_NDIMS];       /*logical offset to start*/
     unsigned    filter_mask;                    /*excluded filters      */
 } H5D_istore_key_t;
 
-typedef struct obj_t {
-    haddr_t 	objno;
-    int	  	nlink;
-} obj_t;
-
-
-typedef struct table_t {
-    size_t 	size;
-    size_t 	nobjs; 
-    obj_t	*objs;
-} table_t;
 
 
 /*
- *  Virtual file layer
+ *  Virtual file drivers
  */
 
-                    
-struct H5FD_class_t { 
-    const char *name;
-    herr_t  (*sb_decode)(H5F_shared_t *_shared_info, const unsigned char *p);
-    H5FD_t *(*open)(const char *name, int driver_id);
-    herr_t  (*close)(H5FD_t *file);
-    herr_t  (*read)(H5FD_t *file, haddr_t addr, size_t size, void *buffer); 
-    haddr_t (*get_eof)(H5FD_t *file);
+/* forward references */
+typedef struct driver_t driver_t;
+typedef struct driver_class_t driver_class_t;
+
+#define SEC2_DRIVER	1
+#define MULTI_DRIVER	2
+
+struct driver_class_t { 
+    const char 	*name;
+    herr_t  	(*decode_driver)(global_shared_t *_shared_info, const unsigned char *p);
+    driver_t 	*(*open)(const char *name, int driver_id);
+    herr_t  	(*close)(driver_t *file);
+    herr_t  	(*read)(driver_t *file, haddr_t addr, size_t size, void *buffer); 
+    haddr_t 	(*get_eof)(driver_t *file);
 
 };
 
 
 
-struct H5FD_t {
-    int			driver_id;      /*driver ID for this file   */
-    const H5FD_class_t *cls;            /*constant class info       */
+struct driver_t {
+    int			driver_id;      /* driver ID for this file   */
+    const driver_class_t *cls;          /* constant class info       */
 };
 
-typedef struct H5FD_sec2_t {
-    H5FD_t      pub;                    /*public stuff, must be first   */
-    int         fd;                     /*the unix file                 */
-    haddr_t     eof;                    /*end of file; current file size*/
-} H5FD_sec2_t;
+typedef struct driver_sec2_t {
+    driver_t      pub;                  /* public stuff, must be first    */
+    int           fd;                   /* the unix file                  */
+    haddr_t       eof;                  /* end of file; current file size */
+} driver_sec2_t;
 
 
-typedef struct H5FD_family_t {
-    H5FD_t      pub;            /*public stuff, must be first           */
-    hsize_t     memb_size;      /*maximum size of each member file      */
-    unsigned    nmembs;         /*number of family members              */
-    unsigned    amembs;         /*number of member slots allocated      */
-    H5FD_t      **memb;         /*dynamic array of member pointers      */
-    haddr_t     eoa;            /*end of allocated addresses            */
-    char        *name;          /*name generator printf format          */
-} H5FD_family_t;
+typedef enum driver_mem_t {
+    FD_MEM_NOLIST     = -1,                   /* must be negative*/
+    FD_MEM_DEFAULT    = 0,                    /* must be zero*/
+    FD_MEM_SUPER      = 1,
+    FD_MEM_BTREE      = 2,
+    FD_MEM_DRAW       = 3,
+    FD_MEM_GHEAP      = 4,
+    FD_MEM_LHEAP      = 5,
+    FD_MEM_OHDR       = 6,
+
+    FD_MEM_NTYPES                             /*must be last*/
+} driver_mem_t;
 
 
-typedef enum H5FD_mem_t {
-    H5FD_MEM_NOLIST     = -1,                   /*must be negative*/
-    H5FD_MEM_DEFAULT    = 0,                    /*must be zero*/
-    H5FD_MEM_SUPER      = 1,
-    H5FD_MEM_BTREE      = 2,
-    H5FD_MEM_DRAW       = 3,
-    H5FD_MEM_GHEAP      = 4,
-    H5FD_MEM_LHEAP      = 5,
-    H5FD_MEM_OHDR       = 6,
-
-    H5FD_MEM_NTYPES                             /*must be last*/
-} H5FD_mem_t;
+typedef struct driver_multi_fapl_t {
+    driver_mem_t  memb_map[FD_MEM_NTYPES];   /* memory usage map           */
+    char          *memb_name[FD_MEM_NTYPES]; /* name generators            */
+    haddr_t       memb_addr[FD_MEM_NTYPES];  /* starting addr per member   */
+} driver_multi_fapl_t;
 
 
-struct H5FD_multi_fapl_t {
-    H5FD_mem_t  memb_map[H5FD_MEM_NTYPES]; /*memory usage map           */
-    char        *memb_name[H5FD_MEM_NTYPES];/*name generators           */
-    haddr_t     memb_addr[H5FD_MEM_NTYPES];/*starting addr per member   */
-};
-
-
-typedef struct H5FD_multi_t {
-    H5FD_t      pub;            /*public stuff, must be first           */
-    H5FD_multi_fapl_t fa;       /*driver-specific file access properties*/
-    haddr_t     memb_next[H5FD_MEM_NTYPES];/*addr of next member        */
-    H5FD_t      *memb[H5FD_MEM_NTYPES]; /*member pointers               */
-    haddr_t     eoa;            /*end of allocated addresses            */
-    char        *name;          /*name passed to H5Fopen or H5Fcreate   */
-}H5FD_multi_t;
+typedef struct driver_multi_t {
+    driver_t      pub;            /* public stuff, must be first            */
+    driver_multi_fapl_t fa;       /* driver-specific file access properties */
+    haddr_t       memb_next[FD_MEM_NTYPES]; /* addr of next member          */
+    driver_t      *memb[FD_MEM_NTYPES];     /* member pointers              */
+    haddr_t     eoa;            /* end of allocated addresses            */
+    char        *name;          /* name passed to H5Fopen or H5Fcreate   */
+} driver_multi_t;
 
