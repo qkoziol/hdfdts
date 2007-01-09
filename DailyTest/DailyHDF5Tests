@@ -46,7 +46,7 @@ if [ -n "$DEBUGMODE" ]; then
     TOWHOM_PASSED=acheng
     TOWHOM_FAILED=acheng
 else
-    TOWHOM_PASSED="hdf5cvs@hdfgroup.org hdf5svn@hdfgroup.org"
+    TOWHOM_PASSED="hdf5repo@hdfgroup.org repo-all@hdfgroup.org"
     TOWHOM_FAILED=hdf5lib@hdfgroup.org
 fi
 
@@ -140,7 +140,7 @@ else
 fi
 
 # Make sure daily test has an mpich2 daemon running in echo of the following hosts.
-for h in heping.hdfgroup.uiuc.edu colonelk.hdfgroup.uiuc.edu; do
+for h in colonelk.hdfgroup.uiuc.edu; do
     ssh $h -n /usr/sdt/bin/mpich2/mpd  --daemon
 done
 

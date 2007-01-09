@@ -46,7 +46,7 @@ if [ -n "$DEBUGMODE" ]; then
     TOWHOM_PASSED=acheng
     TOWHOM_FAILED=acheng
 else
-    TOWHOM_PASSED="hdf-cvs@hdfgroup.org hdf5svn@hdfgroup.org"
+    TOWHOM_PASSED="hdf4repo@hdfgroup.org repo-all@hdfgroup.org"
     TOWHOM_FAILED=hdf4lib@hdfgroup.org
 fi
 
