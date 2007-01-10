@@ -133,39 +133,38 @@ typedef struct table_t {
     GP_SIZEOF_SCRATCH) /* scratch pad space */
 
 
-typedef enum H5G_type_t {
-    H5G_CACHED_ERROR    = -1,   /*force enum to be signed       */
-    H5G_NOTHING_CACHED  = 0,    /*nothing is cached, must be 0  */
-    H5G_CACHED_STAB     = 1,    /*symbol table, `stab'          */
-    H5G_CACHED_SLINK    = 2,    /*symbolic link                 */
-    H5G_NCACHED         = 3     /*THIS MUST BE LAST             */
-} H5G_type_t;
+typedef enum GP_type_t {
+    GP_CACHED_ERROR    = -1,   /*force enum to be signed       */
+    GP_NOTHING_CACHED  = 0,    /*nothing is cached, must be 0  */
+    GP_CACHED_STAB     = 1,    /*symbol table, `stab'          */
+    GP_CACHED_SLINK    = 2,    /*symbolic link                 */
+    GP_NCACHED         = 3     /*THIS MUST BE LAST             */
+} GP_type_t;
 
 
-typedef union H5G_cache_t {
+typedef union GP_cache_t {
     struct {
-        haddr_t btree_addr;             /*file address of symbol table B-tree*/
-        haddr_t heap_addr;              /*file address of stab name heap     */
+        haddr_t btree_addr;        /* file address of symbol table B-tree */
+        haddr_t heap_addr;         /* file address of stab name heap      */
     } stab;
 
     struct {
-        size_t  lval_offset;            /*link value offset                  */
+        size_t  lval_offset;       /* link value offset              */
     } slink;
-} H5G_cache_t;
-
+} GP_cache_t;
 
 typedef struct GP_entry_t {
-    H5G_type_t  type;                   /*type of information cached         */
-    H5G_cache_t cache;                  /*cached data from object header     */
-    size_t      name_off;               /*offset of name within name heap    */
-    haddr_t     header;                 /*file address of object header      */
+    GP_type_t  type;              /* type of information cached         */
+    GP_cache_t cache;             /* cached data from object header     */
+    size_t      name_off;         /* offset of name within name heap    */
+    haddr_t     header;           /* file address of object header      */
 } GP_entry_t;
 
 
-typedef struct H5G_node_t {
-    unsigned nsyms;                     /*number of symbols                  */
-    GP_entry_t *entry;                 /*array of symbol table entries      */
-} H5G_node_t;
+typedef struct GP_node_t {
+    unsigned nsyms;                /*number of symbols                  */
+    GP_entry_t *entry;             /*array of symbol table entries      */
+} GP_node_t;
 
 
 /*
@@ -463,7 +462,7 @@ typedef struct H5T_shared_t {
 typedef struct type_t type_t;
 
 struct type_t {
-    GP_entry_t     ent;    /* entry information if the type is a named type */
+    GP_entry_t     ent;     /* entry information if the type is a named type */
     H5T_shared_t   *shared; /* all other information */
 };
 
@@ -833,30 +832,30 @@ typedef struct H5HG_heap_t H5HG_heap_t;
     (var)=_tmp_overflow2;                               \
 }
 
-typedef enum H5B_subid_t {
-    H5B_SNODE_ID         = 0,   /*B-tree is for symbol table nodes           */
-    H5B_ISTORE_ID        = 1,   /*B-tree is for indexed object storage       */
-    H5B_NUM_BTREE_ID            /* Number of B-tree key IDs (must be last)   */
-} H5B_subid_t;
+typedef enum BT_subid_t {
+    BT_SNODE_ID         = 0,   /* B-tree is for symbol table nodes           */
+    BT_ISTORE_ID        = 1,   /* B-tree is for indexed object storage       */
+    BT_NUM_BTREE_ID            /* Number of B-tree key IDs (must be last)   */
+} BT_subid_t;
 
 
-typedef struct H5B_class_t {
-    H5B_subid_t id;                                     /*id as found in file*/
-    size_t      sizeof_nkey;                    /*size of native (memory) key*/
+typedef struct BT_class_t {
+    BT_subid_t id;                       /* id as found in file*/
+    size_t      sizeof_nkey;             /* size of native (memory) key*/
     size_t      (*get_sizeof_rkey)(global_shared_t, unsigned);    /*raw key size   */
     /* encode, decode, debug key values */
     void *	(*decode)(global_shared_t, unsigned, const uint8_t **);
-} H5B_class_t;
+} BT_class_t;
 
-typedef struct H5G_node_key_t {
+typedef struct GP_node_key_t {
     size_t      offset;                 /*offset into heap for name          */
-} H5G_node_key_t;
+} GP_node_key_t;
 
-typedef struct H5D_istore_key_t {
+typedef struct RAW_node_key_t {
     size_t      nbytes;                         /*size of stored data   */
     hsize_t     offset[OBJ_LAYOUT_NDIMS];       /*logical offset to start*/
     unsigned    filter_mask;                    /*excluded filters      */
-} H5D_istore_key_t;
+} RAW_node_key_t;
 
 
 
