@@ -1,7 +1,7 @@
-CC=h5cc
+H5CC=h5cc
 
 testgen: testgen.c
-	$(CC) $< -o $@
+	$(H5CC) $< -o $@
 	./testgen
 
 check: testh5check.sh
