@@ -10,7 +10,7 @@
 extern int	g_verbose_num;
 
 /* release version of h5checker */
-#define		H5Check_VERSION			"0.1-a1"
+#define		H5Check_VERSION			"0.1-a2"
 
 
 /* need to take care of haddr_t and HADDR_UNDEF */
