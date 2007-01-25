@@ -41,7 +41,7 @@ typedef struct table_t {
     obj_t	*objs;
 } table_t;
 
-
+#define	LOGI_SUPER_BASE	0	/* logical base address of super block */
 #define HDF_SIGNATURE     "\211HDF\r\n\032\n"
 #define HDF_SIGNATURE_LEN 8
 #define SUPERBLOCK_SIZE  256
@@ -704,7 +704,7 @@ typedef struct H5O_stab_t {
 
 typedef struct obj_class_t {
     int id;                            		/* header message ID */
-    void        *(*decode)(const uint8_t*);	/* decode method */
+    void        *(*decode)(const uint8_t*, const uint8_t*, haddr_t);	/* decode method */
 } obj_class_t;
 
 
@@ -877,7 +877,7 @@ struct driver_class_t {
     herr_t  	(*close)(driver_t *file);
     herr_t  	(*read)(driver_t *file, haddr_t addr, size_t size, void *buffer); 
     haddr_t 	(*get_eof)(driver_t *file);
-
+    char        *(*get_fname)(driver_t *file, haddr_t logi_addr);
 };
 
 
@@ -888,9 +888,10 @@ struct driver_t {
 };
 
 typedef struct driver_sec2_t {
-    driver_t      pub;                  /* public stuff, must be first    */
-    int           fd;                   /* the unix file                  */
-    haddr_t       eof;                  /* end of file; current file size */
+    	driver_t      	pub;                  /* public stuff, must be first    */
+    	int           	fd;                   /* the unix file                  */
+    	haddr_t       	eof;                  /* end of file; current file size */
+	char		*name;		      /* name passed to Fopen */
 } driver_sec2_t;
 
 

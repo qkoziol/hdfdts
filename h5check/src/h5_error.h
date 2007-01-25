@@ -76,5 +76,5 @@ ERR_t	ERR_stack_g[1];
 
 void 	error_push(const char *, primary_err_t, secondary_err_t, const char *, haddr_t, haddr_t);
 herr_t 	error_clear(void);
-void 	error_print(FILE *);
+void 	error_print(FILE *, driver_t *);
 int 	found_error(void);
