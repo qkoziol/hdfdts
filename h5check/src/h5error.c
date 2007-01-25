@@ -159,12 +159,13 @@ error_clear(void)
 }
 
 void
-error_print(FILE *stream)
+error_print(FILE *stream, driver_t *_file)
 {
 	int	i;
 	const char	*prim_str = NULL;
 	const char	*sec_str = NULL;
 	ERR_t   *estack = ERR_get_my_stack();
+	char		*fname;
 
 	if (!stream) 
 		stream = stderr; 
@@ -179,16 +180,20 @@ error_print(FILE *stream)
 			if (estack->slot[i].sec_err == ERR_NONE_SEC)
 				sec_null = 1;
 			if (sec_null)
-			fprintf(stream, "  %s\n", prim_str);
+				fprintf(stream, "  %s\n", prim_str);
 			else
-			fprintf(stream, "  %s-->%s\n", prim_str, sec_str);
-			fprintf(stream, "    %s\n", estack->slot[i].desc);
-			if ((int)estack->slot[i].logical_addr != -1)
-				fprintf(stream, "      logical addr=%llu;",
-			     		estack->slot[i].logical_addr);
+				fprintf(stream, "  %s-->%s\n", prim_str, sec_str);
+			fprintf(stream, "    %s", estack->slot[i].desc);
+			if ((int)estack->slot[i].logical_addr != -1) {
+				fname = FD_get_fname(_file, estack->slot[i].logical_addr);
+				fprintf(stream, "\n      file=%s;", fname);
+				fprintf(stream, "  at logical addr %llu;",
+			     		(unsigned long long)estack->slot[i].logical_addr);
+			}
 			if ((int)estack->slot[i].physical_addr != -1)
-				fprintf(stream, "      physical addr=%llu;",
-			     		estack->slot[i].physical_addr);
+				fprintf(stream, " at physical addr %llu;",
+			     		(unsigned long long)estack->slot[i].physical_addr);
+			fprintf(stream, "\n");
 
 #if 0
 			if ((int)estack->slot[i].address == -1)
