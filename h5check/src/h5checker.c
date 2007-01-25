@@ -34,7 +34,7 @@ char 	*strerror(int);
 
 
 /* Validation routines */
-herr_t  check_superblock(FILE *, global_shared_t *);
+herr_t  check_superblock(driver_t *, global_shared_t *);
 herr_t 	check_obj_header(driver_t *, global_shared_t, haddr_t, int, const obj_class_t *);
 herr_t 	check_btree(driver_t *, global_shared_t, haddr_t, unsigned);
 herr_t 	check_sym(driver_t *, global_shared_t, haddr_t);
@@ -42,11 +42,11 @@ herr_t 	check_lheap(driver_t *, global_shared_t, haddr_t, uint8_t **);
 herr_t 	check_gheap(driver_t *, global_shared_t, haddr_t, uint8_t **);
 
 
-haddr_t locate_super_signature(FILE *);
+haddr_t locate_super_signature(driver_t *);
 void    addr_decode(global_shared_t, const uint8_t **, haddr_t *);
 herr_t  gp_ent_decode(global_shared_t, const uint8_t **, GP_entry_t *);
 herr_t  gp_ent_decode_vec(global_shared_t, const uint8_t **, GP_entry_t *, unsigned);
-type_t   *type_alloc(void);
+type_t   *type_alloc(haddr_t);
 
 static  unsigned H5O_find_in_ohdr(driver_t *, H5O_t *, const obj_class_t **, int);
 herr_t  H5O_shared_read(driver_t *, OBJ_shared_t *, const obj_class_t *);
@@ -60,6 +60,7 @@ static driver_t *sec2_open(const char *name, int driver_id);
 static herr_t sec2_read(driver_t *_file, haddr_t addr, size_t size, void *buf/*out*/);
 static herr_t sec2_close(driver_t *_file);
 static haddr_t sec2_get_eof(driver_t *_file);
+static char *sec2_get_fname(driver_t *_file, haddr_t UNUSED);
 
 static const driver_class_t sec2_g = {
     "sec2",                                /* name                  */
@@ -68,6 +69,7 @@ static const driver_class_t sec2_g = {
     sec2_close,                            /* close                 */
     sec2_read,                             /* read                  */
     sec2_get_eof,                          /* get_eof               */
+    sec2_get_fname,			   /* get file name	    */
 };
 
 
@@ -76,6 +78,7 @@ static driver_t *multi_open(const char *name, int driver_id);
 static herr_t multi_close(driver_t *_file);
 static herr_t multi_read(driver_t *_file, haddr_t addr, size_t size, void *_buf/*out*/);
 static haddr_t multi_get_eof(driver_t *_file);
+static char *multi_get_fname(driver_t *_file, haddr_t logi_addr);
 
 
 static int compute_next(driver_multi_t *file);
@@ -88,6 +91,7 @@ static const driver_class_t multi_g = {
     multi_close,                           /* close                 */
     multi_read,                            /* read                  */
     multi_get_eof,                         /* get_eof               */
+    multi_get_fname,			   /* get file name 	    */
 };
 
 
@@ -101,7 +105,7 @@ const obj_class_t OBJ_NIL[1] = {{
     NULL                    /* no decode method              */
 }};
 
-static void *OBJ_sds_decode(const uint8_t *);
+static void *OBJ_sds_decode(const uint8_t *, const uint8_t *, haddr_t);
 
 /* Simple Database: 0x0001 */
 const obj_class_t OBJ_SDS[1] = {{
@@ -111,7 +115,7 @@ const obj_class_t OBJ_SDS[1] = {{
 
 
 
-static void *OBJ_dt_decode (const uint8_t *);
+static void *OBJ_dt_decode (const uint8_t *, const uint8_t *, haddr_t);
 
 /* Datatype: 0x0003 */
 const obj_class_t OBJ_DT[1] = {{
@@ -120,7 +124,7 @@ const obj_class_t OBJ_DT[1] = {{
 }};
 
 
-static void  *OBJ_fill_decode(const uint8_t *);
+static void  *OBJ_fill_decode(const uint8_t *, const uint8_t *, haddr_t);
 
 /* Data Storage - Fill Value: 0x0005 */
 const obj_class_t OBJ_FILL[1] = {{
@@ -128,7 +132,7 @@ const obj_class_t OBJ_FILL[1] = {{
     OBJ_fill_decode         /* decode message                  */
 }};
 
-static void *OBJ_edf_decode(const uint8_t *p);
+static void *OBJ_edf_decode(const uint8_t *p, const uint8_t *, haddr_t);
 
 /* Data Storage - External Data Files: 0x0007 */
 const obj_class_t OBJ_EDF[1] = {{
@@ -137,7 +141,7 @@ const obj_class_t OBJ_EDF[1] = {{
 }};
 
 
-static void *OBJ_layout_decode(const uint8_t *);
+static void *OBJ_layout_decode(const uint8_t *, const uint8_t *, haddr_t);
 
 /* Data Storage - layout: 0x0008 */
 const obj_class_t OBJ_LAYOUT[1] = {{
@@ -145,7 +149,7 @@ const obj_class_t OBJ_LAYOUT[1] = {{
     OBJ_layout_decode	        /* decode message                */
 }};
 
-static void *OBJ_filter_decode (const uint8_t *);
+static void *OBJ_filter_decode (const uint8_t *, const uint8_t *, haddr_t);
 
 /* Data Storage - Filter pipeline: 0x000B */
 const obj_class_t OBJ_FILTER[1] = {{
@@ -153,7 +157,7 @@ const obj_class_t OBJ_FILTER[1] = {{
     OBJ_filter_decode,          /* decode message               */
 }};
 
-static void *OBJ_attr_decode (const uint8_t *);
+static void *OBJ_attr_decode (const uint8_t *, const uint8_t *, haddr_t);
 
 /* Attribute: 0x000C */
 const obj_class_t OBJ_ATTR[1] = {{
@@ -162,7 +166,7 @@ const obj_class_t OBJ_ATTR[1] = {{
 }};
 
 
-static void *OBJ_comm_decode(const uint8_t *p);
+static void *OBJ_comm_decode(const uint8_t *p, const uint8_t *, haddr_t);
 
 /* Object Comment: 0x000D */
 const obj_class_t OBJ_COMM[1] = {{
@@ -178,7 +182,7 @@ const obj_class_t OBJ_COMM[1] = {{
 /* New version, with just address of object as link for object header sharing */
 #define H5O_SHARED_VERSION      2
 
-static void *OBJ_shared_decode (const uint8_t*);
+static void *OBJ_shared_decode (const uint8_t*, const uint8_t *, haddr_t);
 
 /* Shared Object Message: 0x000F */
 const obj_class_t OBJ_SHARED[1] = {{
@@ -187,7 +191,7 @@ const obj_class_t OBJ_SHARED[1] = {{
 }};
 
 
-static void *OBJ_cont_decode(const uint8_t *);
+static void *OBJ_cont_decode(const uint8_t *, const uint8_t *, haddr_t);
 
 /* Object Header Continuation: 0x0010 */
 const obj_class_t OBJ_CONT[1] = {{
@@ -196,7 +200,7 @@ const obj_class_t OBJ_CONT[1] = {{
 }};
 
 
-static void *OBJ_group_decode(const uint8_t *);
+static void *OBJ_group_decode(const uint8_t *, const uint8_t *, haddr_t);
 
 /* Group Message: 0x0011 */
 const obj_class_t OBJ_GROUP[1] = {{
@@ -205,7 +209,7 @@ const obj_class_t OBJ_GROUP[1] = {{
 }};
 
 
-static void *OBJ_mdt_decode(const uint8_t *);
+static void *OBJ_mdt_decode(const uint8_t *, const uint8_t *, haddr_t);
 
 /* Object Modification Date & Time: 0x0012 */
 const obj_class_t OBJ_MDT[1] = {{
@@ -264,6 +268,14 @@ static const BT_class_t *const node_key_g[] = {
 };
 
 
+haddr_t
+get_logical_addr(const uint8_t *p, const uint8_t *start, haddr_t base)
+{
+	haddr_t	diff;
+
+	diff = p - start;
+	return(base + diff);
+}
 
 /*
  *  For handling hard links
@@ -277,7 +289,8 @@ table_init(table_t **obj_table)
 
 	tb = malloc(sizeof(table_t));
 	if (tb == NULL) {
-		error_push("table_init", ERR_INTERNAL, ERR_NONE_SEC, "Could not malloc() table_t.", -1, -1);
+		error_push("table_init", ERR_INTERNAL, ERR_NONE_SEC, 
+		  "Could not malloc() table_t.", -1, -1);
 		return(FAIL);
 	}
 	tb->size = 20;
@@ -407,7 +420,6 @@ FD_open(const char *name, int driver_id)
 /* probably check for callbck functions exists here too or in set_driver */
 	driver = get_driver(driver_id);
 	file = driver->open(name, driver_id);
-/* NEED to set name of the file */
 	if (file != NULL) {
 		file->cls = driver;
 		file->driver_id = driver_id;
@@ -419,6 +431,7 @@ static herr_t
 FD_close(driver_t *_file)
 {
 	int	ret = SUCCEED;
+
 
 	if(_file->cls->close(_file) == FAIL)
 		ret = FAIL;
@@ -448,6 +461,11 @@ FD_get_eof(driver_t *file)
 	return(ret_value);
 }
 
+char *
+FD_get_fname(driver_t *file, haddr_t logi_addr)
+{
+	return(file->cls->get_fname(file, logi_addr));
+}
 
 
 /*
@@ -474,6 +492,7 @@ sec2_open(const char *name, int driver_id)
 	file = calloc(1, sizeof(driver_sec2_t));
 	file->fd = fd;
 	file->eof = sb.st_size;
+	file->name = strdup(name);
 done:
 	ret_value = (driver_t *)file;
 	return(ret_value);
@@ -486,6 +505,13 @@ sec2_get_eof(driver_t *_file)
  
     return(file->eof);
 
+}
+
+char *
+sec2_get_fname(driver_t *_file, haddr_t UNUSED)
+{
+	
+	return(((driver_sec2_t *)_file)->name);
 }
 
 static herr_t
@@ -505,7 +531,8 @@ sec2_read(driver_t *_file, haddr_t addr, size_t size, void *buf/*out*/)
 	int	ret = SUCCEED;
 	int	fd;
 
-	addr = addr + shared_info.base_addr;
+	/* adjust logical "addr" to be the physical address */
+	addr = addr + shared_info.super_addr;
 	/* NEED To find out about lseek64??? */
 	fd = ((driver_sec2_t *)_file)->fd;
 	lseek(fd, addr, SEEK_SET);
@@ -639,7 +666,8 @@ multi_open(const char *name, int driver_id)
        	 * values if necessary.
       	 */
     	if (NULL==(file=calloc(1, sizeof(driver_multi_t)))) {
-		error_push("multi_open", ERR_INTERNAL, ERR_NONE_SEC, "Unable to calloc() driver_multi_t.", -1, -1);
+		error_push("multi_open", ERR_INTERNAL, ERR_NONE_SEC, 
+		  "Unable to calloc() driver_multi_t.", -1, -1);
 		goto error;
 	}
 
@@ -661,7 +689,8 @@ multi_open(const char *name, int driver_id)
     	if (compute_next(file) <0 )
         	printf("compute_next() failed\n");
     	if (open_members(file) != SUCCEED) {
-		error_push("multi_open", ERR_FILE, ERR_NONE_SEC, "Unable to open member files.", -1, -1);
+		error_push("multi_open", ERR_FILE, ERR_NONE_SEC, 
+		  "Unable to open member files.", -1, -1);
 		goto error;
 	}
 
@@ -708,7 +737,8 @@ multi_close(driver_t *_file)
 	} END_MEMBERS;
 
     	if (errs) {
-		error_push("multi_close", ERR_FILE, ERR_NONE_SEC, "Error closing member file(s).", -1, -1);
+		error_push("multi_close", ERR_FILE, ERR_NONE_SEC, 
+		  "Error closing member file(s).", -1, -1);
 		return(FAIL);
 	}
 
@@ -780,10 +810,10 @@ multi_read(driver_t *_file, haddr_t addr, size_t size, void *_buf/*out*/)
     	driver_multi_t        *file = (driver_multi_t*)_file;
     	driver_mem_t          mt, mmt, hi=FD_MEM_DEFAULT;
     	haddr_t             start_addr=0;
-	addr = addr + shared_info.base_addr;
 
 
-	addr = addr + shared_info.base_addr;
+	/* adjust logical "addr" to be the physical address */
+	addr = addr + shared_info.super_addr;
 
     	/* Find the file to which this address belongs */
     	for (mt=FD_MEM_SUPER; mt<FD_MEM_NTYPES; mt=(driver_mem_t)(mt+1)) {
@@ -816,13 +846,14 @@ multi_get_eof(driver_t *_file)
         	if (file->memb[mt]) {
                 	tmp = FD_get_eof(file->memb[mt]);
             		if (tmp == HADDR_UNDEF) {
-				error_push("multi_get_eof", ERR_FILE, ERR_NONE_SEC, "Member file has unknown eof.", -1, -1);
+				error_push("multi_get_eof", ERR_FILE, ERR_NONE_SEC, 
+				  "Member file has unknown eof", -1, -1);
 				return(HADDR_UNDEF);
 			}
             		if (tmp > 0) 
 				tmp += file->fa.memb_addr[mt];
         	} else {
-			error_push("multi_get_eof", ERR_FILE, ERR_NONE_SEC, "Bad eof.", -1, -1);
+			error_push("multi_get_eof", ERR_FILE, ERR_NONE_SEC, "Bad eof", -1, -1);
 			return(HADDR_UNDEF);
         	}
 
@@ -833,6 +864,40 @@ multi_get_eof(driver_t *_file)
     return(eof);
 }
 
+char *
+multi_get_fname(driver_t *_file, haddr_t logi_addr)
+{
+	char 	*tmp, *newname;
+	char	*ptr;
+    	driver_multi_t        *file = (driver_multi_t*)_file;
+    	driver_mem_t          mt, mmt, hi=FD_MEM_DEFAULT;
+    	haddr_t             start_addr=0;
+	haddr_t	addr;
+
+	/* adjust logical "addr" to be the physical address */
+	addr = logi_addr + shared_info.super_addr;
+
+    	/* Find the file to which this address belongs */
+    	for (mt=FD_MEM_SUPER; mt<FD_MEM_NTYPES; mt=(driver_mem_t)(mt+1)) {
+        	mmt = file->fa.memb_map[mt];
+        	if (FD_MEM_DEFAULT==mmt) 
+			mmt = mt;
+        	assert(mmt>0 && mmt<FD_MEM_NTYPES);
+
+        	if (file->fa.memb_addr[mmt]>addr) 
+			continue;
+        	if (file->fa.memb_addr[mmt]>=start_addr)
+            		hi = mmt;
+    	}
+    	assert(hi>0);
+
+	tmp = strdup(file->name);
+	ptr = strrchr(tmp, '-');
+	*ptr = '\0';
+	newname = malloc(strlen(tmp)+10);
+       	sprintf(newname, file->fa.memb_name[hi], tmp);
+    	return(newname);
+}
 /*
  * End virtual file drivers
  */
@@ -844,46 +909,55 @@ multi_get_eof(driver_t *_file)
 
 /* Simple Dataspace */
 static void *
-OBJ_sds_decode(const uint8_t *p)
+OBJ_sds_decode(const uint8_t *p, const uint8_t *start_buf, haddr_t logi_base)
 {
     	SDS_extent_t  	*sdim = NULL;	/* New extent dimensionality structure */
     	void          	*ret_value;
     	unsigned        i;              /* local counting variable */
     	unsigned        flags, version;
 	int		ret;
+	haddr_t		logical;
 
 
     	/* check args */
     	assert(p);
 	ret = SUCCEED;
 
+	logical = get_logical_addr(p, start_buf, logi_base);
     	/* decode */
     	sdim = calloc(1, sizeof(SDS_extent_t));
 	if (sdim == NULL) {
-		error_push("OBJ_sds_decode", ERR_INTERNAL, ERR_NONE_SEC, "Could not calloc() SDS_extent_t.", -1, -1);
+		error_push("OBJ_sds_decode", ERR_INTERNAL, ERR_NONE_SEC, 
+		  "Could not calloc() SDS_extent_t for Simple Dataspace Message", logical, -1);
 		ret++;
 		goto done;
 	}
         /* Check version */
+	logical = get_logical_addr(p, start_buf, logi_base);
         version = *p++;
 
         if (version != SDS_VERSION) {
-		error_push("OBJ_sds_decode", ERR_LEV_2, ERR_LEV_2A2, "Bad version number in simple dataspace message.", -1, -1);
+		error_push("OBJ_sds_decode", ERR_LEV_2, ERR_LEV_2A2, 
+		  "Bad version number for Simple Dataspace Message", logical, -1);
 		ret++;
 	}
 
 	/* SHOULD I CHECK FOR IT: not specified in the specification, but in coding only?? */
         /* Get rank */
+	logical = get_logical_addr(p, start_buf, logi_base);
         sdim->rank = *p++;
         if (sdim->rank > SDS_MAX_RANK) {
-		error_push("OBJ_sds_decode", ERR_LEV_2, ERR_LEV_2A2, "Simple dataspace dimensionality is too large.", -1, -1);
+		error_push("OBJ_sds_decode", ERR_LEV_2, ERR_LEV_2A2, 
+		  "Dimensionality is too large for Simple Dataspace Message", logical, -1);
 		ret++;
 	}
 
         /* Get dataspace flags for later */
+	logical = get_logical_addr(p, start_buf, logi_base);
         flags = *p++;
 	if (flags > 0x3) {  /* Only bit 0 and bit 1 can be set */
-		error_push("OBJ_sds_decode", ERR_LEV_2, ERR_LEV_2A2, "Corrupt flags for simple dataspace.", -1, -1);
+		error_push("OBJ_sds_decode", ERR_LEV_2, ERR_LEV_2A2, 
+		  "Corrupt flags for Simple Dataspace Message", logical, -1);
 		ret++;
 	}
 
@@ -896,17 +970,22 @@ OBJ_sds_decode(const uint8_t *p)
 
         p += 5; /*reserved*/
 
+	logical = get_logical_addr(p, start_buf, logi_base);
 	if (sdim->rank > 0) {
             	if ((sdim->size=malloc(sizeof(hsize_t)*sdim->rank))==NULL) {
-			error_push("OBJ_sds_decode", ERR_INTERNAL, ERR_NONE_SEC, "Could not malloc() hsize_t.", -1, -1);
+			error_push("OBJ_sds_decode", ERR_INTERNAL, ERR_NONE_SEC, 
+			  "Could not malloc() hsize_t for Simple Dataspace Message", logical, -1);
 			ret++;
 			goto done;
 		}
             	for (i = 0; i < sdim->rank; i++)
                 	DECODE_LENGTH (shared_info, p, sdim->size[i]);
+		logical = get_logical_addr(p, start_buf, logi_base);
             	if (flags & SDS_VALID_MAX) {
                 	if ((sdim->max=malloc(sizeof(hsize_t)*sdim->rank))==NULL) {
-				error_push("OBJ_sds_decode", ERR_INTERNAL, ERR_NONE_SEC, "Could not malloc() hsize_t.", -1, -1);
+				error_push("OBJ_sds_decode", ERR_INTERNAL, ERR_NONE_SEC, 
+				  "Could not malloc() hsize_t for Simple Dataspace Message", 
+				  logical, -1);
 				ret++;
 				goto done;
 			}
@@ -936,12 +1015,13 @@ done:
 
 /* Datatype */
 static herr_t
-OBJ_dt_decode_helper(const uint8_t **pp, type_t *dt)
+OBJ_dt_decode_helper(const uint8_t **pp, type_t *dt, const uint8_t *start_buf, haddr_t logi_base)
 {
  	unsigned        flags, version, tmp;
     	unsigned        i, j;
     	size_t          z;
     	herr_t      	ret=SUCCEED;       /* Return value */
+	haddr_t		logical;
 
 
     	/* check args */
@@ -949,16 +1029,19 @@ OBJ_dt_decode_helper(const uint8_t **pp, type_t *dt)
     	assert(dt && dt->shared);
 
     	/* decode */
+	logical = get_logical_addr(*pp, start_buf, logi_base);
     	UINT32DECODE(*pp, flags);
     	version = (flags>>4) & 0x0f;
     	if (version != DT_VERSION_COMPAT && version != DT_VERSION_UPDATED) {
-		error_push("OBJ_dt_decode_helper", ERR_LEV_2, ERR_LEV_2A4, "Bad version number for datatype message.", -1, -1);
+		error_push("OBJ_dt_decode_helper", ERR_LEV_2, ERR_LEV_2A4, 
+		  "Bad version number for Datatype Message", logical, -1);
 		ret++;
 	}
 
     	dt->shared->type = (H5T_class_t)(flags & 0x0f);
 	if ((dt->shared->type < DT_INTEGER) ||(dt->shared->type >DT_ARRAY)) {
-		error_push("OBJ_dt_decode_helper", ERR_LEV_2, ERR_LEV_2A4, "Invalid class value for datatype mesage.", -1, -1);
+		error_push("OBJ_dt_decode_helper", ERR_LEV_2, ERR_LEV_2A4, 
+		  "Invalid class value for Datatype Mesage.", logical, -1);
 		ret++;
 		return(ret);
 	}
@@ -968,10 +1051,7 @@ OBJ_dt_decode_helper(const uint8_t **pp, type_t *dt)
 
 
     	switch (dt->shared->type) {
-          case DT_INTEGER:
-            /*
-             * Integer types...
-             */
+          case DT_INTEGER:  /* Fixed-Point datatypes */
             dt->shared->u.atomic.order = (flags & 0x1) ? H5T_ORDER_BE : H5T_ORDER_LE;
             dt->shared->u.atomic.lsb_pad = (flags & 0x2) ? H5T_PAD_ONE : H5T_PAD_ZERO;
             dt->shared->u.atomic.msb_pad = (flags & 0x4) ? H5T_PAD_ONE : H5T_PAD_ZERO;
@@ -979,15 +1059,14 @@ OBJ_dt_decode_helper(const uint8_t **pp, type_t *dt)
             UINT16DECODE(*pp, dt->shared->u.atomic.offset);
             UINT16DECODE(*pp, dt->shared->u.atomic.prec);
 	    if ((flags>>4) != 0) {  /* should be reserved(zero) */
-		error_push("OBJ_dt_decode_helper", ERR_LEV_2, ERR_LEV_2A4, "Bits 4-23 should be 0 for datatype class bit field.", -1, -1);
+		error_push("OBJ_dt_decode_helper", ERR_LEV_2, ERR_LEV_2A4, 
+		  "Fixed-Point:Bits 4-23 should be 0 for class bit field for Datatype Message", 
+		  logical, -1);
 		ret++;
 	    }
             break;
 
-	 case DT_FLOAT:
-            /*
-             * Floating-point types...
-             */
+	 case DT_FLOAT:  /* Floating-Point datatypes */
             dt->shared->u.atomic.order = (flags & 0x1) ? H5T_ORDER_BE : H5T_ORDER_LE;
             dt->shared->u.atomic.lsb_pad = (flags & 0x2) ? H5T_PAD_ONE : H5T_PAD_ZERO;
             dt->shared->u.atomic.msb_pad = (flags & 0x4) ? H5T_PAD_ONE : H5T_PAD_ZERO;
@@ -1003,18 +1082,23 @@ OBJ_dt_decode_helper(const uint8_t **pp, type_t *dt)
                     dt->shared->u.atomic.u.f.norm = H5T_NORM_IMPLIED;
                     break;
                 default:
-		    error_push("OBJ_dt_decode_helper", ERR_LEV_2, ERR_LEV_2A4, "Unknown floating-point normalization.", -1, -1);
+		    error_push("OBJ_dt_decode_helper", ERR_LEV_2, ERR_LEV_2A4, 
+		      "Unknown Floating-Point normalization for Datatype Message", logical, -1);
 		    ret++;
 		    break;
             }
             dt->shared->u.atomic.u.f.sign = (flags >> 8) & 0xff;
 
 	    if (((flags >> 6) & 0x03) != 0) {
-		error_push("OBJ_dt_decode_helper", ERR_LEV_2, ERR_LEV_2A4, "Bits 6-7 should be 0 for datatype class bit field.", -1, -1);
+		error_push("OBJ_dt_decode_helper", ERR_LEV_2, ERR_LEV_2A4, 
+		  "Floating-Point:Bits 6-7 should be 0 for class bit field for Datatype Message", 
+		  logical, -1);
 		ret++;
 	    }
 	    if ((flags >> 16) != 0) {
-		error_push("OBJ_dt_decode_helper", ERR_LEV_2, ERR_LEV_2A4, "Bits 16-23 should be 0 for datatype class bit field.",-1, -1);
+		error_push("OBJ_dt_decode_helper", ERR_LEV_2, ERR_LEV_2A4, 
+		  "Floating-Point:Bits 16-23 should be 0 for class bit field for Datatype Message", 
+		  logical, -1);
 		ret++;
 	    }
 	
@@ -1033,17 +1117,16 @@ OBJ_dt_decode_helper(const uint8_t **pp, type_t *dt)
             dt->shared->u.atomic.order = (flags & 0x1) ? H5T_ORDER_BE : H5T_ORDER_LE;
 
 	    if ((flags>>1) != 0) {  /* should be reserved(zero) */
-		error_push("OBJ_dt_decode_helper", ERR_LEV_2, ERR_LEV_2A4, "Bits 1-23 should be 0 for datatype class bit field.", -1, -1);
+		error_push("OBJ_dt_decode_helper", ERR_LEV_2, ERR_LEV_2A4, 
+		  "Time:Bits 1-23 should be 0 for class bit field for Datatype Message", 
+		  logical, -1);
 		ret++;
 	    }
 
             UINT16DECODE(*pp, dt->shared->u.atomic.prec);
             break;
 
-	  case DT_STRING:
-            /*
-             * Character string types...
-             */
+	  case DT_STRING:  /* character string datatypes */
             dt->shared->u.atomic.order = H5T_ORDER_NONE;
             dt->shared->u.atomic.prec = 8 * dt->shared->size;
             dt->shared->u.atomic.offset = 0;
@@ -1057,48 +1140,53 @@ OBJ_dt_decode_helper(const uint8_t **pp, type_t *dt)
 	    if ((dt->shared->u.atomic.u.s.pad != H5T_STR_NULLTERM) &&
 	        (dt->shared->u.atomic.u.s.pad != H5T_STR_NULLPAD) &&
 	        (dt->shared->u.atomic.u.s.pad != H5T_STR_SPACEPAD)) {
-		error_push("OBJ_dt_decode_helper", ERR_LEV_2, ERR_LEV_2A4, "Unsupported padding type for datatype class bit field.", -1, -1);
+		error_push("OBJ_dt_decode_helper", ERR_LEV_2, ERR_LEV_2A4, 
+		  "String:Unsupported padding type for class bit field for Datatype Message", 
+		  logical, -1);
 		ret++;
 	    }
 	    /* The only character set supported is the 8-bit ASCII */
 	    if (dt->shared->u.atomic.u.s.cset != H5T_CSET_ASCII) {
-		error_push("OBJ_dt_decode_helper", ERR_LEV_2, ERR_LEV_2A4, "Unsupported character set for datatype class bit field.", -1, -1);
+		error_push("OBJ_dt_decode_helper", ERR_LEV_2, ERR_LEV_2A4, 
+		  "String:Unsupported character set for class bit field for Datatype Message", 
+		  logical, -1);
 		ret++;
 	    }
 	    if ((flags>>8) != 0) {  /* should be reserved(zero) */
-		error_push("OBJ_dt_decode_helper", ERR_LEV_2, ERR_LEV_2A4, "Bits 8-23 should be 0 for datatype class bit field.", -1, -1);
+		error_push("OBJ_dt_decode_helper", ERR_LEV_2, ERR_LEV_2A4, 
+		  "String:Bits 8-23 should be 0 for class bit field for Datatype Message", 
+		  logical, -1);
 		ret++;
 	    }
 	    break;
 	
-        case DT_BITFIELD:
-            /*
-             * Bit fields...
-             */
+        case DT_BITFIELD:  /* Bit fields datatypes */
             dt->shared->u.atomic.order = (flags & 0x1) ? H5T_ORDER_BE : H5T_ORDER_LE;
             dt->shared->u.atomic.lsb_pad = (flags & 0x2) ? H5T_PAD_ONE : H5T_PAD_ZERO;
             dt->shared->u.atomic.msb_pad = (flags & 0x4) ? H5T_PAD_ONE : H5T_PAD_ZERO;
 	    if ((flags>>3) != 0) {  /* should be reserved(zero) */
-		error_push("OBJ_dt_decode_helper", ERR_LEV_2, ERR_LEV_2A4, "Bits 3-23 should be 0 for datatype class bit field.", -1, -1);
+		error_push("OBJ_dt_decode_helper", ERR_LEV_2, ERR_LEV_2A4, 
+		  "Bitfield:Bits 3-23 should be 0 for class bit field for Datatype Message", 
+		  logical, -1);
 		ret++;
 	    }
             UINT16DECODE(*pp, dt->shared->u.atomic.offset);
             UINT16DECODE(*pp, dt->shared->u.atomic.prec);
             break;
 
-        case DT_OPAQUE:
-            /*
-             * Opaque types...
-             */
+        case DT_OPAQUE:  /* Opaque datatypes */
             z = flags & (DT_OPAQUE_TAG_MAX - 1);
             assert(0==(z&0x7)); /*must be aligned*/
 	    if ((flags>>8) != 0) {  /* should be reserved(zero) */
-		error_push("OBJ_dt_decode_helper", ERR_LEV_2, ERR_LEV_2A4, "Bits 8-23 should be 0 for datatype class bit field.", -1, -1);
+		error_push("OBJ_dt_decode_helper", ERR_LEV_2, ERR_LEV_2A4, 
+		  "Opaque:Bits 8-23 should be 0 for class bit field for Datatype Message", 
+		  logical, -1);
 		ret++;
 	    }
 
             if ((dt->shared->u.opaque.tag=malloc(z+1))==NULL) {
-		error_push("OBJ_dt_decode_helper", ERR_INTERNAL, ERR_NONE_SEC, "Could not malloc tag for opaque type.",  -1,-1);
+		error_push("OBJ_dt_decode_helper", ERR_INTERNAL, ERR_NONE_SEC, 
+		  "Could not malloc() Opaque ASCII Tag for Datatype Message", logical, -1);
 		ret++;
 		return(ret);
 	    }
@@ -1109,14 +1197,13 @@ OBJ_dt_decode_helper(const uint8_t **pp, type_t *dt)
             *pp += z;
             break;
 
-	 case DT_COMPOUND:
-            /*
-             * Compound datatypes...
-             */
+	 case DT_COMPOUND:  /* Compound datatypes */
             dt->shared->u.compnd.nmembs = flags & 0xffff;
             assert(dt->shared->u.compnd.nmembs > 0);
 	    if ((flags>>16) != 0) {  /* should be reserved(zero) */
-		error_push("OBJ_dt_decode_helper", ERR_LEV_2, ERR_LEV_2A4, "Bits 16-23 should be 0 for datatype class bit field.", -1, -1);
+		error_push("OBJ_dt_decode_helper", ERR_LEV_2, ERR_LEV_2A4, 
+		  "Compound:Bits 16-23 should be 0 for class bit field for Datatype Message", 
+		  logical, -1);
 		ret++;
 	    }
             dt->shared->u.compnd.packed = TRUE; /* Start off packed */
@@ -1124,7 +1211,9 @@ OBJ_dt_decode_helper(const uint8_t **pp, type_t *dt)
             dt->shared->u.compnd.memb = calloc(dt->shared->u.compnd.nalloc,
                             sizeof(H5T_cmemb_t));
             if ((dt->shared->u.compnd.memb==NULL)) {
-		error_push("OBJ_dt_decode_helper", ERR_INTERNAL, ERR_NONE_SEC, "Could not calloc() H5T_cmemb_t.",  -1,-1);
+		error_push("OBJ_dt_decode_helper", ERR_INTERNAL, ERR_NONE_SEC, 
+		  "Could not calloc() H5T_cmemb_t for Compound type for Datatype Message", 
+		  logical,-1);
 		ret++;
 		return(ret);
 	    }
@@ -1137,13 +1226,17 @@ OBJ_dt_decode_helper(const uint8_t **pp, type_t *dt)
 
                 /* Decode the field name */
 		if (!((const char *)*pp)) {
-			error_push("OBJ_dt_decode_helper", ERR_LEV_2, ERR_LEV_2A4, "Invalid string pointer.",  -1,-1);
+			error_push("OBJ_dt_decode_helper", ERR_LEV_2, ERR_LEV_2A4, 
+			  "Invalid string pointer for Compound type for Datatype Message", 
+			  logical,-1);
 			ret++;
 			return(ret);
 		}
 		tmp_len = strlen((const char *)*pp) + 1;
                 if ((dt->shared->u.compnd.memb[i].name=malloc(tmp_len))==NULL) {
-			error_push("OBJ_dt_decode_helper", ERR_INTERNAL, ERR_NONE_SEC, "Could not malloc() string.",  -1,-1);
+			error_push("OBJ_dt_decode_helper", ERR_INTERNAL, ERR_NONE_SEC, 
+			  "Could not malloc() string for Compound type for Datatype Message", 
+			  logical,-1);
 			ret++;
 			return(ret);
 		}
@@ -1175,18 +1268,21 @@ OBJ_dt_decode_helper(const uint8_t **pp, type_t *dt)
                         UINT32DECODE(*pp, dim[j]);
                 } /* end if */
 
-		if ((temp_type = type_alloc()) == NULL) {
-              		error_push("OBJ_dt_decode_helper", ERR_LEV_2, ERR_LEV_2A4, "Failure in allocating structures for datatype().", -1, -1);
+		if ((temp_type = type_alloc(logical)) == NULL) {
+              		error_push("OBJ_dt_decode_helper", ERR_LEV_2, ERR_LEV_2A4, 
+			  "Compound:Failure in allocating structures via type_alloc() for Datatype Message", 
+			  logical, -1);
 			ret++;
                		return(ret);
 		}
 
                 /* Decode the field's datatype information */
-                if (OBJ_dt_decode_helper(pp, temp_type) != SUCCEED) {
+                if (OBJ_dt_decode_helper(pp, temp_type, start_buf, logi_base) != SUCCEED) {
                     for (j = 0; j <= i; j++)
                         free(temp_type->shared->u.compnd.memb[j].name);
                     free(temp_type->shared->u.compnd.memb);
-                    error_push("OBJ_dt_decode_helper", ERR_LEV_2, ERR_LEV_2A4, "Unable to decode compound member type.", -1, -1);
+                    error_push("OBJ_dt_decode_helper", ERR_LEV_2, ERR_LEV_2A4, 
+		      "Unable to decode Compound member type for Datatype Message", logical, -1);
 		    ret++;
                     return(ret);
                 }
@@ -1211,46 +1307,53 @@ OBJ_dt_decode_helper(const uint8_t **pp, type_t *dt)
 	    /* Value of 2 is not implemented yet (see spec.) */
 	    /* value of 3-15 is supposedly to be reserved */
 	    if ((flags&0x0f) >= 2) {
-		error_push("OBJ_dt_decode_helper", ERR_LEV_2, ERR_LEV_2A4, "Invalid datatype class bit field.", -1, -1);
+		error_push("OBJ_dt_decode_helper", ERR_LEV_2, ERR_LEV_2A4, 
+		  "Reference:Invalid class bit field for Datatype Message", logical, -1);
 		ret++;
 	    }
 
 	    if ((flags>>4) != 0) {
-		error_push("OBJ_dt_decode_helper", ERR_LEV_2, ERR_LEV_2A4, "Bits 4-23 should be 0 for datatype class bit field.", -1, -1);
+		error_push("OBJ_dt_decode_helper", ERR_LEV_2, ERR_LEV_2A4, 
+		  "Reference:Bits 4-23 should be 0 for class bit field for Datatype Message", 
+		  logical, -1);
 		ret++;
 	    }
             break;
 
-	case DT_ENUM:
-            /*
-             * Enumeration datatypes...
-             */
+	case DT_ENUM:  /* Enumeration datatypes */
             dt->shared->u.enumer.nmembs = dt->shared->u.enumer.nalloc = flags & 0xffff;
 	    if ((flags>>16) != 0) {
-		error_push("OBJ_dt_decode_helper", ERR_LEV_2, ERR_LEV_2A4, "Bits 16-23 should be 0 for datatype class bit field.",-1, -1);
+		error_push("OBJ_dt_decode_helper", ERR_LEV_2, ERR_LEV_2A4, 
+		  "Enumeration:Bits 16-23 should be 0 for class bit field for Datatype Message", 
+		  logical, -1);
 		ret++;
 	    }
 
-	    if ((dt->shared->parent=type_alloc()) == NULL) {
-              	error_push("OBJ_dt_decode_helper", ERR_LEV_2, ERR_LEV_2A4, "Failure in allocating structures for datatype.", -1, -1);
+	    if ((dt->shared->parent=type_alloc(logical)) == NULL) {
+              	error_push("OBJ_dt_decode_helper", ERR_LEV_2, ERR_LEV_2A4, 
+		  "Enumeration:Failure in allocating structures via type_alloc() for Datatype Message", logical, -1);
 		ret++;
                	return(ret);
 	    }
 
-            if (OBJ_dt_decode_helper(pp, dt->shared->parent) != SUCCEED) {
-                    error_push("OBJ_dt_decode_helper", ERR_LEV_2, ERR_LEV_2A4, "Unable to decode parent datatype.", -1, -1);
+            if (OBJ_dt_decode_helper(pp, dt->shared->parent, start_buf, logi_base) != SUCCEED) {
+                    error_push("OBJ_dt_decode_helper", ERR_LEV_2, ERR_LEV_2A4, 
+		      "Unable to decode Enumeration parent type for Datatype Message", logical, -1);
 		    ret++;
                     return(ret);
 	    }
 
 	    if ((dt->shared->u.enumer.name=calloc(dt->shared->u.enumer.nalloc, sizeof(char*)))==NULL) {
-              	error_push("OBJ_dt_decode_helper", ERR_INTERNAL, ERR_NONE_SEC, "Could not calloc() enum. name pointer", -1, -1);
+              	error_push("OBJ_dt_decode_helper", ERR_INTERNAL, ERR_NONE_SEC, 
+		  "Could not calloc() Enumeration name pointer for Datatype Message", logical, -1);
 		ret++;
                	return(ret);
 	    }
             if ((dt->shared->u.enumer.value=calloc(dt->shared->u.enumer.nalloc,
                     dt->shared->parent->shared->size))==NULL) {
-              	error_push("OBJ_dt_decode_helper", ERR_INTERNAL, ERR_NONE_SEC, "Could not calloc() space for enum. values", -1, -1);
+              		error_push("OBJ_dt_decode_helper", ERR_INTERNAL, ERR_NONE_SEC, 
+		  	  "Could not calloc() space for Enumeration values for Datatype Message", 
+			  logical, -1);
 		ret++;
                	return(ret);
 	    }
@@ -1262,13 +1365,15 @@ OBJ_dt_decode_helper(const uint8_t **pp, type_t *dt)
 
                 /* Decode the field name */
 		if (!((const char *)*pp)) {
-			error_push("OBJ_dt_decode_helper", ERR_LEV_2, ERR_LEV_2A4, "Invalid string pointer.", -1, -1);
+			error_push("OBJ_dt_decode_helper", ERR_LEV_2, ERR_LEV_2A4, 
+			  "Invalid Enumeration string pointer for Datatype Message", logical, -1);
 			ret++;
 			return(ret);
 		}
 		tmp_len = strlen((const char *)*pp) + 1;
                 if ((dt->shared->u.enumer.name[i]=malloc(tmp_len))==NULL) {
-			error_push("OBJ_dt_decode_helper", ERR_INTERNAL, ERR_NONE_SEC, "Could not malloc() string.", -1, -1);
+			error_push("OBJ_dt_decode_helper", ERR_INTERNAL, ERR_NONE_SEC, 
+			  "Could not malloc() Enumeration string for Datatype Message", logical, -1);
 			ret++;
 			return(ret);
 		}
@@ -1283,7 +1388,7 @@ OBJ_dt_decode_helper(const uint8_t **pp, type_t *dt)
             *pp += dt->shared->u.enumer.nmembs * dt->shared->parent->shared->size;
             break;
 
-        case DT_VLEN:  /* Variable length datatypes...  */
+        case DT_VLEN:  /* Variable length datatypes */
             /* Set the type of VL information, either sequence or string */
             dt->shared->u.vlen.type = (H5T_vlen_type_t)(flags & 0x0f);
             if(dt->shared->u.vlen.type == H5T_VLEN_STRING) {
@@ -1303,19 +1408,24 @@ OBJ_dt_decode_helper(const uint8_t **pp, type_t *dt)
 		}
 	    }
 	    if ((flags>>12) != 0) {
-		error_push("OBJ_dt_decode_helper", ERR_LEV_2, ERR_LEV_2A4, "Bits 12-23 should be 0 for datatype class bit field.", -1, -1);
+		error_push("OBJ_dt_decode_helper", ERR_LEV_2, ERR_LEV_2A4, 
+		  "Variable-Length:Bits 12-23 should be 0 for class bit field for Datatype Message", 
+		  logical, -1);
 		ret++;
 	    }
 
             /* Decode base type of VL information */
-            if((dt->shared->parent = type_alloc())==NULL) {
-		error_push("OBJ_dt_decode_helper", ERR_LEV_2, ERR_LEV_2A4, "Failure in allocating structures for datatype", -1, -1);
+            if((dt->shared->parent = type_alloc(logical))==NULL) {
+		error_push("OBJ_dt_decode_helper", ERR_LEV_2, ERR_LEV_2A4, 
+		  "Variable-Length:Failure in allocating structures via type_alloc() for Datatype Message", 
+		  logical, -1);
 		ret++;
 		return(ret);
 	    }
 
-            if (OBJ_dt_decode_helper(pp, dt->shared->parent) != SUCCEED) {
-		error_push("OBJ_dt_decode_helper", ERR_LEV_2, ERR_LEV_2A4, "Unable to decode VL parent type.", -1, -1);
+            if (OBJ_dt_decode_helper(pp, dt->shared->parent, start_buf, logi_base) != SUCCEED) {
+		error_push("OBJ_dt_decode_helper", ERR_LEV_2, ERR_LEV_2A4, 
+		  "Unable to decode Variable-Length parent type for Datatype Message", logical, -1);
 		ret++;
 		return(ret);
 	    }
@@ -1323,7 +1433,7 @@ OBJ_dt_decode_helper(const uint8_t **pp, type_t *dt)
             break;
 
 
-        case DT_ARRAY:  /* Array datatypes...  */
+        case DT_ARRAY:  /* Array datatypes */
             /* Decode the number of dimensions */
             dt->shared->u.array.ndims = *(*pp)++;
 
@@ -1344,17 +1454,19 @@ OBJ_dt_decode_helper(const uint8_t **pp, type_t *dt)
                 UINT32DECODE(*pp, dt->shared->u.array.perm[j]);
 
             /* Decode base type of array */
-            if((dt->shared->parent = type_alloc())==NULL) {
-		error_push("OBJ_dt_decode_helper", ERR_LEV_2, ERR_LEV_2A4, "Failure in allocating structures for datatype.", -1, -1);
+            if((dt->shared->parent = type_alloc(logical))==NULL) {
+		error_push("OBJ_dt_decode_helper", ERR_LEV_2, ERR_LEV_2A4, 
+		  "Array:Failure in allocating structures via type_alloc() for Datatype Message", 
+		  logical, -1);
 		ret++;
 		return(ret);
 	    }
-            if (OBJ_dt_decode_helper(pp, dt->shared->parent) != SUCCEED) {
-		error_push("OBJ_dt_decode_helper", ERR_LEV_2, ERR_LEV_2A4, "Unable to decode array parent type.", -1, -1);
+            if (OBJ_dt_decode_helper(pp, dt->shared->parent, start_buf, logi_base) != SUCCEED) {
+		error_push("OBJ_dt_decode_helper", ERR_LEV_2, ERR_LEV_2A4, 
+		  "Unable to decode Array parent type for Datatype Message", logical, -1);
 		ret++;
 		return(ret);
 	    }
-
 
             break;
 
@@ -1369,32 +1481,40 @@ OBJ_dt_decode_helper(const uint8_t **pp, type_t *dt)
 
 /* Datatype */
 static void *
-OBJ_dt_decode(const uint8_t *p)
+OBJ_dt_decode(const uint8_t *p, const uint8_t *start_buf, haddr_t logi_base)
 {
     	type_t		*dt = NULL;
     	void    	*ret_value;     /* Return value */
 	int		ret;
+	haddr_t		logical;
 
 
     	/* check args */
     	assert(p);
 	ret = SUCCEED;
 
+	logical = get_logical_addr(p, start_buf, logi_base);
 	if ((dt = calloc(1, sizeof(type_t))) == NULL) {
-		error_push("OBJ_dt_decode", ERR_INTERNAL, ERR_NONE_SEC, "Could not calloc() type_t.", -1, -1);
+		error_push("OBJ_dt_decode", ERR_INTERNAL, ERR_NONE_SEC, 
+		  "Could not calloc() type_t for Datatype Message", logical, -1);
 		return(ret_value=NULL);
 	}
 	/* NOT SURE what to use with the group entry yet */
 	memset(&(dt->ent), 0, sizeof(GP_entry_t));
 	dt->ent.header = HADDR_UNDEF;
 	if ((dt->shared = calloc(1, sizeof(H5T_shared_t))) == NULL) {
-		error_push("OBJ_dt_decode", ERR_INTERNAL, ERR_NONE_SEC, "Could not calloc() H5T_shared_t.", -1, -1);
+		error_push("OBJ_dt_decode", ERR_INTERNAL, ERR_NONE_SEC, 
+		  "Could not calloc() H5T_shared_t for Datatype Message", logical, -1);
 		return(ret_value=NULL);
 	}
 
-    	if (OBJ_dt_decode_helper(&p, dt) != SUCCEED) {
+    	if (OBJ_dt_decode_helper(&p, dt, start_buf, logi_base) != SUCCEED) {
 		ret++;
-		error_push("OBJ_dt_decode", ERR_LEV_2, ERR_LEV_2A4, "Cannot decode datatype message.", -1, -1);
+		/* should have errors already pushed onto the error stack */
+#if 0
+		error_push("OBJ_dt_decode", ERR_LEV_2, ERR_LEV_2A4, 
+		  "Cannot decode datatype message", -1, -1);
+#endif
 	}
 
 	if (ret)	
@@ -1407,65 +1527,83 @@ OBJ_dt_decode(const uint8_t *p)
 
 /* Data Storage - Fill Value */
 static void *
-OBJ_fill_decode(const uint8_t *p)
+OBJ_fill_decode(const uint8_t *p, const uint8_t *start_buf, haddr_t logi_base)
 {
     	obj_fill_t      *mesg=NULL;
     	int          	version, ret;
     	void         	*ret_value;
+	haddr_t		logical;
 
 
     	assert(p);
 	ret = SUCCEED;
 
+	logical = get_logical_addr(p, start_buf, logi_base);
     	mesg = calloc(1, sizeof(obj_fill_t));
 	if (mesg == NULL) {
-		error_push("OBJ_fill_decode", ERR_INTERNAL, ERR_NONE_SEC, "Could not calloc() obj_fill_t.", -1, -1);
+		error_push("OBJ_fill_decode", ERR_INTERNAL, ERR_NONE_SEC, 
+		  "Could not calloc() obj_fill_t for Data Storage-Fill Value Message(new)", 
+		  logical, -1);
 		ret++;
 		goto done;
 	}
 
     	/* Version */
+	logical = get_logical_addr(p, start_buf, logi_base);
     	version = *p++;
     	if ((version != OBJ_FILL_VERSION) && (version != OBJ_FILL_VERSION_2)) {
-		error_push("OBJ_fill_decode", ERR_LEV_2, ERR_LEV_2A6, "Bad version number for fill value message(new).", -1, -1);
+		error_push("OBJ_fill_decode", ERR_LEV_2, ERR_LEV_2A6, 
+		  "Bad version number for Data Storage-Fill Value Message(new)", logical, -1);
 		ret++;
 	}
 
 
     	/* Space allocation time */
+	logical = get_logical_addr(p, start_buf, logi_base);
     	mesg->alloc_time = (fill_alloc_time_t)*p++;
 	if ((mesg->alloc_time != FILL_ALLOC_TIME_EARLY) &&
 	    (mesg->alloc_time != FILL_ALLOC_TIME_LATE) &&
 	    (mesg->alloc_time != FILL_ALLOC_TIME_INCR)) {
-		error_push("OBJ_fill_decode", ERR_LEV_2, ERR_LEV_2A6, "Bad space allocation time for fill value message(new).", -1, -1);
+		error_push("OBJ_fill_decode", ERR_LEV_2, ERR_LEV_2A6, 
+		  "Bad Space Allocation Time for Data Storage-Fill Value Message(new)", 
+		  logical, -1);
 		ret++;
 	}
 
     	/* Fill value write time */
+	logical = get_logical_addr(p, start_buf, logi_base);
     	mesg->fill_time = (fill_time_t)*p++;
 	if ((mesg->fill_time != FILL_TIME_ALLOC) &&
 	    (mesg->fill_time != FILL_TIME_NEVER) &&
 	    (mesg->fill_time != FILL_TIME_IFSET)) {
-		error_push("OBJ_fill_decode", ERR_LEV_2, ERR_LEV_2A6, "Bad fill value write time for fill value message(new).", -1, -1);
+		error_push("OBJ_fill_decode", ERR_LEV_2, ERR_LEV_2A6, 
+		  "Bad Fill Value Write Time for Data Storage-Fill Value Message(new)", 
+		  logical, -1);
 		ret++;
 	}
 	
 
     	/* Whether fill value is defined */
+	logical = get_logical_addr(p, start_buf, logi_base);
     	mesg->fill_defined = *p++;
 	if ((mesg->fill_defined != 0) && (mesg->fill_defined != 1)) {
-		error_push("OBJ_fill_decode", ERR_LEV_2, ERR_LEV_2A6, "Bad fill value defined for fill value message(new).", -1, -1);
+		error_push("OBJ_fill_decode", ERR_LEV_2, ERR_LEV_2A6, 
+		  "Bad Fill Value Defined for Data Storage-Fill Value Message(new)", 
+		  logical, -1);
 		ret++;
 	}
 
 
     	/* Only decode fill value information if one is defined */
     	if(mesg->fill_defined) {
+		logical = get_logical_addr(p, start_buf, logi_base);
         	INT32DECODE(p, mesg->size);
         	if (mesg->size > 0) {
             		CHECK_OVERFLOW(mesg->size,ssize_t,size_t);
             		if (NULL==(mesg->buf=malloc((size_t)mesg->size))) {
-				error_push("OBJ_fill_decode", ERR_INTERNAL, ERR_NONE_SEC, "Could not malloc() buffer for fill value.", -1, -1);
+				error_push("OBJ_fill_decode", ERR_INTERNAL, ERR_NONE_SEC, 
+				  "Could not malloc() Fill Value buffer for Data Storage-Fill Value Message(new)", 
+				  logical, -1);
 				ret++;
 				goto done;
 			}
@@ -1489,28 +1627,35 @@ done:
 
 /* Data Storage - External Data Files */
 static void *
-OBJ_edf_decode(const uint8_t *p)
+OBJ_edf_decode(const uint8_t *p, const uint8_t *start_buf, haddr_t logi_base)
 {
     	obj_edf_t       *mesg = NULL;
     	int             version, ret;
     	const char      *s = NULL;
     	size_t          u;      	/* Local index variable */
     	void 		*ret_value;     /* Return value */
+	haddr_t		logical;
 
     	/* Check args */
     	assert(p);
 	ret = SUCCEED;
 
+	logical = get_logical_addr(p, start_buf, logi_base);
     	if ((mesg = calloc(1, sizeof(obj_edf_t)))==NULL) {
-		error_push("OBJ_edf_decode", ERR_INTERNAL, ERR_NONE_SEC, "Could not calloc() obj_edf_t.", -1, -1);
+		error_push("OBJ_edf_decode", ERR_INTERNAL, ERR_NONE_SEC, 
+		  "Could not calloc() obj_edf_t for Data Storage-External Data Files Message", 
+		  logical, -1);
 		ret++;
 		goto done;
 	}
 
     	/* Version */
+	logical = get_logical_addr(p, start_buf, logi_base);
     	version = *p++;
     	if (version != OBJ_EDF_VERSION) {
-		error_push("OBJ_edf_decode", ERR_LEV_2, ERR_LEV_2A8, "Bad version number for External Data Files message.", -1, -1);
+		error_push("OBJ_edf_decode", ERR_LEV_2, ERR_LEV_2A8, 
+		  "Bad version number for Data Storage-External Data Files Message", 
+		  logical, -1);
 		ret++;
 	}
 
@@ -1518,13 +1663,16 @@ OBJ_edf_decode(const uint8_t *p)
     	p += 3;
 
     	/* Number of slots */
+	logical = get_logical_addr(p, start_buf, logi_base);
     	UINT16DECODE(p, mesg->nalloc);
     	assert(mesg->nalloc>0);
     	UINT16DECODE(p, mesg->nused);
     	assert(mesg->nused <= mesg->nalloc);
 
 	if (!(mesg->nalloc >= mesg->nused)) {
-		error_push("OBJ_edf_decode", ERR_LEV_2, ERR_LEV_2A8, "Inconsistent number of allocated slots.", -1, -1);
+		error_push("OBJ_edf_decode", ERR_LEV_2, ERR_LEV_2A8, 
+		  "Inconsistent number of Allocated Slots for Data Storage-External Data Files Message", 
+		  logical, -1);
 		ret++;
 		goto done;
 	}
@@ -1534,9 +1682,12 @@ OBJ_edf_decode(const uint8_t *p)
     	assert(addr_defined(mesg->heap_addr));
 
     	/* Decode the file list */
+	logical = get_logical_addr(p, start_buf, logi_base);
     	mesg->slot = calloc(mesg->nalloc, sizeof(obj_edf_entry_t));
     	if (NULL == mesg->slot) {
-		error_push("OBJ_edf_decode", ERR_INTERNAL, ERR_NONE_SEC, "Could not calloc() H5O_efl_entry_t.", -1, -1);
+		error_push("OBJ_edf_decode", ERR_INTERNAL, ERR_NONE_SEC, 
+		  "Could not calloc() H5O_efl_entry_t for Data Storage-External Data Files Message", 
+		  logical, -1);
 		ret++;
 		goto done;
 	}
@@ -1565,29 +1716,33 @@ done:
 
 /* Data Storage - Layout */
 static void *
-OBJ_layout_decode(const uint8_t *p)
+OBJ_layout_decode(const uint8_t *p, const uint8_t *start_buf, haddr_t logi_base)
 {
     	OBJ_layout_t    *mesg = NULL;
     	unsigned        u;
     	void            *ret_value;          /* Return value */
 	int		ret;
+	haddr_t		logical;
 
 
     	/* check args */
     	assert(p);
 	ret = SUCCEED;
 
-
+	logical = get_logical_addr(p, start_buf, logi_base);
     	/* decode */
 	if ((mesg=calloc(1, sizeof(OBJ_layout_t)))==NULL) {
-		error_push("OBJ_layout_decode", ERR_INTERNAL, ERR_NONE_SEC, "Could not calloc() OBJ_layout_t.", -1, -1);
+		error_push("OBJ_layout_decode", ERR_INTERNAL, ERR_NONE_SEC, 
+		  "Could not calloc() OBJ_layout_t for Data Storage-Layout Message", logical, -1);
 		return(ret_value=NULL);
 	}
 
     	/* Version. 1 when space allocated; 2 when space allocation is delayed */
+	logical = get_logical_addr(p, start_buf, logi_base);
     	mesg->version = *p++;
     	if (mesg->version<OBJ_LAYOUT_VERSION_1 || mesg->version>OBJ_LAYOUT_VERSION_3) {
-		error_push("OBJ_layout_decode", ERR_LEV_2, ERR_LEV_2A9, "Bad version number for layout message.", -1, -1);
+		error_push("OBJ_layout_decode", ERR_LEV_2, ERR_LEV_2A9, 
+		  "Bad version number for Data Storage-Layout Message.", logical, -1);
 		ret++;  /* ?????SHOULD I LET IT CONTINUE */
 	}
 
@@ -1595,10 +1750,12 @@ OBJ_layout_decode(const uint8_t *p)
         	unsigned        ndims;    /* Num dimensions in chunk           */
 
         	/* Dimensionality */
+		logical = get_logical_addr(p, start_buf, logi_base);
         	ndims = *p++;
 		/* this is not specified in the format specification ??? */
         	if (ndims > OBJ_LAYOUT_NDIMS) {
-			error_push("OBJ_layout_decode", ERR_LEV_2, ERR_LEV_2A9, "Dimensionality is too large.", -1, -1);
+			error_push("OBJ_layout_decode", ERR_LEV_2, ERR_LEV_2A9, 
+			  "Dimensionality is too large for Data Storage-Layout Message", logical, -1);
 			ret++;
 		}
 
@@ -1639,10 +1796,12 @@ printf("CHUNKED_STORAGE:btree address=%lld, chunk size=%d, ndims=%d\n",
         	}
 
         	if(mesg->type == DATA_COMPACT) {
+			logical = get_logical_addr(p, start_buf, logi_base);
             		UINT32DECODE(p, mesg->u.compact.size);
             		if(mesg->u.compact.size > 0) {
                 		if(NULL==(mesg->u.compact.buf=malloc(mesg->u.compact.size))) {
-					error_push("OBJ_layout_decode", ERR_INTERNAL, ERR_NONE_SEC, "Could not malloc() compact storage buffer.", -1, -1);
+					error_push("OBJ_layout_decode", ERR_INTERNAL, ERR_NONE_SEC, 
+					  "Could not malloc() Compact Data buffer for Data Storage-Layout Message", logical, -1);
 					return(ret_value=NULL);
 				}
 
@@ -1652,6 +1811,7 @@ printf("CHUNKED_STORAGE:btree address=%lld, chunk size=%d, ndims=%d\n",
         	}
     	} else {  /* version 3 */
         	/* Layout class */
+		logical = get_logical_addr(p, start_buf, logi_base);
         	mesg->type = (DATA_layout_t)*p++;
 
         	/* Interpret the rest of the message according to the layout class */
@@ -1663,9 +1823,12 @@ printf("CHUNKED_STORAGE:btree address=%lld, chunk size=%d, ndims=%d\n",
 
                	  case DATA_CHUNKED:
                    	/* Dimensionality */
+			logical = get_logical_addr(p, start_buf, logi_base);
                     	mesg->u.chunk.ndims = *p++;
                 	if (mesg->u.chunk.ndims>OBJ_LAYOUT_NDIMS) {
-				error_push("OBJ_layout_decode", ERR_LEV_2, ERR_LEV_2A9, "Dimensionality is too large.", -1, -1);
+				error_push("OBJ_layout_decode", ERR_LEV_2, ERR_LEV_2A9, 
+				  "Chunked layout:Dimensionality is too large for Data Storage-Layout Message", 
+				  logical, -1);
 				ret++;
 			}
 
@@ -1682,10 +1845,13 @@ printf("CHUNKED_STORAGE:btree address=%lld, chunk size=%d, ndims=%d\n",
                 	break;
 
             	  case DATA_COMPACT:
+			logical = get_logical_addr(p, start_buf, logi_base);
                 	UINT16DECODE(p, mesg->u.compact.size);
                 	if(mesg->u.compact.size > 0) {
                     		if(NULL==(mesg->u.compact.buf=malloc(mesg->u.compact.size))) {
-					error_push("OBJ_layout_decode", ERR_LEV_2, ERR_NONE_SEC, "Could not malloc() compact storage buffer.", -1, -1);
+					error_push("OBJ_layout_decode", ERR_LEV_2, ERR_NONE_SEC, 
+					  "Compact layout:Could not malloc() buffer for Data Storage-Layout Message", 
+					  logical, -1);
 					return(ret_value=NULL);
 				}
                     		memcpy(mesg->u.compact.buf, p, mesg->u.compact.size);
@@ -1694,7 +1860,8 @@ printf("CHUNKED_STORAGE:btree address=%lld, chunk size=%d, ndims=%d\n",
                 	break;
 
             	  default:
-			error_push("OBJ_layout_decode", ERR_LEV_2, ERR_LEV_2A9, "Invalid layout class.", -1, -1);
+			error_push("OBJ_layout_decode", ERR_LEV_2, ERR_LEV_2A9, 
+			  "Invalid Layout Class for Data Storage-Layout Message", logical, -1);
 			ret++;
         	} /* end switch */
     	} /* version 3 */
@@ -1709,34 +1876,43 @@ printf("CHUNKED_STORAGE:btree address=%lld, chunk size=%d, ndims=%d\n",
 
 /* Data Storage - Filter Pipeline */
 static void *
-OBJ_filter_decode(const uint8_t *p)
+OBJ_filter_decode(const uint8_t *p, const uint8_t *start_buf, haddr_t logi_base)
 {
     	OBJ_filter_t     *pline = NULL;
     	void            *ret_value;
     	unsigned        version;
     	size_t          i, j, n, name_length;
 	int		ret;
+	haddr_t		logical;
 
     	/* check args */
     	assert(p);
 	ret = SUCCEED;
 
+	logical = get_logical_addr(p, start_buf, logi_base);
+
     	/* Decode */
     	if ((pline = calloc(1, sizeof(OBJ_filter_t)))==NULL) {
-		error_push("OBJ_filter_decode", ERR_INTERNAL, ERR_NONE_SEC, "Could not calloc() OBJ_filter_t.", -1, -1);
+		error_push("OBJ_filter_decode", ERR_INTERNAL, ERR_NONE_SEC, 
+		  "Could not calloc() OBJ_filter_t for Data Storage-Filter Pipeline Message", 
+		  logical, -1);
 		ret++;
 		goto done;
 	}
 
+	logical = get_logical_addr(p, start_buf, logi_base);
     	version = *p++;
     	if (version != OBJ_FILTER_VERSION) {
-		error_push("OBJ_filter_decode", ERR_LEV_2, ERR_LEV_2A12, "Bad version number for filter pipeline message.", -1, -1);
+		error_push("OBJ_filter_decode", ERR_LEV_2, ERR_LEV_2A12, 
+		  "Bad version number for Data Storage-Filter Pipeline Message", logical, -1);
 		ret++;  /* ?????SHOULD I LET IT CONTINUE */
 	}
 
+	logical = get_logical_addr(p, start_buf, logi_base);
     	pline->nused = *p++;
     	if (pline->nused > OBJ_MAX_NFILTERS) {
-		error_push("OBJ_filter_decode", ERR_LEV_2, ERR_LEV_2A12, "filter pipeline message has too many filters.", -1, -1);
+		error_push("OBJ_filter_decode", ERR_LEV_2, ERR_LEV_2A12, 
+		  "Too many filters for Data Storage-Filter Pipeline Message", logical, -1);
 		ret++;  /* ?????SHOULD I LET IT CONTINUE */
 	}
 
@@ -1744,17 +1920,21 @@ OBJ_filter_decode(const uint8_t *p)
     	pline->nalloc = pline->nused;
     	pline->filter = calloc(pline->nalloc, sizeof(pline->filter[0]));
     	if (pline->filter==NULL) {
-		error_push("OBJ_filter_decode", ERR_INTERNAL, ERR_NONE_SEC, "Could not calloc() H5O_pline_t->filter.", -1, -1);
+		error_push("OBJ_filter_decode", ERR_INTERNAL, ERR_NONE_SEC, 
+		  "Could not calloc() H5O_pline_t->filter for Data Storage-Filter Pipeline Message", 
+		  logical, -1);
 		ret++;
 		goto done;
 	}
 
     	for (i = 0; i < pline->nused; i++) {
         	UINT16DECODE(p, pline->filter[i].id);
+		logical = get_logical_addr(p, start_buf, logi_base);
         	UINT16DECODE(p, name_length);
         	if (name_length % 8) {
 			error_push("OBJ_filter_decode", ERR_LEV_2, ERR_LEV_2A12, 
-			  "filter name length is not a multiple of eight.", -1, -1);
+			  "Filter name length is not a multiple of eight for Data Storage-Filter Pipeline Message", 
+			  logical, -1);
 			ret++;
 			goto done;
 		}
@@ -1767,10 +1947,13 @@ OBJ_filter_decode(const uint8_t *p)
             		pline->filter[i].name[name_length] = '\0';
             		p += name_length;
         	}
+		logical = get_logical_addr(p, start_buf, logi_base);
         	if ((n=pline->filter[i].cd_nelmts)) {
             		pline->filter[i].cd_values = malloc(n*sizeof(unsigned));
             		if (pline->filter[i].cd_values==NULL) {
-				error_push("OBJ_filter_decode", ERR_INTERNAL, ERR_NONE_SEC, "Could not malloc() cd_values.", -1, -1);
+				error_push("OBJ_filter_decode", ERR_INTERNAL, ERR_NONE_SEC, 
+				  "Could not malloc() Client Data buffer for Data Storage-Filter Pipeline Message", 
+				  logical, -1);
 				ret++;
 				goto done;
 			}
@@ -1808,7 +1991,7 @@ done:
 
 /* Attribute */
 static void *
-OBJ_attr_decode(const uint8_t *p)
+OBJ_attr_decode(const uint8_t *p, const uint8_t *start_buf, haddr_t logi_base)
 {
     	OBJ_attr_t      *attr = NULL;
     	SDS_extent_t    *extent;        /* extent dimensionality information  */
@@ -1817,29 +2000,36 @@ OBJ_attr_decode(const uint8_t *p)
     	unsigned        unused_flags=0; /* Attribute flags */
     	OBJ_attr_t     	*ret_value;     /* Return value */
 	int		ret;
+	haddr_t		logical;
 
 
     	assert(p);
 	ret = SUCCEED;
 
+	logical = get_logical_addr(p, start_buf, logi_base);
     	if ((attr=calloc(1, sizeof(OBJ_attr_t))) == NULL) {
-		error_push("OBJ_attr_decode", ERR_INTERNAL, ERR_NONE_SEC, "Could not calloc() OBJ_attr_t.", -1, -1);
+		error_push("OBJ_attr_decode", ERR_INTERNAL, ERR_NONE_SEC, 
+		  "Could not calloc() OBJ_attr_t for Attribute Message", logical, -1);
 		ret++;
 		goto done;
 	}
 
+	logical = get_logical_addr(p, start_buf, logi_base);
     	/* Version number */
     	version = *p++;
 	/* The format specification only describes version 1 of attribute messages */
     	if (version != H5O_ATTR_VERSION) {
-		error_push("OBJ_attr_decode", ERR_LEV_2, ERR_LEV_2A13, "Bad version number for Attribute message.", -1, -1);
+		error_push("OBJ_attr_decode", ERR_LEV_2, ERR_LEV_2A13, 
+		  "Bad version number for Attribute Message", logical, -1);
 		ret++;  /* ?????SHOULD I LET IT CONTINUE */
 	}
 
+	logical = get_logical_addr(p, start_buf, logi_base);
     	/* version 1 does not support flags; it is reserved and set to zero */
         unused_flags = *p++;
 	if (unused_flags != 0) {
-		error_push("OBJ_attr_decode", ERR_LEV_2, ERR_LEV_2A13, "Attribute flag is unused for version 1.", -1, -1);
+		error_push("OBJ_attr_decode", ERR_LEV_2, ERR_LEV_2A13, 
+		  "Flag is unused for version 1 for Attribute Message", logical, -1);
 		ret++;  /* ?????SHOULD I LET IT CONTINUE */
 	}
 
@@ -1847,6 +2037,7 @@ OBJ_attr_decode(const uint8_t *p)
      	 * Decode the sizes of the parts of the attribute.  The sizes stored in
          * the file are exact but the parts are aligned on 8-byte boundaries.
      	 */
+	logical = get_logical_addr(p, start_buf, logi_base);
     	UINT16DECODE(p, name_len); /*including null*/
     	UINT16DECODE(p, attr->dt_size);
     	UINT16DECODE(p, attr->ds_size);
@@ -1856,14 +2047,18 @@ OBJ_attr_decode(const uint8_t *p)
 	attr->name = NULL;
 	if (name_len != 0) {
 		if ((attr->name = malloc(name_len)) == NULL) {
-			error_push("OBJ_attr_decode", ERR_INTERNAL, ERR_NONE_SEC, "Could not malloc() space for attribute name.", -1, -1);
+			error_push("OBJ_attr_decode", ERR_INTERNAL, ERR_NONE_SEC, 
+			  "Could not malloc() space for name for Attribute Message", logical, -1);
 			ret++;
 			goto done;
 		}
+		logical = get_logical_addr(p, start_buf, logi_base);
 		strcpy(attr->name, (const char *)p);
-		/* should be null-terminated */
+		/* should be null-terminated  but should it name_len or name_len -1???*/
 		if (attr->name[name_len-1] != '\0') {
-			error_push("OBJ_attr_decode", ERR_LEV_2, ERR_LEV_2A13, "Attribute name should be null-terminated.", -1, -1);
+			error_push("OBJ_attr_decode", ERR_LEV_2, ERR_LEV_2A13, 
+			  "Name for Attribute message should be null-terminated for Attribute Message", 
+			  logical, -1);
 			ret++;
 		}
 	}
@@ -1871,8 +2066,11 @@ OBJ_attr_decode(const uint8_t *p)
         p += H5O_ALIGN(name_len);    /* advance the memory pointer */
 
 
-        if((attr->dt=(OBJ_DT->decode)(p))==NULL) {
-		error_push("OBJ_attr_decode", ERR_LEV_2, ERR_LEV_2A13, "Cannot decode attribute datatype.", -1, -1);
+	logical = get_logical_addr(p, start_buf, logi_base);
+/* NEED To check on this */
+        if((attr->dt=(OBJ_DT->decode)(p, start_buf, logi_base))==NULL) {
+		error_push("OBJ_attr_decode", ERR_LEV_2, ERR_LEV_2A13, 
+		  "Errors found when decoding Type for Attribute Message", logical, -1);
 		ret++;
 		goto done;
 	}
@@ -1881,14 +2079,17 @@ OBJ_attr_decode(const uint8_t *p)
 
     	/* decode the attribute dataspace */
 	/* ??? there is select info in the structure */
+	logical = get_logical_addr(p, start_buf, logi_base);
     	if ((attr->ds = calloc(1, sizeof(OBJ_space_t)))==NULL) {
-		error_push("OBJ_attr_decode", ERR_INTERNAL, ERR_NONE_SEC, "Could not calloc() OBJ_space_t.", -1, -1);
+		error_push("OBJ_attr_decode", ERR_INTERNAL, ERR_NONE_SEC, 
+		  "Could not calloc() OBJ_space_t for Attribute Message", logical, -1);
 		ret++;
 		goto done;
 	}
 
-    	if((extent=(OBJ_SDS->decode)(p))==NULL) {
-		error_push("OBJ_attr_decode", ERR_LEV_2, ERR_LEV_2A13, "Cannot decode attribute dataspace.", -1, -1);
+    	if((extent=(OBJ_SDS->decode)(p, start_buf, logi_base))==NULL) {
+		error_push("OBJ_attr_decode", ERR_LEV_2, ERR_LEV_2A13, 
+		  "Cannot decode dataspace for Attribute Message", logical, -1);
 		ret++;
 		goto done;
 	}
@@ -1906,9 +2107,11 @@ OBJ_attr_decode(const uint8_t *p)
 
         p += H5O_ALIGN(attr->ds_size);
     	/* Go get the data */
+	logical = get_logical_addr(p, start_buf, logi_base);
     	if(attr->data_size) {
 		if ((attr->data = malloc(attr->data_size))==NULL) {
-			error_push("OBJ_attr_decode", ERR_INTERNAL, ERR_NONE_SEC, "Could not malloc() space for attribute data", -1, -1);
+			error_push("OBJ_attr_decode", ERR_INTERNAL, ERR_NONE_SEC, 
+			  "Could not malloc() space for Data for Attribute Message", logical, -1);
 			ret++;
 			goto done;
 		}
@@ -1933,27 +2136,32 @@ done:
 
 /* Object Comment */
 static void *
-OBJ_comm_decode(const uint8_t *p)
+OBJ_comm_decode(const uint8_t *p, const uint8_t *start_buf, haddr_t logi_base)
 {
-	OBJ_comm_t          *mesg;
-    	void                *ret_value;     /* Return value */
-	int		    len;
+	OBJ_comm_t       *mesg;
+    	void             *ret_value;     /* Return value */
+	int		 len;
+	haddr_t		 logical;
 
 
     	/* check args */
     	assert(p);
 
+	logical = get_logical_addr(p, start_buf, logi_base);
 	len = strlen((const char *)p);
     	/* decode */
     	if ((mesg=calloc(1, sizeof(OBJ_comm_t))) == NULL ||
             (mesg->s = malloc(len+1))==NULL) {
-		error_push("OBJ_comm_decode", ERR_INTERNAL, ERR_NONE_SEC, "Could not calloc() OBJ_comm_t or comment string.", -1, -1);
+		error_push("OBJ_comm_decode", ERR_INTERNAL, ERR_NONE_SEC, 
+		  "Could not calloc() OBJ_comm_t for Object Comment Message", logical, -1);
 		ret_value = NULL;
 		goto done;
 	}
     	strcpy(mesg->s, (const char*)p);
 	if (mesg->s[len] != '\0') {
-		error_push("OBJ_comm_decode", ERR_LEV_2, ERR_LEV_2A14, "The comment string should be null-terminated.", -1, -1);
+		error_push("OBJ_comm_decode", ERR_LEV_2, ERR_LEV_2A14, 
+		  "The comment string should be null-terminated for Object Comment Message", 
+		  logical, -1);
 		ret_value = NULL;
 		goto done;
 	}
@@ -1976,36 +2184,42 @@ done:
 
 /* Shared Object Message */
 static void *
-OBJ_shared_decode (const uint8_t *buf)
+OBJ_shared_decode (const uint8_t *buf, const uint8_t *start_buf, haddr_t logi_base)
 {
     	OBJ_shared_t    *mesg=NULL;
     	unsigned        flags, version;
     	void            *ret_value;     /* Return value */
 	int		ret=SUCCEED;
+	haddr_t		logical;
 
 
     	/* Check args */
     	assert (buf);
 
+	logical = get_logical_addr(buf, start_buf, logi_base);
     	/* Decode */
     	if ((mesg = calloc(1, sizeof(OBJ_shared_t)))==NULL) {
-		error_push("OBJ_shared_decode", ERR_INTERNAL, ERR_NONE_SEC, "Could not calloc() OBJ_shared_t.", -1, -1);
+		error_push("OBJ_shared_decode", ERR_INTERNAL, ERR_NONE_SEC, 
+		  "Could not calloc() OBJ_shared_t for Shared Object Message", -1, -1);
 		ret++;
 		goto done;
  	}
 
     	/* Version */
     	version = *buf++;
+	logical = get_logical_addr(buf, start_buf, logi_base);
 
 	/* ????NOT IN SPECF FOR DIFFERENT VERSIONS */
 	/* SHOULD be only version 1 is described in the spec */
     	if (version != OBJ_SHARED_VERSION_1 && version != OBJ_SHARED_VERSION) {
-		error_push("OBJ_shared_decode", ERR_LEV_2, ERR_LEV_2A16, "Bad version number for shared object message.", -1, -1);
+		error_push("OBJ_shared_decode", ERR_LEV_2, ERR_LEV_2A16, 
+		  "Bad version number for Shared Object Message", logical, -1);
 		ret++;
 		goto done;
 	}
 
     	/* Get the shared information flags */
+	logical = get_logical_addr(buf, start_buf, logi_base);
     	flags = *buf++;
     	mesg->in_gh = (flags & 0x01);
 
@@ -2017,7 +2231,8 @@ else
 #endif
 
 	if ((flags>>1) != 0) {  /* should be reserved(zero) */
-		error_push("OBJ_shared_decode", ERR_LEV_2, ERR_LEV_2A16, "Bits 1-7 should be 0 for shared Object flags.", -1, -1);
+		error_push("OBJ_shared_decode", ERR_LEV_2, ERR_LEV_2A16, 
+		  "Bits 1-7 in Flags should be 0 for Shared Object Message", logical, -1);
 		ret++;
 	}
 
@@ -2025,6 +2240,7 @@ else
     	if(version==OBJ_SHARED_VERSION_1)
         	buf += 6;
 
+	logical = get_logical_addr(buf, start_buf, logi_base);
     	/* Body */
     	if (mesg->in_gh) {
 		/* NEED TO HANDLE GLOBAL HEAP HERE  and also validation */
@@ -2040,7 +2256,9 @@ else
             		assert(version==OBJ_SHARED_VERSION);
             		addr_decode(shared_info, &buf, &(mesg->u.ent.header));
 			if ((mesg->u.ent.header == HADDR_UNDEF) || (mesg->u.ent.header >= shared_info.stored_eoa)) {
-				error_push("OBJ_shared_decode", ERR_LEV_2, ERR_LEV_2A16, "Invalid object header address.", -1, -1);
+				error_push("OBJ_shared_decode", ERR_LEV_2, ERR_LEV_2A16, 
+				  "Invalid object header address for Shared Object Message", 
+				  logical, -1);
 				ret++;
 				goto done;
 			}
@@ -2063,34 +2281,42 @@ done:
 
 /* Object Header Continutaion */
 static void *
-OBJ_cont_decode(const uint8_t *p)
+OBJ_cont_decode(const uint8_t *p, const uint8_t *start_buf, haddr_t logi_base)
 {
     	OBJ_cont_t 	*cont = NULL;
     	void       	*ret_value;
 	int		ret;
+	haddr_t		logical;
 
     	assert(p);
 	ret = SUCCEED;
 
+	logical = get_logical_addr(p, start_buf, logi_base);
     	/* decode */
 	cont = malloc(sizeof(OBJ_cont_t));
 	if (cont == NULL) {
-		error_push("OBJ_cont_decode", ERR_INTERNAL, ERR_NONE_SEC, "Could not malloc() OBJ_cont_t.", -1, -1);
+		error_push("OBJ_cont_decode", ERR_INTERNAL, ERR_NONE_SEC, 
+		  "Could not malloc() OBJ_cont_t for Object Header Continuation Message", 
+		  logical, -1);
 		ret++;
 		goto done;
 	}
 	
+	logical = get_logical_addr(p, start_buf, logi_base);
     	addr_decode(shared_info, &p, &(cont->addr));
 
 	if ((cont->addr == HADDR_UNDEF) || (cont->addr >= shared_info.stored_eoa)) {
-		error_push("OBJ_cont_decode", ERR_LEV_2, ERR_LEV_2A17, "Invalid header continuation offset.", -1, -1);
+		error_push("OBJ_cont_decode", ERR_LEV_2, ERR_LEV_2A17, 
+		  "Invalid offset for Object Header Continuation Message", logical, -1);
 		ret++;
 	}
 
+	logical = get_logical_addr(p, start_buf, logi_base);
     	DECODE_LENGTH(shared_info, p, cont->size);
 
 	if (cont->size < 0) {
-		error_push("OBJ_cont_decode", ERR_LEV_2, ERR_LEV_2A17, "Invalid header continuation length.", -1, -1);
+		error_push("OBJ_cont_decode", ERR_LEV_2, ERR_LEV_2A17, 
+		  "Invalid length for Object Header Continuation Message", logical, -1);
 		ret++;
 	}
 
@@ -2108,31 +2334,36 @@ done:
 
 /* Group Message */
 static void *
-OBJ_group_decode(const uint8_t *p)
+OBJ_group_decode(const uint8_t *p, const uint8_t *start_buf, haddr_t logi_base)
 {
     	H5O_stab_t  	*stab=NULL;
     	void    	*ret_value;     /* Return value */
 	int		ret;
+	haddr_t		logical;
 
     	assert(p);
 	ret = SUCCEED;
 
+	logical = get_logical_addr(p, start_buf, logi_base);
     	/* decode */
 	stab = malloc(sizeof(H5O_stab_t));
 	if (stab == NULL) {
-		error_push("OBJ_group_decode", ERR_INTERNAL, ERR_NONE_SEC, "Could not malloc() H5O_stab_t.", -1, -1);
+		error_push("OBJ_group_decode", ERR_INTERNAL, ERR_NONE_SEC, 
+		  "Could not malloc() H5O_stab_t for Group Message", logical, -1);
 		ret++;
 		goto done;
 	}
 
 	addr_decode(shared_info, &p, &(stab->btree_addr));
 	if ((stab->btree_addr == HADDR_UNDEF) || (stab->btree_addr >= shared_info.stored_eoa)) {
-		error_push("OBJ_group_decode", ERR_LEV_2, ERR_LEV_2A18, "Invalid btree address.", -1, -1);
+		error_push("OBJ_group_decode", ERR_LEV_2, ERR_LEV_2A18, 
+		  "Invalid btree address for Group Message", logical, -1);
 		ret++;
 	}
 	addr_decode(shared_info, &p, &(stab->heap_addr));
 	if ((stab->heap_addr == HADDR_UNDEF) || (stab->heap_addr >= shared_info.stored_eoa)) {
-		error_push("OBJ_group_decode", ERR_LEV_2, ERR_LEV_2A18, "Invalid heap address.", -1, -1);
+		error_push("OBJ_group_decode", ERR_LEV_2, ERR_LEV_2A18, 
+		  "Invalid heap address for Group Message", logical, -1);
 		ret++;
 	}
 
@@ -2148,20 +2379,23 @@ done:
 
 /* Object Modification Date & Time */
 static void *
-OBJ_mdt_decode(const uint8_t *p)
+OBJ_mdt_decode(const uint8_t *p, const uint8_t *start_buf, haddr_t logi_base)
 {
     	time_t      	*mesg;
     	uint32_t    	tmp_time;       /* Temporary copy of the time */
     	void        	*ret_value;     /* Return value */
 	int		ret;
+	haddr_t		logical;
 
 
     	assert(p);
 	ret = SUCCEED;
 
+	logical = get_logical_addr(p, start_buf, logi_base);
     	/* decode */
     	if(*p++ != H5O_MTIME_VERSION) {
-		error_push("OBJ_mdt_decode", ERR_LEV_2, ERR_LEV_2A19, "Bad version number for mtime message.", -1, -1);
+		error_push("OBJ_mdt_decode", ERR_LEV_2, ERR_LEV_2A19, 
+		  "Bad version number for Object Modification Date & Time Message", logical, -1);
 		ret++;
 	}
 
@@ -2169,11 +2403,14 @@ OBJ_mdt_decode(const uint8_t *p)
     	p+=3;
 
     	/* Get the time_t from the file */
+	logical = get_logical_addr(p, start_buf, logi_base);
     	UINT32DECODE(p, tmp_time);
 
     	/* The return value */
     	if ((mesg=malloc(sizeof(time_t))) == NULL) {
-		error_push("OBJ_mdt_decode", ERR_INTERNAL, ERR_NONE_SEC, "Could not malloc() time_t.", -1, -1);
+		error_push("OBJ_mdt_decode", ERR_INTERNAL, ERR_NONE_SEC, 
+		  "Could not malloc() time_t for Object Modification Date & Time Message", 
+		  logical, -1);
 		ret++;
 		goto done;
 	}
@@ -2190,8 +2427,16 @@ done:
     	return(ret_value);
 }
 
+/*
+ *  end decoding header messages
+ */
+
+
+
+
+
 type_t *
-type_alloc(void)
+type_alloc(haddr_t logical)
 {
     type_t *dt;                  /* Pointer to datatype allocated */
     type_t *ret_value;           /* Return value */
@@ -2199,7 +2444,8 @@ type_alloc(void)
 
     	/* Allocate & initialize new datatype info */
     	if((dt=calloc(1, sizeof(type_t)))==NULL) {
-              	error_push("type_alloc", ERR_INTERNAL, ERR_NONE_SEC, "Could not calloc() type_t.", -1, -1);
+              	error_push("type_alloc", ERR_INTERNAL, ERR_NONE_SEC, 
+		  "Could not calloc() type_t in type_alloc()", logical, -1);
 		return(ret_value=NULL);
 	}
 
@@ -2209,7 +2455,8 @@ type_alloc(void)
 
     	if((dt->shared=calloc(1, sizeof(H5T_shared_t)))==NULL) {
 		if (dt != NULL) free(dt);
-              	error_push("type_alloc", ERR_INTERNAL, ERR_NONE_SEC, "Could not calloc() H5T_shared_t.", -1, -1);
+              	error_push("type_alloc", ERR_INTERNAL, ERR_NONE_SEC, 
+		  "Could not calloc() H5T_shared_t in type_alloc()", logical, -1);
 		return(ret_value=NULL);
 	}
     
@@ -2281,8 +2528,12 @@ gp_ent_decode_vec(global_shared_t shared_info, const uint8_t **pp, GP_entry_t *e
 
     	for (u = 0; u < n; u++)
         	if (ret_value=gp_ent_decode(shared_info, pp, ent + u) < 0) {
-			error_push("gp_ent_decode_vec", ERR_LEV_1, ERR_LEV_1C, "Unable to read symbol table entries.", -1, -1);
+#if 0
+/* it will never fail unless for assert() */
+			error_push("gp_ent_decode_vec", ERR_LEV_1, ERR_LEV_1C, 
+			  "Unable to read symbol table entries.", -1, -1);
             		return(ret_value);
+#endif
 		}
 
 	return(ret_value);
@@ -2290,7 +2541,7 @@ gp_ent_decode_vec(global_shared_t shared_info, const uint8_t **pp, GP_entry_t *e
 
 
 haddr_t
-locate_super_signature(FILE *inputfd)
+locate_super_signature(driver_t *_file)
 {
     	haddr_t         addr;
     	uint8_t         buf[HDF_SIGNATURE_LEN];
@@ -2298,18 +2549,9 @@ locate_super_signature(FILE *inputfd)
 	int		ret;
 
 	addr = 0;
+
 	/* find file size */
-	if (fseek(inputfd, 0, SEEK_END) < 0) {
-		error_push("locate_super_signature", ERR_LEV_0, ERR_LEV_0A, "Failure in seeking to the end of file.", -1, -1);
-		return(HADDR_UNDEF);
-	}
-	ret = ftell(inputfd);
-	if (ret < 0) {
-		error_push("locate_super_signature", ERR_LEV_0, ERR_LEV_0A, "Failure in finding the end of file.", -1, -1);
-		return(HADDR_UNDEF);
-	}
-	addr = (haddr_t)ret;
-	rewind(inputfd);
+	addr = FD_get_eof(_file);
 	
     	/* Find the smallest N such that 2^N is larger than the file size */
     	for (maxpow=0; addr; maxpow++)
@@ -2322,9 +2564,9 @@ locate_super_signature(FILE *inputfd)
      	 */
     	for (n=8; n<maxpow; n++) {
         	addr = (8==n) ? 0 : (haddr_t)1 << n;
-		fseek(inputfd, addr, SEEK_SET);
-        	if (fread(buf, 1, (size_t)HDF_SIGNATURE_LEN, inputfd)<0) {
-			error_push("locate_super_signature", ERR_LEV_0, ERR_LEV_0A, "Unable to read super block signature.", -1, -1);
+		if (FD_read(_file, addr, (size_t)HDF_SIGNATURE_LEN, buf) == FAIL) {
+			error_push("check_superblock", ERR_FILE, ERR_NONE_SEC, 
+				"Errors when reading superblock signature", LOGI_SUPER_BASE, addr);
 			addr = HADDR_UNDEF;
 			break;
 		}
@@ -2336,14 +2578,13 @@ locate_super_signature(FILE *inputfd)
 		}
     	}
 	if (n >= maxpow) {
-		error_push("locate_super_signature", ERR_LEV_0, ERR_LEV_0A, "Unable to find super block signature.", -1, -1);
+		error_push("locate_super_signature", ERR_LEV_0, ERR_LEV_0A, 
+			"Unable to find super block signature", LOGI_SUPER_BASE, -1);
 		addr = HADDR_UNDEF;
 	}
-	rewind(inputfd);
 
     	/* Set return value */
     	return(addr);
-
 }
 
 
@@ -2400,7 +2641,8 @@ gp_node_decode_key(global_shared_t shared_info, unsigned UNUSED, const uint8_t *
     	/* decode */
     	key = calloc(1, sizeof(GP_node_key_t));
 	if (key == NULL) {
-		error_push("gp_node_decode_key", ERR_INTERNAL, ERR_NONE_SEC, "Could not calloc() GP_node_key_t.", -1, -1);
+		error_push("gp_node_decode_key", ERR_INTERNAL, ERR_NONE_SEC, 
+		  "Could not calloc() GP_node_key_t for key in B-tree", -1, -1);
 		return(ret_value=NULL);
 	}
 
@@ -2430,7 +2672,8 @@ raw_node_decode_key(global_shared_t shared_info, size_t ndims, const uint8_t **p
     	/* decode */
     	key = calloc(1, sizeof(RAW_node_key_t));
 	if (key == NULL) {
-		error_push("gp_node_decode_key", ERR_INTERNAL, ERR_NONE_SEC, "Could not calloc() H5G_istore_key_t.", -1, -1);
+		error_push("gp_node_decode_key", ERR_INTERNAL, ERR_NONE_SEC, 
+		  "Could not calloc() H5G_istore_key_t for key in B-tree", -1, -1);
 		return(ret_value=NULL);
 	}
 
@@ -2465,17 +2708,19 @@ raw_node_sizeof_rkey(global_shared_t shared_data, unsigned ndims)
 
 
 
+/* STILL MORE NEEDS TO BE DONE ABOUT ERROR_reporting */
 
 /*
  * 1. Read in the information from the superblock
  * 2. Validate the information obtained.
  */
 herr_t
-check_superblock(FILE *inputfd, global_shared_t *_shared_info)
+check_superblock(driver_t *_file, global_shared_t *_shared_info)
 {
 	uint		n;
 	uint8_t		buf[SUPERBLOCK_SIZE];
-	uint8_t		*p;
+	uint8_t		*p, *start_buf;
+	haddr_t		logical;	/* logical address */
 	herr_t		ret;
 	char 		driver_name[9];
 
@@ -2490,48 +2735,129 @@ check_superblock(FILE *inputfd, global_shared_t *_shared_info)
 	/* the rest is in shared_info global structure */
 	size_t		variable_size;	    /* variable size portion of the superblock */
 
-	{ /* BEGIN SCANNING and STORING OF THE SUPER BLOCK INFO */
 	/* 
 	 * The super block may begin at 0, 512, 1024, 2048 etc. 
 	 * or may not be there at all.
 	 */
 	ret = SUCCEED;
-	_shared_info->super_addr = locate_super_signature(inputfd);
+
+	_shared_info->super_addr = 0;
+	_shared_info->super_addr = locate_super_signature(_file);
 	if (_shared_info->super_addr == HADDR_UNDEF) {
-		error_push("check_superblock", ERR_LEV_0, ERR_LEV_0A, "Could not find super block.", -1, -1);
-		error_print(stderr);
+#if 0
+		error_push("check_superblock", ERR_LEV_0, ERR_LEV_0A, "Could not find super block", -1, -1);
+#endif
+		error_print(stderr, _file);
 		error_clear();
 		printf("ASSUMING super block at physical address 0.\n");
 		_shared_info->super_addr = 0;
 	}
 	
 	if (debug_verbose())
-		printf("VALIDATING the super block at physical address %llu...\n", _shared_info->super_addr);
+		printf("VALIDATING the super block at physical address %llu...\n", 
+			_shared_info->super_addr);
 
-	fseek(inputfd, _shared_info->super_addr, SEEK_SET);
-	fread(buf, 1, fixed_size, inputfd);
+	if (FD_read(_file, LOGI_SUPER_BASE, fixed_size, buf) == FAIL) {
+		error_push("check_superblock", ERR_FILE, ERR_NONE_SEC, 
+		  "Unable to read in the fixed size portion of the superblock", 
+		  LOGI_SUPER_BASE, _shared_info->super_addr);
+		ret++;
+		goto done;
+	} 
 	/* super block signature already checked */
 	p = buf + HDF_SIGNATURE_LEN;
+	start_buf = buf;
 
+	logical = get_logical_addr(p, start_buf, LOGI_SUPER_BASE);
 	super_vers = *p++;
+	if (super_vers != SUPERBLOCK_VERSION_DEF && 
+	    super_vers != SUPERBLOCK_VERSION_MAX) {
+		error_push("check_superblock", ERR_LEV_0, ERR_LEV_0A, 
+		  "Incorrect Version number of Super Block", 
+		  logical, _shared_info->super_addr);
+		ret++;
+	}
+
+
+	logical = get_logical_addr(p, start_buf, LOGI_SUPER_BASE);
 	freespace_vers = *p++;
+
+	if (freespace_vers != FREESPACE_VERSION) {
+		error_push("check_superblock", ERR_LEV_0, ERR_LEV_0A, 
+		  "Incorrect Version number of Global Free-space Storage", 
+		  logical, _shared_info->super_addr);
+		ret++;
+	}
+
+	logical = get_logical_addr(p, start_buf, LOGI_SUPER_BASE);
 	root_sym_vers = *p++;
+	if (root_sym_vers != OBJECTDIR_VERSION) {
+		error_push("check_superblock", ERR_LEV_0, ERR_LEV_0A, 
+		  "Incorrect version number of the Root Group Symbol Table Entry", 
+		  logical, _shared_info->super_addr);
+		ret++;
+	}
+
 	/* skip over reserved byte */
 	p++;
 
+	logical = get_logical_addr(p, start_buf, LOGI_SUPER_BASE);
 	shared_head_vers = *p++;
+	if (shared_head_vers != SHAREDHEADER_VERSION) {
+		error_push("check_superblock", ERR_LEV_0, ERR_LEV_0A, 
+		  "Incorrect version number of Shared Header Message Format", 
+		  logical, _shared_info->super_addr);
+		ret++;
+	}
+
+	logical = get_logical_addr(p, start_buf, LOGI_SUPER_BASE);
 	_shared_info->size_offsets = *p++;
+	if (_shared_info->size_offsets != 2 && _shared_info->size_offsets != 4 &&
+            _shared_info->size_offsets != 8 && _shared_info->size_offsets != 16 && 
+	    _shared_info->size_offsets != 32) {
+		error_push("check_superblock", ERR_LEV_0, ERR_LEV_0A, 
+		  "Invalid Size of Offsets", logical, _shared_info->super_addr);
+		ret++;
+	}
+
+	logical = get_logical_addr(p, start_buf, LOGI_SUPER_BASE);
 	_shared_info->size_lengths = *p++;
+	if (_shared_info->size_lengths != 2 && _shared_info->size_lengths != 4 &&
+            _shared_info->size_lengths != 8 && _shared_info->size_lengths != 16 && 
+	    _shared_info->size_lengths != 32) {
+		error_push("check_superblock", ERR_LEV_0, ERR_LEV_0A, 
+		  "Invalid Size of Lengths", logical, _shared_info->super_addr);
+		ret++;
+	}
 	/* skip over reserved byte */
 	p++;
 
+	logical = get_logical_addr(p, start_buf, LOGI_SUPER_BASE);
 	UINT16DECODE(p, _shared_info->gr_leaf_node_k);
-	UINT16DECODE(p, _shared_info->gr_int_node_k);
+	if (_shared_info->gr_leaf_node_k <= 0) {
+		error_push("check_superblock", ERR_LEV_0, ERR_LEV_0A, 
+		  "Invalid Group Leaf Node K", logical, _shared_info->super_addr);
+		ret++;
+	}
 
+	logical = get_logical_addr(p, start_buf, LOGI_SUPER_BASE);
+	UINT16DECODE(p, _shared_info->gr_int_node_k);
+	if (_shared_info->gr_int_node_k <= 0) {
+		error_push("check_superblock", ERR_LEV_0, ERR_LEV_0A, 
+		  "Invalid Internal Node K", logical, _shared_info->super_addr);
+		ret++;
+	}
+
+	logical = get_logical_addr(p, start_buf, LOGI_SUPER_BASE);
 	/* File consistency flags. Not really used yet */
     	UINT32DECODE(p, _shared_info->file_consist_flg);
+	if (_shared_info->file_consist_flg > 0x03) {
+		error_push("check_superblock", ERR_LEV_0, ERR_LEV_0A, 
+		  "Invalid file consistency flags.", logical, _shared_info->super_addr);
+		ret++;
+	}
 
-
+	logical = get_logical_addr(p, start_buf, LOGI_SUPER_BASE);
 	/* decode the variable length part of the super block */
 	/* Potential indexed storage internal node K */
     	variable_size = (super_vers>0 ? 4 : 0) + 
@@ -2542,40 +2868,173 @@ check_superblock(FILE *inputfd, global_shared_t *_shared_info)
                     GP_SIZEOF_ENTRY(*_shared_info); /* root group symbol table entry */
 
 	if ((fixed_size + variable_size) > sizeof(buf)) {
-		error_push("check_superblock", ERR_LEV_0, ERR_LEV_0A, "Total size of super block is incorrect.", -1, _shared_info->super_addr);
+		error_push("check_superblock", ERR_LEV_0, ERR_LEV_0A, 
+			"Total size of super block is incorrect", LOGI_SUPER_BASE, 
+			_shared_info->super_addr);
 		ret++;
 		return(ret);
 	}
 
-	fseek(inputfd, _shared_info->super_addr+fixed_size, SEEK_SET);
-	fread(p, 1, variable_size, inputfd);
+	if (FD_read(_file, LOGI_SUPER_BASE+fixed_size, variable_size, p) == FAIL) {
+		error_push("check_superblock", ERR_FILE, ERR_NONE_SEC, 
+		  "Unable to read in the variable length part of the superblock", 
+		  logical, _shared_info->super_addr);
+		ret++;
+		goto done;
+	}
 
     	/*
      	 * If the superblock version # is greater than 0, read in the indexed
      	 * storage B-tree internal 'K' value
      	 */
     	if (super_vers > 0) {
+		logical = get_logical_addr(p, start_buf, LOGI_SUPER_BASE);
         	UINT16DECODE(p, _shared_info->btree_k);
         	p += 2;   /* reserved */
-    	}
+    		if (_shared_info->btree_k <= 0) {
+			error_push("check_superblock", ERR_LEV_0, ERR_LEV_0A, 
+			  "Invalid internal node of an indexed storage b-tree", 
+			  logical, _shared_info->super_addr);
+			ret++;
+		}
+	}
 
 
+	logical = get_logical_addr(p, start_buf, LOGI_SUPER_BASE);
 	addr_decode(*_shared_info, (const uint8_t **)&p, &_shared_info->base_addr);
+	/* SHOULD THERE BE MORE VALIDATION of base_addr?? */
+	if (_shared_info->base_addr != _shared_info->super_addr) {
+		error_push("check_superblock", ERR_LEV_0, ERR_LEV_0A, "Invalid base address", 
+		  logical, _shared_info->super_addr);
+		ret++;
+	} 
+
+	logical = get_logical_addr(p, start_buf, LOGI_SUPER_BASE);
     	addr_decode(*_shared_info, (const uint8_t **)&p, &_shared_info->freespace_addr);
+	if (_shared_info->freespace_addr != HADDR_UNDEF) {
+		error_push("check_superblock", ERR_LEV_0, ERR_LEV_0A, 
+		  "Invalid address of Global Free-space Heap", logical, 
+		  _shared_info->super_addr);
+		ret++;
+	}
+
+	logical = get_logical_addr(p, start_buf, LOGI_SUPER_BASE);
     	addr_decode(*_shared_info, (const uint8_t **)&p, &_shared_info->stored_eoa);
+	if ((_shared_info->stored_eoa == HADDR_UNDEF) ||
+	    (_shared_info->base_addr >= _shared_info->stored_eoa)) {
+		error_push("check_superblock", ERR_LEV_0, ERR_LEV_0A, 
+		  "Invalid End of File Address", logical, _shared_info->super_addr);
+		ret++;
+	}
+
     	addr_decode(*_shared_info, (const uint8_t **)&p, &_shared_info->driver_addr);
 
+
+	logical = get_logical_addr(p, start_buf, LOGI_SUPER_BASE);
 	if (gp_ent_decode(*_shared_info, (const uint8_t **)&p, &root_ent/*out*/) < 0) {
-		error_push("check_superblock", ERR_LEV_0, ERR_LEV_0A, "Unable to read root symbol entry.", -1, _shared_info->super_addr);
+		error_push("check_superblock", ERR_LEV_0, ERR_LEV_0A, 
+			"Unable to read root symbol entry.", logical, _shared_info->super_addr);
 		ret++;
 		return(ret);
 	}
 	_shared_info->root_grp = &root_ent;
 
+#ifdef NEEDSTOBEDONE
+WHAT IF THE Root grp pointer is undefined???
+what if the rootgrp ->header is undefined for symbolic link??? will that happen
+OR the whole thing shouldn't be checked here should be in check_obj_header()???
+Should all the asserts be validation???
+#endif
+	/* NEED to validate shared_info.root_grp->name_off??? to be within size of local heap */
+	if ((_shared_info->root_grp->header==HADDR_UNDEF) || 
+	    (_shared_info->root_grp->header >= _shared_info->stored_eoa)) {
+		error_push("check_superblock", ERR_LEV_0, ERR_LEV_0A, 
+		  "Invalid object header address.", -1, _shared_info->super_addr);
+		ret++;
+	}
+	if (_shared_info->root_grp->type < 0) {
+		error_push("check_superblock", ERR_LEV_0, ERR_LEV_0A, "Invalid cache type.", -1, _shared_info->super_addr);
+		ret++;
+	}
 
-	}  /* DONE WITH SCANNING and STORING OF SUPERBLOCK INFO */
+	driver_name[0] = '\0';
+
+	/* Read in driver information block and validate */
+	/* Defined driver information block address or not */
+    	if (_shared_info->driver_addr != HADDR_UNDEF) {
+		/* since base_addr may not be valid, use super_addr to be sure */
+		haddr_t drv_addr = _shared_info->super_addr + _shared_info->driver_addr;
+        	uint8_t dbuf[DRVINFOBLOCK_SIZE];     /* Local buffer */
+		uint8_t	*drv_start;
+		size_t  driver_size;   /* Size of driver info block, in bytes */
+
+		if (((drv_addr+16) == HADDR_UNDEF) || ((drv_addr+16) >= _shared_info->stored_eoa)) {
+			error_push("check_superblock", ERR_LEV_0, ERR_LEV_0B, 
+			  "Invalid driver information block.", LOGI_SUPER_BASE+_shared_info->driver_addr, 
+			  drv_addr);
+			ret++;
+			return(ret);
+		}
+
+		/* read in the first 16 bytes of the driver information block */
+		if (FD_read(_file, _shared_info->driver_addr, 16, dbuf) == FAIL) {
+			error_push("check_superblock", ERR_FILE, ERR_NONE_SEC, 
+			  "Unable to read in the 16 bytes of the driver information block.", 
+			  LOGI_SUPER_BASE+_shared_info->driver_addr, drv_addr);
+			ret++;
+			goto done;
+		}
+
+		drv_start = dbuf;
+		p = dbuf;
+		logical = get_logical_addr(p, drv_start, _shared_info->driver_addr);
+		if (*p++ != DRIVERINFO_VERSION) {
+			error_push("check_superblock", ERR_LEV_0, ERR_LEV_0B, 
+			  "Bad driver information block version number.", logical, drv_addr);
+			ret++;
+		}
+		p += 3; /* reserved */
+
+		/* Driver info size */
+        	UINT32DECODE(p, driver_size);
+
+		
+		 /* Driver name and/or version */
+        	strncpy(driver_name, (const char *)p, (size_t)8);
+        	driver_name[8] = '\0';
+		set_driver(&(_shared_info->driverid), driver_name);
+		p += 8; /* advance past driver identification */
+
+		logical = get_logical_addr(p, drv_start, _shared_info->driver_addr);
+
+		 /* Read driver information and decode */
+        	assert((driver_size + 16) <= sizeof(dbuf));
+		if (((drv_addr+16+driver_size) == HADDR_UNDEF) || 
+		    ((drv_addr+16+driver_size) >= _shared_info->stored_eoa)) {
+			error_push("check_superblock", ERR_LEV_0, ERR_LEV_0B, 
+			  "Invalid driver information size", logical, drv_addr);
+			ret++;
+		}
+		if (FD_read(_file, _shared_info->driver_addr+16, driver_size, p) == FAIL) {
+			error_push("check_superblock", ERR_FILE, ERR_NONE_SEC, 
+			  "Unable to read in the driver information part", logical, drv_addr);
+			ret++;
+			goto done;
+		}
+		decode_driver(_shared_info, p);
+	}  /* DONE with driver information block */
+	else /* sec2 driver is used when no driver information */
+		set_driver(&(_shared_info->driverid), driver_name);
 
 #if DEBUG
+	printf("base_addr=%llu, super_addr=%llu, stored_eoa=%llu, driver_addr=%llu\n",
+		_shared_info->base_addr, _shared_info->super_addr, _shared_info->stored_eoa, 
+		_shared_info->driver_addr==HADDR_UNDEF?9999:_shared_info->driver_addr);
+	printf("name0ffset=%d, header_address=%llu\n", 
+		_shared_info->root_grp->name_off, _shared_info->root_grp->header);
+	printf("btree_addr=%llu, heap_addr=%llu\n", 
+		_shared_info->root_grp->cache.stab.btree_addr, 
+		_shared_info->root_grp->cache.stab.heap_addr);
 	printf("super_addr = %llu\n", _shared_info->super_addr);
 	printf("super_vers=%d, freespace_vers=%d, root_sym_vers=%d\n",	
 		super_vers, freespace_vers, root_sym_vers);
@@ -2594,156 +3053,7 @@ check_superblock(FILE *inputfd, global_shared_t *_shared_info)
 		_shared_info->root_grp->cache.stab.heap_addr);
 #endif
 
-	/* 
-	 * superblock signature is already checked
-	 * DO the validation of the superblock info
-	 */
-
-	/* BEGIN VALIDATION */
-
-	/* fixed size part validation */
-	if (super_vers != SUPERBLOCK_VERSION_DEF && 
-	    super_vers != SUPERBLOCK_VERSION_MAX) {
-		error_push("check_superblock", ERR_LEV_0, ERR_LEV_0A, "Version number of the superblock is incorrect.", -1, _shared_info->super_addr);
-		ret++;
-	}
-	if (freespace_vers != FREESPACE_VERSION) {
-		error_push("check_superblock", ERR_LEV_0, ERR_LEV_0A, "Version number of the file free-space information is incorrect.", -1, _shared_info->super_addr);
-		ret++;
-	}
-	if (root_sym_vers != OBJECTDIR_VERSION) {
-		error_push("check_superblock", ERR_LEV_0, ERR_LEV_0A, "Version number of the root group symbol table entry is incorrect.", -1, _shared_info->super_addr);
-		ret++;
-	}
-	if (shared_head_vers != SHAREDHEADER_VERSION) {
-		error_push("check_superblock", ERR_LEV_0, ERR_LEV_0A, "Version number of the shared header message format is incorrect.", -1, _shared_info->super_addr);
-		ret++;
-	}
-	if (_shared_info->size_offsets != 2 && _shared_info->size_offsets != 4 &&
-            _shared_info->size_offsets != 8 && _shared_info->size_offsets != 16 && 
-	    _shared_info->size_offsets != 32) {
-		error_push("check_superblock", ERR_LEV_0, ERR_LEV_0A, "Bad byte number in an address.", -1, _shared_info->super_addr);
-		ret++;
-	}
-	if (_shared_info->size_lengths != 2 && _shared_info->size_lengths != 4 &&
-            _shared_info->size_lengths != 8 && _shared_info->size_lengths != 16 && 
-	    _shared_info->size_lengths != 32) {
-		error_push("check_superblock", ERR_LEV_0, ERR_LEV_0A, "Bad byte number for object size.", -1, _shared_info->super_addr);
-		ret++;
-	}
-	if (_shared_info->gr_leaf_node_k <= 0) {
-		error_push("check_superblock", ERR_LEV_0, ERR_LEV_0A, "Invalid leaf node of a group B-tree.", -1, _shared_info->super_addr);
-		ret++;
-	}
-	if (_shared_info->gr_int_node_k <= 0) {
-		error_push("check_superblock", ERR_LEV_0, ERR_LEV_0A, "Invalid internal node of a group B-tree.", -1, _shared_info->super_addr);
-		ret++;
-	}
-	if (_shared_info->file_consist_flg > 0x03) {
-		error_push("check_superblock", ERR_LEV_0, ERR_LEV_0A, "Invalid file consistency flags.", -1, _shared_info->super_addr);
-		ret++;
-	}
-
-
-	/* variable size part validation */
-    	if (super_vers > 0) { /* indexed storage internal node k */
-    		if (_shared_info->btree_k <= 0) {
-			error_push("check_superblock", ERR_LEV_0, ERR_LEV_0A, "Invalid internal node of an indexed storage b-tree.", -1, _shared_info->super_addr);
-			ret++;
-		}
-    	}
-
-	/* SHOULD THERE BE MORE VALIDATION of base_addr?? */
-	if ((_shared_info->base_addr != _shared_info->super_addr) ||
-	    (_shared_info->base_addr >= _shared_info->stored_eoa))
-	{
-		error_push("check_superblock", ERR_LEV_0, ERR_LEV_0A, "Invalid base address.", -1, _shared_info->super_addr);
-		ret++;
-	} 
-
-	if (_shared_info->freespace_addr != HADDR_UNDEF) {
-		error_push("check_superblock", ERR_LEV_0, ERR_LEV_0A, "Invalid address of global free-space index.", -1, _shared_info->super_addr);
-		ret++;
-	}
-
-	if (_shared_info->stored_eoa == HADDR_UNDEF) {
-		error_push("check_superblock", ERR_LEV_0, ERR_LEV_0A, "Invalid end of file address.", -1, _shared_info->super_addr);
-		ret++;
-	}
-
-
-	driver_name[0] = '\0';
-
-	/* Read in driver information block and validate */
-	/* Defined driver information block address or not */
-    	if (_shared_info->driver_addr != HADDR_UNDEF) {
-		haddr_t drv_addr = _shared_info->base_addr + _shared_info->driver_addr;
-        	uint8_t dbuf[DRVINFOBLOCK_SIZE];     /* Local buffer */
-		size_t  driver_size;   /* Size of driver info block, in bytes */
-
-
-		if (((drv_addr+16) == HADDR_UNDEF) || ((drv_addr+16) >= _shared_info->stored_eoa)) {
-			error_push("check_superblock", ERR_LEV_0, ERR_LEV_0B, "Invalid driver information block.", -1, _shared_info->super_addr);
-			ret++;
-			return(ret);
-		}
-		/* read in the first 16 bytes of the driver information block */
-		fseek(inputfd, drv_addr, SEEK_SET);
-		fread(dbuf, 1, 16, inputfd);
-		p = dbuf;
-		if (*p++ != DRIVERINFO_VERSION) {
-			error_push("check_superblock", ERR_LEV_0, ERR_LEV_0B, "Bad driver information block version number.", -1, _shared_info->super_addr);
-			ret++;
-		}
-		p += 3; /* reserved */
-		/* Driver info size */
-        	UINT32DECODE(p, driver_size);
-
-		
-		 /* Driver name and/or version */
-        	strncpy(driver_name, (const char *)p, (size_t)8);
-        	driver_name[8] = '\0';
-		set_driver(&(_shared_info->driverid), driver_name);
-		p += 8; /* advance past driver identification */
-
-		 /* Read driver information and decode */
-        	assert((driver_size + 16) <= sizeof(dbuf));
-		if (((drv_addr+16+driver_size) == HADDR_UNDEF) || 
-		    ((drv_addr+16+driver_size) >= _shared_info->stored_eoa)) {
-			error_push("check_superblock", ERR_LEV_0, ERR_LEV_0B, "Invalid driver information size.", -1, _shared_info->super_addr);
-			ret++;
-		}
-		fseek(inputfd, drv_addr+16, SEEK_SET);
-		fread(p, 1, driver_size, inputfd);
-		decode_driver(_shared_info, p);
-	}  /* DONE with driver information block */
-	else /* sec2 driver is used when no driver information */
-		set_driver(&(_shared_info->driverid), driver_name);
-#if 0
-	printf("driver_id = %d\n", _shared_info->driver->driver_id);
-	driver_t file;
-	_shared_info->driver->cls->get_eoa(&file);
-	/*
-     * Tell the file driver how much address space has already been
-     * allocated so that it knows how to allocate additional memory.
-     */
-    if (FD_set_eoa(lf, stored_eoa) < 0)
-        HGOTO_ERROR(H5E_FILE, H5E_CANTOPENFILE, FAIL, "unable to set end-of-address marker for file")
-#endif
-
-
-
-	/* NEED to validate shared_info.root_grp->name_off??? to be within size of local heap */
-
-	if ((_shared_info->root_grp->header==HADDR_UNDEF) || 
-	    (_shared_info->root_grp->header >= _shared_info->stored_eoa)) {
-		error_push("check_superblock", ERR_LEV_0, ERR_LEV_0A, "Invalid object header address.", -1, _shared_info->super_addr);
-		ret++;
-	}
-	if (_shared_info->root_grp->type < 0) {
-		error_push("check_superblock", ERR_LEV_0, ERR_LEV_0A, "Invalid cache type.", -1, _shared_info->super_addr);
-		ret++;
-	}
+done:
 	return(ret);
 }
 
@@ -2773,7 +3083,8 @@ check_sym(driver_t *_file, global_shared_t shared_info, haddr_t sym_addr)
 
 	buf = malloc(size);
 	if (buf == NULL) {
-		error_push("check_sym", ERR_INTERNAL, ERR_NONE_SEC, "Unable to malloc() a symbol table node.", sym_addr, -1);
+		error_push("check_sym", ERR_INTERNAL, ERR_NONE_SEC, 
+		  "Unable to malloc() a symbol table node.", sym_addr, -1);
 		ret++;
 		goto done;
 	}
@@ -2792,7 +3103,7 @@ check_sym(driver_t *_file, global_shared_t shared_info, haddr_t sym_addr)
 	}
 
 	if (FD_read(_file, sym_addr, size, buf) == FAIL) {
-		error_push("check_sym", ERR_LEV_1, ERR_LEV_1B, "Unable to read in the symbol table node.", sym_addr, -1);
+		error_push("check_sym", ERR_FILE, ERR_NONE_SEC, "Unable to read in the symbol table node.", sym_addr, -1);
 		ret++;
 		goto done;
 	}
@@ -2827,7 +3138,8 @@ check_sym(driver_t *_file, global_shared_t shared_info, haddr_t sym_addr)
 	/* reading the vector of symbol table group entries */
 	ret = gp_ent_decode_vec(shared_info, (const uint8_t **)&p, sym->entry, sym->nsyms);
 	if (ret != SUCCEED) {
-		error_push("check_sym", ERR_LEV_1, ERR_LEV_1B, "Unable to read in symbol table group entries.", sym_addr, -1);
+		error_push("check_sym", ERR_LEV_1, ERR_LEV_1B, 
+		  "Unable to read in symbol table group entries", sym_addr, -1);
 		ret++;
 		goto done;
 	}
@@ -2851,15 +3163,15 @@ check_sym(driver_t *_file, global_shared_t shared_info, haddr_t sym_addr)
 		}
 	
 		if (ent->type < 0) {
-			error_push("check_sym", ERR_LEV_1, ERR_LEV_1C, "Invalid cache type.", sym_addr, -1);
+			error_push("check_sym", ERR_LEV_1, ERR_LEV_1C, "Invalid cache type", sym_addr, -1);
 			ret++;
 		}
 
 		ret = check_obj_header(_file, shared_info, ent->header, 0, NULL);
 		if (ret != SUCCEED) {
 			error_push("check_sym", ERR_LEV_1, ERR_LEV_1C, 
-			  "Errors found when checking the object header whose address is found in the group entry", sym_addr, -1);
-			error_print(stderr);
+			  "Errors found when checking the object header in the group entry...", sym_addr, -1);
+			error_print(stderr, _file);
 			error_clear();
 			ret = SUCCEED;
 		}
@@ -2890,6 +3202,8 @@ check_btree(driver_t *_file, global_shared_t shared_info, haddr_t btree_addr, un
 	haddr_t		child;
 	void 		*key;
 
+	uint8_t		*start_buf;
+	haddr_t		logical;
 
 
 	assert(addr_defined(btree_addr));
@@ -2901,33 +3215,74 @@ check_btree(driver_t *_file, global_shared_t shared_info, haddr_t btree_addr, un
 
 	buf = malloc(hdr_size);
 	if (buf == NULL) {
-		error_push("check_btree", ERR_INTERNAL, ERR_NONE_SEC, "Unable to malloc() btree header.", btree_addr, -1);
+		error_push("check_btree", ERR_INTERNAL, ERR_NONE_SEC, 
+		  "B-tree:Unable to malloc() B-tree header", btree_addr, -1);
 		ret++;
 		goto done;
 	}
 
 	if (FD_read(_file, btree_addr, hdr_size, buf) == FAIL) {
-		error_push("check_btree", ERR_LEV_1, ERR_LEV_1A, "Unable to read btree header.", btree_addr, -1);
+		error_push("check_btree", ERR_FILE, ERR_NONE_SEC, 
+		  "B-tree:Unable to read B-tree header", logical, -1);
 		ret++;
 		goto done;
 	}
+
+	start_buf = buf;
+	logical = get_logical_addr(p, start_buf, btree_addr);
 	p = buf;
 
 	/* magic number */
 	ret = memcmp(p, H5B_MAGIC, (size_t)H5B_SIZEOF_MAGIC);
 	if (ret != 0) {
-		error_push("check_btree", ERR_LEV_1, ERR_LEV_1A, "Could not find btree signature.", btree_addr, -1);
+		error_push("check_btree", ERR_LEV_1, ERR_LEV_1A, 
+		  "B-tree:Could not find B-tree signature", btree_addr, -1);
 		ret++;
 		goto done;
 	} else if (debug_verbose())
 		printf("FOUND btree signature.\n");
 
 	p+=4;
+
+	logical = get_logical_addr(p, start_buf, btree_addr);
 	nodetype = *p++;
+	if ((nodetype != 0) && (nodetype !=1)) {
+		error_push("check_btree", ERR_LEV_1, ERR_LEV_1A, 
+		  "B-tree:Incorrect Node Type", logical, -1);
+		ret++;
+	}
+
+	logical = get_logical_addr(p, start_buf, btree_addr);
 	nodelev = *p++;
+	if (nodelev < 0) {
+		error_push("check_btree", ERR_LEV_1, ERR_LEV_1A, 
+		  "B-tree:Incorrect Node Level", logical, -1);
+		ret++;
+	}
+
+	logical = get_logical_addr(p, start_buf, btree_addr);
 	UINT16DECODE(p, entries);
+	if (entries >= (2*shared_info.gr_int_node_k)) {
+		error_push("check_btree", ERR_LEV_1, ERR_LEV_1A, 
+		  "B-tree:Entries Used exceed 2K", logical, -1);
+		ret++;
+	}
+
+	logical = get_logical_addr(p, start_buf, btree_addr);
 	addr_decode(shared_info, (const uint8_t **)&p, &left_sib/*out*/);
+	if ((left_sib != HADDR_UNDEF) && (left_sib >= shared_info.stored_eoa)) {
+		error_push("check_btree", ERR_LEV_1, ERR_LEV_1A, 
+		  "B-tree:Invalid left sibling address", logical, -1);
+		ret++;
+	}
+
+	logical = get_logical_addr(p, start_buf, btree_addr);
 	addr_decode(shared_info, (const uint8_t **)&p, &right_sib/*out*/);
+	if ((right_sib != HADDR_UNDEF) && (right_sib >= shared_info.stored_eoa)) {
+		error_push("check_btree", ERR_LEV_1, ERR_LEV_1A, 
+		  "B-tree:Invalid left sibling address", logical, -1);
+		ret++;
+	}
 
 #ifdef DEBUG
 	printf("nodeytpe=%d, nodelev=%d, entries=%d\n",
@@ -2935,30 +3290,6 @@ check_btree(driver_t *_file, global_shared_t shared_info, haddr_t btree_addr, un
 	printf("left_sib=%d, right_sib=%d\n", left_sib, right_sib);
 #endif
 
-	if ((nodetype != 0) && (nodetype !=1)) {
-		error_push("check_btree", ERR_LEV_1, ERR_LEV_1A, "Incorrect node type.", btree_addr, -1);
-		ret++;
-	}
-
-	if (nodelev < 0) {
-		error_push("check_btree", ERR_LEV_1, ERR_LEV_1A, "Incorrect node level.", btree_addr, -1);
-		ret++;
-	}
-
-	if (entries >= (2*shared_info.gr_int_node_k)) {
-		error_push("check_btree", ERR_LEV_1, ERR_LEV_1A, "Entries used exceed 2K.", btree_addr, -1);
-		ret++;
-	}
-	
-	if ((left_sib != HADDR_UNDEF) && (left_sib >= shared_info.stored_eoa)) {
-		error_push("check_btree", ERR_LEV_1, ERR_LEV_1A, "Invalid left sibling address.", btree_addr, -1);
-		ret++;
-	}
-	if ((right_sib != HADDR_UNDEF) && (right_sib >= shared_info.stored_eoa)) {
-		error_push("check_btree", ERR_LEV_1, ERR_LEV_1A, "Invalid left sibling address.", btree_addr, -1);
-		ret++;
-	}
-	
 	/* the remaining node size: key + child pointer */
 	key_size = node_key_g[nodetype]->get_sizeof_rkey(shared_info, ndims);
 	key_ptr_size = (2*shared_info.gr_int_node_k)*SIZEOF_ADDR(shared_info) +
@@ -2968,21 +3299,31 @@ check_btree(driver_t *_file, global_shared_t shared_info, haddr_t btree_addr, un
 #endif
 	buffer = malloc(key_ptr_size);
 	if (buffer == NULL) {
-		error_push("check_btree", ERR_INTERNAL, ERR_NONE_SEC, "Unable to malloc() key+child.", btree_addr, -1);
+		error_push("check_btree", ERR_INTERNAL, ERR_NONE_SEC, 
+		  "B-tree:Unable to malloc() key+child", btree_addr, -1);
 		ret++;
 		goto done;
 	}
 
 	if (FD_read(_file, btree_addr+hdr_size, key_ptr_size, buffer) == FAIL) {
-		error_push("check_btree", ERR_LEV_1, ERR_LEV_1A, "Unable to read key+child.", btree_addr, -1);
+		error_push("check_btree", ERR_FILE, ERR_NONE_SEC, 
+		  "B-tree:Unable to read key+child", btree_addr, -1);
 		ret++;
 		goto done;
 	}
 
+	start_buf = buffer;
 	p = buffer;
 		
 	for (u = 0; u < entries; u++) {
 		key = node_key_g[nodetype]->decode(shared_info, ndims, (const uint8_t **)&p);
+		if (key == NULL) {
+			error_push("check_btree", ERR_LEV_1, ERR_LEV_1A, 
+			  "B-tree:Errors when decoding key", logical, -1);
+			error_print(stderr, _file);
+			error_clear();
+			continue;
+		}
 
 #ifdef DEBUG
 		if (nodetype == 0)
@@ -2993,24 +3334,34 @@ check_btree(driver_t *_file, global_shared_t shared_info, haddr_t btree_addr, un
 		
 		/* NEED TO VALIDATE name_offset to be within the local heap's size??HOW */
 
+		logical = get_logical_addr(p, start_buf, btree_addr+hdr_size);
         	/* Decode address value */
   		addr_decode(shared_info, (const uint8_t **)&p, &child/*out*/);
 
 		if ((child != HADDR_UNDEF) && (child >= shared_info.stored_eoa)) {
-			error_push("check_btree", ERR_LEV_1, ERR_LEV_1A, "Invalid child address.", btree_addr, -1);
+			error_push("check_btree", ERR_LEV_1, ERR_LEV_1A, 
+			  "B-tree:Invalid child address found", logical, -1);
 			ret++;
 			continue;
 		}
 
 		if (nodelev > 0) {
-/* NEED TO CHECK on something about ret value */
-			check_btree(_file, shared_info, child, 0);
+			status = check_btree(_file, shared_info, child, 0);
+			if (status != SUCCEED) {
+				error_push("check_btree", ERR_LEV_1, ERR_LEV_1A, 
+				  "Errors from when checking B-tree...", logical, -1);
+				error_print(stderr, _file);
+				error_clear();
+				ret = SUCCEED;
+				continue;
+			}
 		} else {
 			if (nodetype == 0) {
 				status = check_sym(_file, shared_info, child);
 				if (status != SUCCEED) {
-					error_push("check_btree", ERR_LEV_1, ERR_LEV_1A, "Errors from check_sym().", btree_addr, -1);
-					error_print(stderr);
+					error_push("check_btree", ERR_LEV_1, ERR_LEV_1A, 
+					  "Errors when checking Group Node...", logical, -1);
+					error_print(stderr, _file);
 					error_clear();
 					ret = SUCCEED;
 					continue;
@@ -3023,6 +3374,7 @@ check_btree(driver_t *_file, global_shared_t shared_info, haddr_t btree_addr, un
 	/* decode final key */
 	if (entries > 0) {
 		key = node_key_g[nodetype]->decode(shared_info, ndims, (const uint8_t **)&p);
+		/* After decoding, then what ???  NEED TO CHECK INTO THIS */
 #ifdef DEBUG
 		if (nodetype == 0)
 		printf("Final key's offset=%d\n", ((H5G_node_key_t *)key)->offset);
@@ -3052,6 +3404,10 @@ check_lheap(driver_t *_file, global_shared_t shared_info, haddr_t lheap_addr, ui
 	int		ret;
 	const uint8_t	*p = NULL;
 
+	uint8_t	*start_buf = NULL;
+	haddr_t		logical;
+
+
 
 	assert(addr_defined(lheap_addr));
     	hdr_size = H5HL_SIZEOF_HDR(shared_info);
@@ -3062,16 +3418,21 @@ check_lheap(driver_t *_file, global_shared_t shared_info, haddr_t lheap_addr, ui
 	ret = SUCCEED;
 
 	if (FD_read(_file, lheap_addr, hdr_size, hdr) == FAIL) {
-		error_push("check_lheap", ERR_LEV_1, ERR_LEV_1D, "Unable to read local heap header.", lheap_addr, -1);
+		error_push("check_lheap", ERR_FILE, ERR_NONE_SEC, 
+		  "Local Heap:Unable to read local heap header", lheap_addr, -1);
 		ret++;
 		goto done;
 	}
+
+	start_buf = hdr;
     	p = hdr;
+	logical = get_logical_addr(p, start_buf, lheap_addr);
 
 	/* magic number */
 	ret = memcmp(p, H5HL_MAGIC, H5HL_SIZEOF_MAGIC);
 	if (ret != 0) {
-		error_push("check_lheap", ERR_LEV_1, ERR_LEV_1D, "Could not find local heap signature.", lheap_addr, -1);
+		error_push("check_lheap", ERR_LEV_1, ERR_LEV_1D, 
+		  "Local Heap:Could not find local heap signature", logical, -1);
 		ret++;
 		goto done;
 	} else if (debug_verbose())
@@ -3079,9 +3440,11 @@ check_lheap(driver_t *_file, global_shared_t shared_info, haddr_t lheap_addr, ui
 
 	p += H5HL_SIZEOF_MAGIC;
 
+	logical = get_logical_addr(p, start_buf, lheap_addr);
 	 /* Version */
     	if (*p++ != H5HL_VERSION) {
-		error_push("check_lheap", ERR_LEV_1, ERR_LEV_1D, "Wrong local heap version number.", lheap_addr, -1);
+		error_push("check_lheap", ERR_LEV_1, ERR_LEV_1D, 
+		  "Local Heap:Wrong version number", logical, -1);
 		ret++; /* continue on */
 	}
 
@@ -3089,10 +3452,12 @@ check_lheap(driver_t *_file, global_shared_t shared_info, haddr_t lheap_addr, ui
     	p += 3;
 
 
+	logical = get_logical_addr(p, start_buf, lheap_addr);
 	/* data segment size */
     	DECODE_LENGTH(shared_info, p, data_seg_size);
 	if (data_seg_size <= 0) {
-		error_push("check_lheap", ERR_LEV_1, ERR_LEV_1D, "Invalid data segment size.", lheap_addr, -1);
+		error_push("check_lheap", ERR_LEV_1, ERR_LEV_1D, 
+		  "Local Heap:Invalid data segment size", logical, -1);
 		ret++;
 		goto done;
 	}
@@ -3101,24 +3466,30 @@ check_lheap(driver_t *_file, global_shared_t shared_info, haddr_t lheap_addr, ui
     	DECODE_LENGTH(shared_info, p, next_free_off);
 #if 0
 	if ((haddr_t)next_free_off != HADDR_UNDEF && (haddr_t)next_free_off != H5HL_FREE_NULL && (haddr_t)next_free_off >= data_seg_size) {
-		error_push("check_lheap", ERR_LEV_1, ERR_LEV_1D, "Offset to head of free list is invalid.", lheap_addr, -1);
+		error_push("check_lheap", ERR_LEV_1, ERR_LEV_1D, 
+		  "Offset to head of free list is invalid.", lheap_addr, -1);
 		ret++;
 		goto done;
 	}
 #endif
 
 	/* address of data segment */
+	logical = get_logical_addr(p, start_buf, lheap_addr);
     	addr_decode(shared_info, &p, &addr_data_seg);
+#if 0
 	addr_data_seg = addr_data_seg + shared_info.base_addr;
-	if ((addr_data_seg == HADDR_UNDEF) || (addr_data_seg >= shared_info.stored_eoa)) {
-		error_push("check_lheap", ERR_LEV_1, ERR_LEV_1D, "Address of data segment is invalid.", lheap_addr, -1);
+#endif
+	if ((addr_data_seg == HADDR_UNDEF) || ((addr_data_seg+shared_info.base_addr) >= shared_info.stored_eoa)) {
+		error_push("check_lheap", ERR_LEV_1, ERR_LEV_1D, 
+		  "Local Heap:Address of data segment is invalid", logical, -1);
 		ret++;
 		goto done;
 	}
 
 	heap_chunk = malloc(hdr_size+data_seg_size);
 	if (heap_chunk == NULL) {
-		error_push("check_lheap", ERR_LEV_1, ERR_LEV_1D, "Memory allocation failed for local heap data segment.", lheap_addr, -1);
+		error_push("check_lheap", ERR_LEV_1, ERR_LEV_1D, 
+		  "Local Heap:Memory allocation failed for data segment", logical, -1);
 		ret++;
 		goto done;
 	}
@@ -3129,24 +3500,29 @@ check_lheap(driver_t *_file, global_shared_t shared_info, haddr_t lheap_addr, ui
 #endif
 
 	if (data_seg_size) {
-		if (FD_read(_file, (addr_data_seg-shared_info.base_addr), data_seg_size, heap_chunk+hdr_size) == FAIL) {
-			error_push("check_lheap", ERR_LEV_1, ERR_LEV_1D, "Unable to read local heap data segment.", lheap_addr, -1);
+		if (FD_read(_file, addr_data_seg, data_seg_size, heap_chunk+hdr_size) == FAIL) {
+			error_push("check_lheap", ERR_FILE, ERR_NONE_SEC, 
+			  "Local Heap:Unable to read data segment", logical, -1);
 			ret++;
 			goto done;
 		}
 	} 
 
 
+	start_buf = heap_chunk+hdr_size;
+
 	/* traverse the free list */
 	while (next_free_off != H5HL_FREE_NULL) {
 		if (next_free_off >= data_seg_size) {
-			error_push("check_lheap", ERR_LEV_1, ERR_LEV_1D, "Offset of the next free block is invalid.", lheap_addr, -1);
+			error_push("check_lheap", ERR_LEV_1, ERR_LEV_1D, 
+			  "Local Heap:Offset of the next free block is invalid", logical, -1);
 			ret++;
 			goto done;
 		}
 		saved_offset = next_free_off;
 		p = heap_chunk + hdr_size + next_free_off;
 		DECODE_LENGTH(shared_info, p, next_free_off);
+		get_logical_addr(p, start_buf, addr_data_seg);
 		DECODE_LENGTH(shared_info, p, size_free_block);
 #if DEBUG
 		printf("next_free_off=%d, size_free_block=%d\n",
@@ -3154,11 +3530,13 @@ check_lheap(driver_t *_file, global_shared_t shared_info, haddr_t lheap_addr, ui
 #endif
 
 		if (!(size_free_block >= (2*SIZEOF_SIZE(shared_info)))) {
-			error_push("check_lheap", ERR_LEV_1, ERR_LEV_1D, "Offset of the next free block is invalid.", lheap_addr, -1);
+			error_push("check_lheap", ERR_LEV_1, ERR_LEV_1D, 
+			  "Local Heap:Offset of the next free block is invalid", logical, -1);
 			ret++;  /* continue on */
 		}
         	if (saved_offset + size_free_block > data_seg_size) {
-			error_push("check_lheap", ERR_LEV_1, ERR_LEV_1D, "Bad heap free list.", lheap_addr, -1);
+			error_push("check_lheap", ERR_LEV_1, ERR_LEV_1D, 
+			  "Local Heap:Bad heap free list", logical, -1);
 			ret++;
 			goto done;
 		}
@@ -3189,6 +3567,9 @@ check_gheap(driver_t *_file, global_shared_t shared_info, haddr_t gheap_addr, ui
     	size_t      	max_idx=0;              /* The maximum index seen */
     	H5HG_heap_t 	*ret_value = NULL;      /* Return value */
 
+	uint8_t		*start_buf;
+	haddr_t		logical;
+
 
     	/* check arguments */
     	assert(addr_defined(gheap_addr));
@@ -3196,13 +3577,15 @@ check_gheap(driver_t *_file, global_shared_t shared_info, haddr_t gheap_addr, ui
 
     	/* Read the initial 4k page */
     	if ((heap = calloc(1, sizeof(H5HG_heap_t)))==NULL) {
-		error_push("check_gheap", ERR_INTERNAL, ERR_NONE_SEC, "Couldn't calloc() H5HG_heap_t.", gheap_addr, -1);
+		error_push("check_gheap", ERR_INTERNAL, ERR_NONE_SEC, 
+		  "Global Heap:Couldn't calloc() H5HG_heap_t", gheap_addr, -1);
 		ret++;
 		goto done;
 	}
     	heap->addr = gheap_addr;
     	if ((heap->chunk = malloc(H5HG_MINSIZE))==NULL) {
-		error_push("check_gheap", ERR_INTERNAL, ERR_NONE_SEC, "Couldn't malloc() H5HG_heap_t->chunk.", gheap_addr, -1);
+		error_push("check_gheap", ERR_INTERNAL, ERR_NONE_SEC, 
+		  "Gloabl Heap:Couldn't malloc() H5HG_heap_t->chunk", gheap_addr, -1);
 		ret++;
 		goto done;
 	}
@@ -3211,23 +3594,28 @@ check_gheap(driver_t *_file, global_shared_t shared_info, haddr_t gheap_addr, ui
 		printf("VALIDATING the global heap at logical address %llu...\n", gheap_addr);
         
 	if (FD_read(_file, gheap_addr, H5HG_MINSIZE, heap->chunk) == FAIL) {
-		error_push("check_gheap", ERR_LEV_1, ERR_LEV_1E, "Unable to read global heap collection.", gheap_addr, -1);
+		error_push("check_gheap", ERR_FILE, ERR_NONE_SEC, 
+		  "Global Heap:Unable to read global heap collection", gheap_addr, -1);
 		ret++;
 		goto done;
 	}
 
     	/* Magic number */
     	if (memcmp(heap->chunk, H5HG_MAGIC, H5HG_SIZEOF_MAGIC)) {
-		error_push("check_gheap", ERR_LEV_1, ERR_LEV_1E, "Could not find GCOL signature.", gheap_addr, -1);
+		error_push("check_gheap", ERR_LEV_1, ERR_LEV_1E, 
+		  "Global Heap:Could not find GCOL signature", gheap_addr, -1);
 		ret++;
 	} else if (debug_verbose())
 		printf("FOUND GLOBAL HEAP SIGNATURE\n");
 
+	start_buf = heap->chunk;
     	p = heap->chunk + H5HG_SIZEOF_MAGIC;
+	logical = get_logical_addr(p, start_buf, gheap_addr);
 
     	/* Version */
     	if (H5HG_VERSION != *p++) {
-		error_push("check_gheap", ERR_LEV_1, ERR_LEV_1E, "Wrong version number in global heap.", gheap_addr, -1);
+		error_push("check_gheap", ERR_LEV_1, ERR_LEV_1E, 
+		  "Global Heap:Wrong version number", logical, -1);
 		ret++;
 	} else
 		printf("Version 1 of global heap is detected\n");
@@ -3235,6 +3623,7 @@ check_gheap(driver_t *_file, global_shared_t shared_info, haddr_t gheap_addr, ui
     	/* Reserved */
     	p += 3;
 
+	logical = get_logical_addr(p, start_buf, gheap_addr);
     	/* Size */
     	DECODE_LENGTH(shared_info, p, heap->size);
     	assert (heap->size>=H5HG_MINSIZE);
@@ -3243,12 +3632,14 @@ check_gheap(driver_t *_file, global_shared_t shared_info, haddr_t gheap_addr, ui
         	haddr_t next_addr = gheap_addr + (hsize_t)H5HG_MINSIZE;
 
         	if ((heap->chunk = realloc(heap->chunk, heap->size))==NULL) {
-			error_push("check_gheap", ERR_LEV_1, ERR_LEV_1E, "Couldn't realloc() H5HG_heap_t->chunk.", gheap_addr, -1);
+			error_push("check_gheap", ERR_LEV_1, ERR_LEV_1E, 
+			  "Global Heap:Couldn't realloc() H5HG_heap_t->chunk", logical, -1);
 			ret++;
 			goto done;
 		}
 		if (FD_read(_file, next_addr, heap->size-H5HG_MINSIZE, heap->chunk+H5HG_MINSIZE) == FAIL) {
-			error_push("check_gheap", ERR_LEV_1, ERR_LEV_1E, "Unable to read global heap collection.", gheap_addr, -1);
+			error_push("check_gheap", ERR_FILE, ERR_NONE_SEC, 
+			  "Global Heap:Unable to read global heap collection", logical, -1);
 			ret++;
 			goto done;
 		}
@@ -3256,9 +3647,11 @@ check_gheap(driver_t *_file, global_shared_t shared_info, haddr_t gheap_addr, ui
 
     	/* Decode each object */
     	p = heap->chunk + H5HG_SIZEOF_HDR(shared_info);
+	logical = get_logical_addr(p, start_buf, gheap_addr);
     	nalloc = H5HG_NOBJS(shared_info, heap->size);
     	if ((heap->obj = malloc(nalloc*sizeof(H5HG_obj_t)))==NULL) {
-                error_push("check_gheap", ERR_INTERNAL, ERR_NONE_SEC, "Couldn't malloc() H5HG_obj_t.", gheap_addr, -1);
+                error_push("check_gheap", ERR_INTERNAL, ERR_NONE_SEC, 
+		  "Global Heap:Couldn't malloc() H5HG_obj_t", logical, -1);
                 ret++;
 		goto done;
 	}
@@ -3290,9 +3683,11 @@ check_gheap(driver_t *_file, global_shared_t shared_info, haddr_t gheap_addr, ui
                 		/* Determine the new number of objects to index */
                 		new_alloc = MAX(heap->nalloc*2,(idx+1));
 
+				logical = get_logical_addr(p, start_buf, gheap_addr);
                 		/* Reallocate array of objects */
                 		if ((new_obj=realloc(heap->obj, new_alloc*sizeof(H5HG_obj_t)))==NULL) {
-                			error_push("check_gheap", ERR_LEV_1, ERR_LEV_1E, "Couldn't realloc() H5HG_obj_t.", gheap_addr, -1);
+                			error_push("check_gheap", ERR_LEV_1, ERR_LEV_1E, 
+					  "Global Heap:Couldn't realloc() H5HG_obj_t", logical, -1);
                 			ret++;
 					goto done;
 				}
@@ -3370,36 +3765,53 @@ decode_validate_messages(driver_t *_file, H5O_t *oh)
 	unsigned	global1, global2;
 	haddr_t		global;
 
-	ret = SUCCEED;
+uint8_t	*start_buf, *p;
+haddr_t	logical, logi_base;
 
+	ret = SUCCEED;
 	for (i = 0; i < oh->nmesgs; i++) {	
+	  start_buf = oh->chunk[oh->mesg[i].chunkno].image;
+	  p = oh->mesg[i].raw;
+	  logi_base = oh->chunk[oh->mesg[i].chunkno].addr;
+	  logical = get_logical_addr(p, start_buf, logi_base);
+#if 0
+printf("addr=%llu, type=%d, logical=%llu, raw_size=%llu\n", 
+	logi_base, oh->mesg[i].type->id, logical, oh->mesg[i].raw_size);
+#endif
 	  id = oh->mesg[i].type->id;
 	  if (id == OBJ_CONT_ID) {
 		continue;
 	  } else if (id == OBJ_NIL_ID) {
 		continue;
 	  } else if (oh->mesg[i].flags & OBJ_FLAG_SHARED) {
-	  	mesg = OBJ_SHARED->decode(oh->mesg[i].raw);
+	  	mesg = OBJ_SHARED->decode(oh->mesg[i].raw, start_buf, logi_base);
 		if (mesg != NULL) {
 			status = H5O_shared_read(_file, mesg, oh->mesg[i].type);
 			if (status != SUCCEED) {
-				error_push("decode_validate_messages", ERR_LEV_2, ERR_LEV_2A, "Errors from H5O_shared_read()", -1, -1);
-				error_print(stderr);
+				error_push("decode_validate_messages", ERR_LEV_2, ERR_LEV_2A, 
+				  "Errors from H5O_shared_read() when decoding header message", 
+				  logical, -1);
+				error_print(stderr, _file);
 				error_clear();
 				ret = SUCCEED;
 			}
 			continue;
 		}
-	   } else {
-	  	mesg = message_type_g[id]->decode(oh->mesg[i].raw);
-	    }
+	  } else {
+	  	mesg = message_type_g[id]->decode(oh->mesg[i].raw, start_buf, logi_base);
+	  }
 
-	    if (mesg == NULL) {
-		error_push("decode_validate_messages", ERR_LEV_2, ERR_LEV_2A, "Failure in decoding datatype.", -1, -1);
+	  if (mesg == NULL) {
+#if 0
+printf("failure logi_base=%lld, type=%d, logical=%lld, raw_size=%lld\n", 
+	logi_base, oh->mesg[i].type->id, logical, oh->mesg[i].raw_size);
+#endif
+		error_push("decode_validate_messages", ERR_LEV_2, ERR_LEV_2A, 
+		  "Errors found when decoding header message", logical, -1);
 		ret++;
 		continue;
-	    }
-	    switch (id) {
+	  }
+	  switch (id) {
 		case OBJ_SDS_ID:
 		case OBJ_DT_ID:
 		case OBJ_FILL_ID:
@@ -3413,8 +3825,9 @@ decode_validate_messages(driver_t *_file, H5O_t *oh)
 			status = check_lheap(_file, shared_info, 
 			  ((obj_edf_t *)mesg)->heap_addr, &heap_chunk);
 			if (status != SUCCEED) {
-				error_push("decode_validate_messages", ERR_LEV_2, ERR_LEV_2A8, "Errors found when checking local heap", -1, -1);
-				error_print(stderr);
+				error_push("decode_validate_messages", ERR_LEV_2, ERR_LEV_2A8, 
+				  "Errors found when checking Local Heap from header message...", logical, -1);
+				error_print(stderr, _file);
 				error_clear();
 				ret = SUCCEED;
 			}
@@ -3444,16 +3857,18 @@ decode_validate_messages(driver_t *_file, H5O_t *oh)
 			status = check_btree(_file, shared_info, 
 			     ((H5O_stab_t *)mesg)->btree_addr, 0);
 			if (status != SUCCEED) {
-				error_push("decode_validate_messages", ERR_LEV_2, ERR_LEV_2A18, "Errors found when checking btree", -1, -1);
-				error_print(stderr);
+				error_push("decode_validate_messages", ERR_LEV_2, ERR_LEV_2A18, 
+				  "Errors found when checking B-tree from header message...", logical, -1);
+				error_print(stderr, _file);
 				error_clear();
 				ret = SUCCEED;
 			}
 			status = check_lheap(_file, shared_info, 
 			     ((H5O_stab_t *)mesg)->heap_addr, NULL);
 			if (status != SUCCEED) {
-				error_push("decode_validate_messages", ERR_LEV_2, ERR_LEV_2A18, "Errors found when checking local heap", -1, -1);
-				error_print(stderr);
+				error_push("decode_validate_messages", ERR_LEV_2, ERR_LEV_2A18, 
+				  "Errors found when checking Local Heap from header message...", logical, -1);
+				error_print(stderr, _file);
 				error_clear();
 				ret = SUCCEED;
 			}
@@ -3477,6 +3892,8 @@ H5O_find_in_ohdr(driver_t *_file, H5O_t *oh, const obj_class_t **type_p, int seq
 	unsigned            u, FOUND;
     	const obj_class_t   *type = NULL;
     	unsigned            ret_value;
+	const uint8_t	*start_buf;
+	haddr_t		logi_base;
 
 /* DO I NEED TO PASS type_p, and modified it ??? */
     	/* Check args */
@@ -3505,9 +3922,12 @@ H5O_find_in_ohdr(driver_t *_file, H5O_t *oh, const obj_class_t **type_p, int seq
         	type = oh->mesg[u].type;
 	}
 
+	start_buf = oh->chunk[oh->mesg[u].chunkno].image;
+	logi_base = oh->chunk[oh->mesg[u].chunkno].addr;
+
     	if (oh->mesg[u].native == NULL) {
         	assert(type->decode);
-        	oh->mesg[u].native = (type->decode) (oh->mesg[u].raw);
+        	oh->mesg[u].native = (type->decode) (oh->mesg[u].raw, start_buf, logi_base);
         	if (NULL == oh->mesg[u].native)
 /* NEED TO CHECK ON THIS */
             		printf("unable to decode message\n");
@@ -3565,7 +3985,9 @@ int search, const obj_class_t *type)
 	size_t		hdr_size, chunk_size;
 	haddr_t		chunk_addr;
 	uint8_t		buf[16], *p, flags;
+	uint8_t		*start_buf;
 	unsigned	nmesgs, id;
+	haddr_t		logical, logi_base;
 	size_t		mesg_size;
 	int		version, nlink, ret, status;
 
@@ -3590,7 +4012,8 @@ int search, const obj_class_t *type)
 			obj_table->objs[idx].nlink--;
 			return(ret);
 		} else {
-			error_push("check_obj_header", ERR_LEV_2, ERR_LEV_2A, "Inconsistent reference count.", obj_head_addr, -1);
+			error_push("check_obj_header", ERR_LEV_2, ERR_LEV_2A, 
+			  "Object Header:Inconsistent reference count", obj_head_addr, -1);
 			ret++;  /* SHOULD I return??? */
 			return(ret);
 		}
@@ -3601,33 +4024,44 @@ int search, const obj_class_t *type)
 	if (debug_verbose())
 		printf("VALIDATING the object header at logical address %llu...\n", obj_head_addr);
 
-#ifdef DEBUG
-	printf("obj_head_addr=%d, hdr_size=%d\n", 
+#if 0
+	printf("obj_head_addr=%llu, hdr_size=%d\n", 
 		obj_head_addr, hdr_size);
 #endif
+
 	oh = calloc(1, sizeof(H5O_t));
 	if (oh == NULL) {
-		error_push("check_obj_header", ERR_INTERNAL, ERR_NONE_SEC, "Unable to calloc() H5O_t.", obj_head_addr, -1);
+		error_push("check_obj_header", ERR_INTERNAL, ERR_NONE_SEC, 
+		  "Object Header:Unable to calloc() H5O_t", obj_head_addr, -1);
 		ret++;
 		return(ret);
 	}
 
 	if (FD_read(_file, obj_head_addr, (size_t)hdr_size, buf) == FAIL) {
-		error_push("check_obj_header", ERR_LEV_2, ERR_LEV_2A, "Unable to read object header.", obj_head_addr, -1);
+		error_push("check_obj_header", ERR_FILE, ERR_NONE_SEC, 
+		  "Object Header:Unable to read object header", obj_head_addr, -1);
 		ret++;
 		return(ret);
 	}
 
+	start_buf = buf;
     	p = buf;
+
+	logical = get_logical_addr(p, start_buf, obj_head_addr);
 	oh->version = *p++;
 	if (oh->version != H5O_VERSION) {
-		error_push("check_obj_header", ERR_LEV_2, ERR_LEV_2A, "Invalid version number.", obj_head_addr, -1);
+		error_push("check_obj_header", ERR_LEV_2, ERR_LEV_2A, 
+		  "Object Header:Invalid version number", 
+		  logical, -1);
 		ret++;
 	}
 	p++;
+
+	logical = get_logical_addr(p, start_buf, obj_head_addr);
 	UINT16DECODE(p, nmesgs);
 	if ((int)nmesgs < 0) {  /* ??? */
-		error_push("check_obj_header", ERR_LEV_2, ERR_LEV_2A, "Incorrect number of header messages.", obj_head_addr, -1);
+		error_push("check_obj_header", ERR_LEV_2, ERR_LEV_2A, 
+		  "Object Header:Incorrect number of header messages", logical, -1);
 		ret++;
 	}
 
@@ -3638,13 +4072,19 @@ int search, const obj_class_t *type)
 
 	chunk_addr = obj_head_addr + (size_t)hdr_size;
 	UINT32DECODE(p, chunk_size);
+	logical = get_logical_addr(p, start_buf, chunk_addr);
 
 	oh->alloc_nmesgs = MAX(H5O_NMESGS, nmesgs);
-	oh->mesg = calloc(oh->alloc_nmesgs, sizeof(H5O_mesg_t));
+	if ((oh->mesg = calloc(oh->alloc_nmesgs, sizeof(H5O_mesg_t)))==NULL) {
+		error_push("check_obj_header", ERR_INTERNAL, ERR_NONE_SEC, 
+		  "Object Header:calloc() failed for oh->alloc_nmesgs", logical, -1);
+		ret++;
+		return(ret);
+	}
 
-#ifdef DEBUG
+#if 0
 	printf("oh->version =%d, nmesgs=%d, oh->nlink=%d\n", oh->version, nmesgs, oh->nlink);
-	printf("chunk_addr=%d, chunk_size=%d\n", chunk_addr, chunk_size);
+	printf("chunk_addr=%llu, chunk_size=%ld\n", chunk_addr, chunk_size);
 #endif
 
 	/* read each chunk from disk */
@@ -3654,7 +4094,8 @@ int search, const obj_class_t *type)
             		unsigned na = oh->alloc_nchunks + H5O_NCHUNKS;
             		H5O_chunk_t *x = realloc(oh->chunk, (size_t)(na*sizeof(H5O_chunk_t)));
             		if (!x) {
-				error_push("check_obj_header", ERR_INTERNAL, ERR_NONE_SEC, "Realloc() failed for H5O_chunk_t.", obj_head_addr, -1);
+				error_push("check_obj_header", ERR_INTERNAL, ERR_NONE_SEC, 
+				  "Object Header:Realloc() failed for H5O_chunk_t", logical, -1);
 				ret++;
 				return(ret);
 			}
@@ -3668,18 +4109,21 @@ int search, const obj_class_t *type)
         	oh->chunk[chunkno].size = chunk_size;
 
 		if ((oh->chunk[chunkno].image = calloc(1, chunk_size)) == NULL) {
-			error_push("check_obj_header", ERR_INTERNAL, ERR_NONE_SEC, "calloc() failed for oh->chunk[].image", obj_head_addr, -1);
+			error_push("check_obj_header", ERR_INTERNAL, ERR_NONE_SEC, 
+			  "Object Header:calloc() failed for oh->chunk[].image", logical, -1);
 			ret++;
 			return(ret);
 		}
 
 		if (FD_read(_file, chunk_addr, chunk_size, oh->chunk[chunkno].image) == FAIL) {
-			error_push("check_obj_header", ERR_LEV_2, ERR_LEV_2A, "Unable to read object header data.", obj_head_addr, -1);
+			error_push("check_obj_header", ERR_FILE, ERR_NONE_SEC, 
+			  "Object Header:Unable to read object header data", logical, -1);
 			ret++;
 			return(ret);
 		}
 
 
+		start_buf = oh->chunk[chunkno].image;
 		for (p = oh->chunk[chunkno].image; p < oh->chunk[chunkno].image+chunk_size; p += mesg_size) {
 			UINT16DECODE(p, id);
             		UINT16DECODE(p, mesg_size);
@@ -3687,8 +4131,10 @@ int search, const obj_class_t *type)
 			flags = *p++;
 			p += 3;  /* reserved */
 			/* Try to detect invalidly formatted object header messages */
+			logical = get_logical_addr(p, start_buf, chunk_addr);
             		if (p + mesg_size > oh->chunk[chunkno].image + chunk_size) {
-				error_push("check_obj_header", ERR_LEV_2, ERR_LEV_2A, "Corrupt object header message.", obj_head_addr, -1);
+				error_push("check_obj_header", ERR_LEV_2, ERR_LEV_2A, 
+				  "Object Header:Corrupt object header message", logical, -1);
 				ret++;
 				return(ret);
 			}
@@ -3699,7 +4145,8 @@ int search, const obj_class_t *type)
 			}
 			 /* new message */
                 	if (oh->nmesgs >= nmesgs) {
-				error_push("check_obj_header", ERR_LEV_2, ERR_LEV_2A, "Corrupt object header.", obj_head_addr, -1);
+				error_push("check_obj_header", ERR_LEV_2, ERR_LEV_2A, 
+				  "Object Header:Corrupt object header", logical, -1);
 				ret++;
 				return(ret);
 			}
@@ -3717,10 +4164,14 @@ int search, const obj_class_t *type)
         	/* decode next object header continuation message */
         	for (chunk_addr = HADDR_UNDEF; !addr_defined(chunk_addr) && curmesg < oh->nmesgs; ++curmesg) {
             		if (oh->mesg[curmesg].type->id == OBJ_CONT_ID) {
-                		cont = (OBJ_CONT->decode) (oh->mesg[curmesg].raw);
+				start_buf = oh->chunk[oh->mesg[curmesg].chunkno].image;
+				logi_base = oh->chunk[oh->mesg[curmesg].chunkno].addr;
+                		cont = (OBJ_CONT->decode) (oh->mesg[curmesg].raw, start_buf, logi_base);
+				logical = get_logical_addr(oh->mesg[curmesg].raw, start_buf, logi_base);
 				if (cont == NULL) {
-					error_push("check_obj_header", ERR_LEV_2, ERR_LEV_2A, "Corrupt continuation message...skipped.", 
-						obj_head_addr, -1);
+					error_push("check_obj_header", ERR_LEV_2, ERR_LEV_2A, 
+					  "Object Header:Corrupt continuation message...skipped.", 
+					  logical, -1);
 					ret++;
 					continue;
 				}
@@ -3790,7 +4241,7 @@ int main(int argc, char **argv)
 	haddr_t		ss;
 	haddr_t		gheap_addr;
 	FILE 		*inputfd;
-	driver_t 		*thefile;
+	driver_t 	*thefile;
 
 
 	/* command line declarations */
@@ -3861,69 +4312,65 @@ int main(int argc, char **argv)
 	printf("\nVALIDATING %s\n\n", fname);
 
 	
-#if LATER
 	/* Initially, use the SEC2 driver by default */
 	thefile = FD_open(fname, SEC2_DRIVER);
-	if (thefile == NULL) {
-		error_push("Main", ERR_FILE, ERR_NONE_SEC, "Failure in opening input file. Validation discontinued.", -1, -1);
-		error_print(stderr);
-		error_clear();
-		goto done;
-	}
-
-DOING opening sec2 by default THIS NOW, later, doing logical address handling....
-#endif
-
-	inputfd = fopen(fname, "r");
-
-        if (inputfd == NULL) {
-		error_push("Main", ERR_FILE, ERR_NONE_SEC, "Failure in fopen() of input file. Validation discontinued.", -1, -1);
-		error_print(stderr);
-		error_clear();
 #if 0
-                fprintf(stderr, "fopen(\"%s\") failed: %s\n", fname,
-                                 strerror(errno));
+	printf("Using default file driver...\n");
 #endif
-		goto done;
-        }
-
-
-	ret = check_superblock(inputfd, &shared_info);
-	if (ret != SUCCEED) {
-		error_push("Main", ERR_LEV_0, ERR_NONE_SEC, "Errors found when checking superblock. Validation stopped.", -1, -1);
-		error_print(stderr);
+	if (thefile == NULL) {
+		error_push("Main", ERR_FILE, ERR_NONE_SEC, 
+		  "Failure in opening input file using the default driver. Validation discontinued.", -1, -1);
+		error_print(stderr, thefile);
 		error_clear();
-
-		fclose(inputfd);
-
 		goto done;
 	}
 
-	fclose(inputfd);
-
+	ret = check_superblock(thefile, &shared_info);
 	/* superblock validation has to be all passed before proceeding further */
-	/* from now on, use virtual file driver for opening/reading/closing */
-	thefile = FD_open(fname, shared_info.driverid);
-	if (thefile == NULL) {
-		error_push("Main", ERR_FILE, ERR_NONE_SEC, "Errors in opening input file. Validation stopped.", -1, -1);
-		error_print(stderr);
+	if (ret != SUCCEED) {
+		error_push("Main", ERR_LEV_0, ERR_NONE_SEC, 
+		  "Errors found when checking superblock. Validation stopped.", -1, -1);
+		error_print(stderr, thefile);
 		error_clear();
 		goto done;
-        }
+	}
+
+	/* not using the default driver */
+	if (shared_info.driverid != SEC2_DRIVER) {
+		ret = FD_close(thefile);
+		if (ret != SUCCEED) {
+			error_push("Main", ERR_FILE, ERR_NONE_SEC, 
+			  "Errors in closing input file using the default driver.", -1, -1);
+			error_print(stderr, thefile);
+			error_clear();
+		}
+		printf("Switching to new file driver...\n");
+		thefile = FD_open(fname, shared_info.driverid);
+		if (thefile == NULL) {
+			error_push("Main", ERR_FILE, ERR_NONE_SEC, 
+			  "Errors in opening input file. Validation stopped.", -1, -1);
+			error_print(stderr, thefile);
+			error_clear();
+			goto done;
+        	}
+	}
 
 
 	ss = thefile->cls->get_eof(thefile);
 	if ((ss==HADDR_UNDEF) || (ss<shared_info.stored_eoa)) {
-		error_push("Main", ERR_FILE, ERR_NONE_SEC, "Invalid file size or file size less than superblock eoa. Validation stopped.", -1, -1);
-		error_print(stderr);
+		error_push("Main", ERR_FILE, ERR_NONE_SEC, 
+		  "Invalid file size or file size less than superblock eoa. Validation stopped.", 
+		  -1, -1);
+		error_print(stderr, thefile);
 		error_clear();
 		goto done;
 	}
 
 	ret = table_init(&obj_table);
 	if (ret != SUCCEED) {
-		error_push("Main", ERR_INTERNAL, ERR_NONE_SEC, "Errors in initializing hard link table.", -1, -1);
-		error_print(stderr);
+		error_push("Main", ERR_INTERNAL, ERR_NONE_SEC, 
+		  "Errors in initializing hard link table.", -1, -1);
+		error_print(stderr, thefile);
 		error_clear();
 		ret = SUCCEED;
 	}
@@ -3931,22 +4378,25 @@ DOING opening sec2 by default THIS NOW, later, doing logical address handling...
 	ret = check_obj_header(thefile, shared_info, shared_info.root_grp->header, 0, NULL);
 	if (ret != SUCCEED) {
 		error_push("Main", ERR_LEV_0, ERR_NONE_SEC, 
-		  "Errors found when checking the object header whose address is found in the root group symbol table entry embedded in the superblock.", -1, -1);
-		error_print(stderr);
+		  "Errors found when checking the object header in the root group symbol table entry of the superblock.", -1, -1);
+		error_print(stderr, thefile);
 		error_clear();
 		ret = SUCCEED;
 	}
 
-	ret = FD_close(thefile);
-	if (ret != SUCCEED) {
-		error_push("Main", ERR_FILE, ERR_NONE_SEC, "Errors in closing input file.", -1, -1);
-		error_print(stderr);
-		error_clear();
+done:
+	if (thefile != NULL) {
+		ret = FD_close(thefile);
+		if (ret != SUCCEED) {
+			error_push("Main", ERR_FILE, ERR_NONE_SEC, 
+				"Errors in closing input file", -1, -1);
+			error_print(stderr, thefile);
+			error_clear();
+		}
 	}
 	
-done:
 	if (found_error()){
-	    printf("Errors found\n");
+	    printf("Non-compliance errors found\n");
 	    leave(EXIT_FORMAT_FAILURE);
 	}else{
 	    printf("No non-compliance errors found\n");
