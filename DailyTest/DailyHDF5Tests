@@ -70,19 +70,13 @@ WATCHERFILE=${LOGDIR}/../watchers		# List of platform watchers
 CMD="bin/runtest $DEBUGMODE ${SWVER}"
 
 # Setup Mailing command and Report title
-if [ $HOSTNAME = gondolin ]; then
-    MAIL=Mail
-    TEST_TITLE="$HOSTNAME ${SW}${SWVERSTR}_Daily_Tests"
-else
-    MAIL=mail
-    TEST_TITLE="${SW}${SWVERSTR}_Daily_Tests"
-fi
+MAIL=mail
+TEST_TITLE="$HOSTNAME ${SW}${SWVERSTR}_Daily_Tests"
 
 # set up auto-cleanup
 trap "rm -f $LOGDIRLOCK" 0
 trap "rm -f $LOGDIRLOCK" 1 2 3 4 5 6 7 8 9 10 12 13 14 15
 
-if [ $HOSTNAME != gondolin ]; then
 # Clean up LOGDIR by moving all files that are not "of today" to OLD.
 # Then go into OLD and move all files older than 7 days to OLDER.
 # Then go into OLDer and remove all files older than 30 days.
@@ -90,26 +84,23 @@ if [ $HOSTNAME != gondolin ]; then
 # which should be in AFS space so that the files are available to most hosts.
 # The second tier is OLDER which could be in HDF's own NFS space which has
 # much bigger capacity but not as widely available.
-(   
-    nold=6
-    nolder=31
-    echo cleaning $LOGDIR by moving all old logfiles to OLD
-    cd $LOGDIR
-    test -d OLD/. || mkdir OLD
-    find . \( -name OLD -prune \) \
-	-o -type f ! -name '*'$TODAY'*' -exec mv '{}' OLD/. \;
+nold=6
+nolder=31
+echo cleaning $LOGDIR by moving all old logfiles to OLD
+cd $LOGDIR
+test -d OLD/. || mkdir OLD
+find . \( -name OLD -prune \) \
+    -o -type f ! -name '*'$TODAY'*' -exec mv '{}' OLD/. \;
 
-    echo cleaning $LOGDIR/OLD by moving all files older than $nold days to OLDER
-    cd OLD
-    test -d OLDER/. || mkdir OLDER
-    find . \( -name OLDER -prune \) \
-	-o -type f -mtime +$nold -exec mv '{}' OLDER/. \;
+echo cleaning $LOGDIR/OLD by moving all files older than $nold days to OLDER
+cd OLD
+test -d OLDER/. || mkdir OLDER
+find . \( -name OLDER -prune \) \
+    -o -type f -mtime +$nold -exec mv '{}' OLDER/. \;
 
-    echo cleaning $LOGDIR/OLDER by removing all files older than $nolder days.
-    cd OLDER
-    find . -type f -mtime +$nolder -exec rm -f '{}' \;
-)
-fi
+echo cleaning $LOGDIR/OLDER by removing all files older than $nolder days.
+cd OLDER
+find . -type f -mtime +$nolder -exec rm -f '{}' \;
 
 if [ -f $LOGFILE ]; then
     if [ -n "$DEBUGMODE" ]; then
@@ -141,14 +132,10 @@ fi
 
 # Make sure daily test has an mpich2 daemon running in echo of the following hosts.
 for h in colonelk.hdfgroup.uiuc.edu; do
-    ssh $h -n /usr/sdt/bin/mpich2/mpd  --daemon
+    echo "DISABLE" ssh $h -n /usr/sdt/bin/mpich2/mpd  --daemon
 done
 
-if [ $HOSTNAME != gondolin ]; then
-    (cd $HOME/${SW}/${SWSRC_VER}/${sw}; $CMD -all) > $LOGFILE 2>&1
-else
-    (cd $HOME/${SW}/${SWSRC_VER}/${sw}; $CMD -nocvs) > $LOGFILE 2>&1
-fi
+(cd $HOME/${SW}/${SWSRC_VER}/${sw}; $CMD -all) > $LOGFILE 2>&1
 
 # Verify test script did complete by checking the last lines
 (tail -4 $LOGFILE | grep -s "^*** finished .* in $HOSTNAME ***" > /dev/null 2>&1) ||
@@ -232,7 +219,6 @@ fi
 # remove lock
 rm $LOGDIRLOCK
 
-if [ $HOSTNAME != gondolin ]; then
 # do a snapshot release if
 #   test-passed && 
 #   release_not-is-not-present &&
@@ -291,7 +277,6 @@ if [ $errcode -eq 0 -a \
      echo "    $SNAPSHOTLOG"
     ) |
     mail -s "${SW}${SWVERSTR}_snapshot:$RELEASE_Result" $TOWHOM
-fi
 fi
 
 
