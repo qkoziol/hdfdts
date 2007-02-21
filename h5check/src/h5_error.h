@@ -51,16 +51,23 @@ typedef struct   secondary_err_mesg_t {
         const   char    *str;
 } secondary_err_mesg_t;
 
+/* mainly used to report the version number decoded */
+typedef struct	error_info_t {
+	int	reported;	/* whether to report the "bad_info" */
+	int	bad_info;
+} error_info_t;
+
 /* Information about an error */
 typedef struct  error_t {
-    	const char  	*func_name;  	/* function in which error occurred   */
         primary_err_t   prim_err;	/* Primary Format Level where error is found */
         secondary_err_t sec_err;	/* Secondary Format Level where error is found */
         const char      *desc;		/* Detail description of error */
     	haddr_t		logical_addr;  	/* logical address where error occurs */
-    	haddr_t		physical_addr; 	/* physical address of a file where error occurs */
+	error_info_t	err_info;	/* for reporting wrong/correct version info */
 } error_t;
 
+#define	REPORTED	1
+#define	NOT_REP		0
 #define H5E_NSLOTS      32      /* number of slots in an error stack */
 
 /* An error stack */
@@ -74,7 +81,7 @@ ERR_t	ERR_stack_g[1];
 
 #define	ERR_get_my_stack()	(ERR_stack_g+0)
 
-void 	error_push(const char *, primary_err_t, secondary_err_t, const char *, haddr_t, haddr_t);
+void 	error_push(primary_err_t, secondary_err_t, const char *, haddr_t, int, int);
 herr_t 	error_clear(void);
 void 	error_print(FILE *, driver_t *);
 int 	found_error(void);

@@ -122,6 +122,13 @@ typedef struct table_t {
 #   define TRUE 1
 #endif
 
+#define 	BT_ISTORE_K	32	/* for older version of superblock < 1 */
+typedef enum BT_subid_t {
+    BT_SNODE_ID         = 0,   /* B-tree is for symbol table nodes           */
+    BT_ISTORE_ID        = 1,   /* B-tree is for indexed object storage       */
+    BT_NUM_BTREE_ID            /* Number of B-tree key IDs (must be last)   */
+} BT_subid_t;
+
 #define NELMTS(X)           (sizeof(X)/sizeof(X[0]))
 
 #define GP_SIZEOF_SCRATCH      16
@@ -176,9 +183,8 @@ typedef struct 	global_shared_t {
         size_t          size_offsets;       /* size of offsets: sizeof_addr */
         size_t          size_lengths;       /* size of lengths: sizeof_size */
 	unsigned	gr_leaf_node_k;	    /* group leaf node k */
-	unsigned	gr_int_node_k;	    /* group internal node k */
         uint32_t        file_consist_flg;   /* file consistency flags */
-        unsigned        btree_k;            /* indexed storage internal node k */
+        unsigned        btree_k[BT_NUM_BTREE_ID];  /* internal node k for SNODE & ISTORE */
         haddr_t         base_addr;          /* absolute base address for rel.addrs. */
         haddr_t         freespace_addr;     /* relative address of free-space info  */
         haddr_t         stored_eoa;         /* end of file address */
@@ -832,11 +838,6 @@ typedef struct H5HG_heap_t H5HG_heap_t;
     (var)=_tmp_overflow2;                               \
 }
 
-typedef enum BT_subid_t {
-    BT_SNODE_ID         = 0,   /* B-tree is for symbol table nodes           */
-    BT_ISTORE_ID        = 1,   /* B-tree is for indexed object storage       */
-    BT_NUM_BTREE_ID            /* Number of B-tree key IDs (must be last)   */
-} BT_subid_t;
 
 
 typedef struct BT_class_t {
