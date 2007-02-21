@@ -95,7 +95,7 @@ static  const   secondary_err_mesg_t secondary_err_mesg_g[] = {
 
 
 void
-error_push(const char *function_name, primary_err_t prim_err, secondary_err_t sec_err, const char *desc, haddr_t logical_addr, haddr_t physical_addr)
+error_push(primary_err_t prim_err, secondary_err_t sec_err, const char *desc, haddr_t logical_addr, int reported, int bad_info)
 {
 	
     	ERR_t   *estack = ERR_get_my_stack();
@@ -107,8 +107,6 @@ error_push(const char *function_name, primary_err_t prim_err, secondary_err_t se
      	 * Don't fail if arguments are bad.  Instead, substitute some default
        	 * value.
      	 */
-    	if (!function_name) 
-		function_name = "Unknown_Function";
 	if (!desc) 
 		desc = "No description given";
 
@@ -128,12 +126,12 @@ error_push(const char *function_name, primary_err_t prim_err, secondary_err_t se
      	 */
     	assert (estack);
     	if (estack->nused < H5E_NSLOTS) {
-        	estack->slot[estack->nused].func_name = function_name;
         	estack->slot[estack->nused].prim_err = prim_err;
         	estack->slot[estack->nused].sec_err = sec_err;
         	estack->slot[estack->nused].desc = desc;
         	estack->slot[estack->nused].logical_addr = logical_addr;
-        	estack->slot[estack->nused].physical_addr = physical_addr;
+        	estack->slot[estack->nused].err_info.reported = reported;
+        	estack->slot[estack->nused].err_info.bad_info = bad_info;
         	estack->nused++;
     	}
 }
@@ -173,40 +171,27 @@ error_print(FILE *stream, driver_t *_file)
 	if (g_verbose_num) {
 		fprintf(stream, "***Error***\n");
 		for (i = estack->nused-1; i >=0; --i) {
+			int sec_null = 0;
+			fprintf(stream, "%s", estack->slot[i].desc);
+			if ((int)estack->slot[i].logical_addr != -1) {
+				fname = (char *)FD_get_fname(_file, estack->slot[i].logical_addr);
+				fprintf(stream, "\n  file=%s;", fname);
+				fprintf(stream, "  at logical addr %llu",
+			     		(unsigned long long)estack->slot[i].logical_addr);
+				if (estack->slot[i].err_info.reported)
+					fprintf(stream, "; Value decoded: %d",
+			     			estack->slot[i].err_info.bad_info);
+			}
+			fprintf(stream, "\n");
+
 			prim_str = get_prim_err(estack->slot[i].prim_err);
 			sec_str = get_sec_err(estack->slot[i].sec_err);
-
-			int sec_null = 0;
 			if (estack->slot[i].sec_err == ERR_NONE_SEC)
 				sec_null = 1;
 			if (sec_null)
 				fprintf(stream, "  %s\n", prim_str);
 			else
 				fprintf(stream, "  %s-->%s\n", prim_str, sec_str);
-			fprintf(stream, "    %s", estack->slot[i].desc);
-			if ((int)estack->slot[i].logical_addr != -1) {
-				fname = FD_get_fname(_file, estack->slot[i].logical_addr);
-				fprintf(stream, "\n      file=%s;", fname);
-				fprintf(stream, "  at logical addr %llu;",
-			     		(unsigned long long)estack->slot[i].logical_addr);
-			}
-			if ((int)estack->slot[i].physical_addr != -1)
-				fprintf(stream, " at physical addr %llu;",
-			     		(unsigned long long)estack->slot[i].physical_addr);
-			fprintf(stream, "\n");
-
-#if 0
-			if ((int)estack->slot[i].address == -1)
-    		     	fprintf(stream, "%s(): %s\n", 
-			     estack->slot[i].func_name, 
-			     estack->slot[i].desc);
-    			else {
-			fprintf(stream, "%s(at %llu): %s\n", 
-			     estack->slot[i].func_name, 
-			     estack->slot[i].address,
-			     estack->slot[i].desc);
-			}
-#endif
 		}
 		fprintf(stream, "***End of Error messages***\n");
 	}
