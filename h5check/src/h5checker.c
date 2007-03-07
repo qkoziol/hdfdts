@@ -17,6 +17,8 @@ GP_entry_t 	root_ent;
 
 /* command line option */
 int	g_verbose_num;
+haddr_t	g_obj_addr;
+
 
 /* for handling hard links */
 table_t		*obj_table;
@@ -537,9 +539,12 @@ sec2_read(driver_t *_file, haddr_t addr, size_t size, void *buf/*out*/)
 	addr = addr + shared_info.super_addr;
 	/* NEED To find out about lseek64??? */
 	fd = ((driver_sec2_t *)_file)->fd;
-	lseek(fd, addr, SEEK_SET);
-       	if (read(fd, buf, size)<0)
+	if (lseek(fd, addr, SEEK_SET) < 0)
 		ret = FAIL;
+	/* end of file: return 0; errors: return -1 */
+       	else if (read(fd, buf, size) <= 0)
+		ret = FAIL;
+	return(ret);
 }
 
 
@@ -1682,7 +1687,6 @@ OBJ_edf_decode(const uint8_t *p, const uint8_t *start_buf, haddr_t logi_base)
 		  logical, REPORTED, version);
 		ret++;
 	}
-
     	/* Reserved */
     	p += 3;
 
@@ -1701,7 +1705,7 @@ OBJ_edf_decode(const uint8_t *p, const uint8_t *start_buf, haddr_t logi_base)
 		goto done;
 	}
 
-    	/* Heap address */
+    	/* Heap address:will be validated later in decode_validate_messages() */
     	addr_decode(shared_info, &p, &(mesg->heap_addr));
     	assert(addr_defined(mesg->heap_addr));
 
@@ -1717,13 +1721,30 @@ OBJ_edf_decode(const uint8_t *p, const uint8_t *start_buf, haddr_t logi_base)
 	}
 
     	for (u = 0; u < mesg->nused; u++) {
-        	/* Name offset */
+        	/* Name offset: will be validated later in decode_validate_messages() */
         	DECODE_LENGTH (shared_info, p, mesg->slot[u].name_offset);
         	/* File offset */
         	DECODE_LENGTH (shared_info, p, mesg->slot[u].offset);
-        	/* Size */
+		if (!(mesg->slot[u].offset >=0)) {
+			error_push(ERR_LEV_2, ERR_LEV_2A8, 
+		  		"Invalid file offset for Data Storage-External Data Files Message", 
+		  		logical, NOT_REP, -1);
+			ret++;
+		}
+        	/* size */
         	DECODE_LENGTH (shared_info, p, mesg->slot[u].size);
-        	assert (mesg->slot[u].size>0);
+		if (mesg->slot[u].size <= 0) {
+			error_push(ERR_LEV_2, ERR_LEV_2A8, 
+		  		"Invalid size for Data Storage-External Data Files Message", 
+		  		logical, NOT_REP, -1);
+			ret++;
+		}
+		if (!(mesg->slot[u].offset <= mesg->slot[u].size)) {
+			error_push(ERR_LEV_2, ERR_LEV_2A8, 
+		  		"Inconsistent file offset/size for Data Storage-External Data Files Message", 
+		  		logical, NOT_REP, -1);
+			ret++;
+		}
     	}
 
     	ret_value = mesg;
@@ -3916,19 +3937,37 @@ printf("failure logi_base=%lld, type=%d, logical=%lld, raw_size=%lld\n",
 			  ((obj_edf_t *)mesg)->heap_addr, &heap_chunk);
 			if (status != SUCCEED) {
 				error_push(ERR_LEV_2, ERR_LEV_2A8, 
-				  "Errors found when checking Local Heap from header message...",
+				  "Errors found when checking Local Heap from External Data Files header message",
 				  logical, NOT_REP, -1);
 				error_print(stderr, _file);
 				error_clear();
 				ret = SUCCEED;
-			}
-			/* should be linked together as else when status == SUCCEED */
-    			for (k = 0; k < ((obj_edf_t *)mesg)->nused; k++) {
-			
-				s = heap_chunk+H5HL_SIZEOF_HDR(shared_info)+((obj_edf_t *)mesg)->slot[k].name_offset;
-        			assert (s && *s);
-			}
-			if (heap_chunk) free(heap_chunk);
+			} else {  /* SUCCEED */
+				int 	has_error = FALSE;
+    				for (k = 0; k < ((obj_edf_t *)mesg)->nused; k++) {
+					s = heap_chunk+H5HL_SIZEOF_HDR(shared_info)
+						+((obj_edf_t *)mesg)->slot[k].name_offset;
+					if (s) {
+						if (!(*s)) {
+							error_push(ERR_LEV_2, ERR_LEV_2A8, 
+				  				"Invalid external file name found in local heap",
+				  				logical, NOT_REP, -1);
+							has_error = TRUE;
+						}
+					} else {
+						error_push(ERR_LEV_2, ERR_LEV_2A8, 
+				  			"Invalid name offset into local heap", logical, NOT_REP, -1);
+						has_error = TRUE;
+					}
+				}  /* end for */
+				if (has_error) {
+					error_print(stderr, _file);
+					error_clear();
+					ret = SUCCEED;
+				}
+			}  /* end else */
+			if (heap_chunk) 
+				free(heap_chunk);
 			break;
 		case OBJ_LAYOUT_ID:
 			if (((OBJ_layout_t *)mesg)->type == DATA_CHUNKED) {
@@ -4311,6 +4350,8 @@ usage(prog_name)
     	fprintf(stdout, "     		n=0	Terse--only indicates if the file is compliant or not\n");
     	fprintf(stdout, "     		n=1	Default--prints its progress and all errors found\n");
     	fprintf(stdout, "     		n=2	Verbose--prints everything it knows, usually for debugging\n");
+    	fprintf(stdout, "     -oa, --object=a	Check object header\n");
+    	fprintf(stdout, "     		a	Address of the object header to be validated\n");
 	fprintf(stdout, "\n");
 
 }
@@ -4351,6 +4392,7 @@ int main(int argc, char **argv)
 		prog_name = argv[0];
 
 	g_verbose_num = DEFAULT_VERBOSE;
+	g_obj_addr = HADDR_UNDEF;
 	for (argno=1; argno<argc && argv[argno][0]=='-'; argno++) {
 		if (!strcmp(argv[argno], "--help")) {
 			usage(prog_name);
@@ -4362,14 +4404,32 @@ int main(int argc, char **argv)
 			printf("VERBOSE is true\n");
 			g_verbose_num = strtol(argv[argno]+10, NULL, 0);
 			printf("verbose_num=%d\n", g_verbose_num);
+
 		} else if (!strncmp(argv[argno], "--verbose", 10)) {
 			printf("no number provided, assume default verbose\n");
 			g_verbose_num = DEFAULT_VERBOSE;
+
 		} else if (!strncmp(argv[argno], "-v", 2)) {
 			if (argv[argno][2]) {
 				s = argv[argno]+2;
 				g_verbose_num = strtol(s, NULL, 0);
 				printf("single verbose_num=%d\n", g_verbose_num);
+			} else {
+				usage(prog_name);
+				leave(EXIT_COMMAND_FAILURE);
+			}
+
+		} else if (!strncmp(argv[argno], "--object=", 9)) {
+			g_obj_addr = strtoull(argv[argno]+9, NULL, 0);
+			printf("CHECK OBJECT_ HEADER is true:g_obj_addr=%llu\n", g_obj_addr);
+		} else if (!strncmp(argv[argno], "--object", 10)) {
+			printf("no address provided, assume default validation\n");
+			g_obj_addr = HADDR_UNDEF;
+		} else if (!strncmp(argv[argno], "-o", 2)) {
+			if (argv[argno][2]) {
+				s = argv[argno]+2;
+				g_obj_addr = strtoull(s, NULL, 0);
+				printf("CHECK OBJECT_HEADER is true:g_obj_addr=%llu\n", g_obj_addr);
 			} else {
 				usage(prog_name);
 				leave(EXIT_COMMAND_FAILURE);
@@ -4402,7 +4462,10 @@ int main(int argc, char **argv)
 
 	ret = SUCCEED;
 	fname = strdup(argv[argno]);
-	printf("\nVALIDATING %s\n\n", fname);
+	printf("\nVALIDATING %s ", fname);
+	if (g_obj_addr != HADDR_UNDEF)
+		printf("at object header address %llu", g_obj_addr);
+	printf("\n\n");
 
 	
 	/* Initially, use the SEC2 driver by default */
@@ -4459,6 +4522,15 @@ int main(int argc, char **argv)
 		goto done;
 	}
 
+	if ((g_obj_addr != HADDR_UNDEF) && (g_obj_addr >= shared_info.stored_eoa)) {
+		error_push(ERR_FILE, ERR_NONE_SEC, 
+		  "Invalid Object header address provided. Validation stopped.", 
+		  -1, NOT_REP, -1);
+		error_print(stderr, thefile);
+		error_clear();
+		goto done;
+	}
+
 	ret = table_init(&obj_table);
 	if (ret != SUCCEED) {
 		error_push(ERR_INTERNAL, ERR_NONE_SEC, 
@@ -4468,11 +4540,13 @@ int main(int argc, char **argv)
 		ret = SUCCEED;
 	}
 
-	ret = check_obj_header(thefile, shared_info, shared_info.root_grp->header, 0, NULL, prev_entries);
+	if (g_obj_addr != HADDR_UNDEF)
+		ret = check_obj_header(thefile, shared_info, g_obj_addr, 0, NULL, prev_entries);
+	else 
+		ret = check_obj_header(thefile, shared_info, shared_info.root_grp->header, 0, NULL, prev_entries);
 	if (ret != SUCCEED) {
 		error_push(ERR_LEV_0, ERR_NONE_SEC, 
-		  "Errors found when checking the object header in the root group symbol table entry of the superblock", 
-		  shared_info.root_grp->header, NOT_REP, -1);
+		  "Errors found when checking the object header", shared_info.root_grp->header, NOT_REP, -1);
 		error_print(stderr, thefile);
 		error_clear();
 		ret = SUCCEED;
