@@ -62,7 +62,7 @@ typedef struct  error_t {
         primary_err_t   prim_err;	/* Primary Format Level where error is found */
         secondary_err_t sec_err;	/* Secondary Format Level where error is found */
         const char      *desc;		/* Detail description of error */
-    	haddr_t		logical_addr;  	/* logical address where error occurs */
+    	ck_addr_t		logical_addr;  	/* logical address where error occurs */
 	error_info_t	err_info;	/* for reporting wrong/correct version info */
 } error_t;
 
@@ -81,7 +81,7 @@ ERR_t	ERR_stack_g[1];
 
 #define	ERR_get_my_stack()	(ERR_stack_g+0)
 
-void 	error_push(primary_err_t, secondary_err_t, const char *, haddr_t, int, int);
-herr_t 	error_clear(void);
+void 	error_push(primary_err_t, secondary_err_t, const char *, ck_addr_t, int, int);
+ck_err_t 	error_clear(void);
 void 	error_print(FILE *, driver_t *);
 int 	found_error(void);
