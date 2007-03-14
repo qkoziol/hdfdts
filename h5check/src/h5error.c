@@ -95,7 +95,7 @@ static  const   secondary_err_mesg_t secondary_err_mesg_g[] = {
 
 
 void
-error_push(primary_err_t prim_err, secondary_err_t sec_err, const char *desc, haddr_t logical_addr, int reported, int bad_info)
+error_push(primary_err_t prim_err, secondary_err_t sec_err, const char *desc, ck_addr_t logical_addr, int reported, int bad_info)
 {
 	
     	ERR_t   *estack = ERR_get_my_stack();
@@ -138,7 +138,7 @@ error_push(primary_err_t prim_err, secondary_err_t sec_err, const char *desc, ha
 
 
 
-herr_t
+ck_err_t
 error_clear(void)
 {
 	int	i;
