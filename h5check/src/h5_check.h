@@ -13,24 +13,24 @@ extern int	g_verbose_num;
 #define		H5Check_VERSION			"0.1-a2"
 
 
-/* need to take care of haddr_t and HADDR_UNDEF */
-/* see H5public.h for definition of haddr_t, H5pubconf.h */
-typedef	unsigned long long		haddr_t;
-#define	HADDR_UNDEF		((haddr_t)(-1))
-#define HADDR_MAX            (HADDR_UNDEF-1)
+/* need to take care of ck_addr_t and CK_ADDR_UNDEF */
+/* see H5public.h for definition of ck_addr_t, H5pubconf.h */
+typedef	unsigned long long		ck_addr_t;
+#define	CK_ADDR_UNDEF		((ck_addr_t)(-1))
+#define CK_ADDR_MAX            (CK_ADDR_UNDEF-1)
 
 
-/* need to take care of haddr_t and HADDR_UNDEF */
-/* see H5public.h for definition of hsize_t, H5pubconf.h */
-typedef size_t                  hsize_t;
+/* need to take care of ck_addr_t and CK_ADDR_UNDEF */
+/* see H5public.h for definition of ck_size_t, H5pubconf.h */
+typedef size_t                  ck_size_t;
 
-typedef unsigned int hbool_t;
-typedef int herr_t;
+typedef unsigned int ck_bool_t;
+typedef int ck_err_t;
 
 
 /* for handling hard links */
 typedef struct obj_t {
-    haddr_t 	objno;
+    ck_addr_t 	objno;
     int	  	nlink;
 } obj_t;
 
@@ -95,7 +95,7 @@ typedef struct table_t {
 }
 
 
-#define addr_defined(X)     (X!=HADDR_UNDEF)
+#define addr_defined(X)     (X!=CK_ADDR_UNDEF)
 
 #define SIZEOF_ADDR(F)      ((F).size_offsets)
 #define SIZEOF_SIZE(F)      ((F).size_lengths)
@@ -151,8 +151,8 @@ typedef enum GP_type_t {
 
 typedef union GP_cache_t {
     struct {
-        haddr_t btree_addr;        /* file address of symbol table B-tree */
-        haddr_t heap_addr;         /* file address of stab name heap      */
+        ck_addr_t btree_addr;        /* file address of symbol table B-tree */
+        ck_addr_t heap_addr;         /* file address of stab name heap      */
     } stab;
 
     struct {
@@ -164,7 +164,7 @@ typedef struct GP_entry_t {
     GP_type_t  type;              /* type of information cached         */
     GP_cache_t cache;             /* cached data from object header     */
     size_t      name_off;         /* offset of name within name heap    */
-    haddr_t     header;           /* file address of object header      */
+    ck_addr_t     header;           /* file address of object header      */
 } GP_entry_t;
 
 
@@ -179,16 +179,16 @@ typedef struct GP_node_t {
  *  from the superblock to be shared by all routines.
  */
 typedef struct 	global_shared_t {
-	haddr_t		super_addr;	    /* absolute address of the super block */
+	ck_addr_t		super_addr;	    /* absolute address of the super block */
         size_t          size_offsets;       /* size of offsets: sizeof_addr */
         size_t          size_lengths;       /* size of lengths: sizeof_size */
 	unsigned	gr_leaf_node_k;	    /* group leaf node k */
         uint32_t        file_consist_flg;   /* file consistency flags */
         unsigned        btree_k[BT_NUM_BTREE_ID];  /* internal node k for SNODE & ISTORE */
-        haddr_t         base_addr;          /* absolute base address for rel.addrs. */
-        haddr_t         freespace_addr;     /* relative address of free-space info  */
-        haddr_t         stored_eoa;         /* end of file address */
-        haddr_t         driver_addr;        /* file driver information block address*/
+        ck_addr_t         base_addr;          /* absolute base address for rel.addrs. */
+        ck_addr_t         freespace_addr;     /* relative address of free-space info  */
+        ck_addr_t         stored_eoa;         /* end of file address */
+        ck_addr_t         driver_addr;        /* file driver information block address*/
 	GP_entry_t 	*root_grp;	    /* ?? */
 	int		driverid;	    /* the driver id to be used */
 	void		*fa;	    	    /* driver specific info */
@@ -244,11 +244,11 @@ typedef enum SDS_class_t {
 
 typedef struct {
     SDS_class_t type;   /* Type of extent */
-    hsize_t nelem;      /* Number of elements in extent */
+    ck_size_t nelem;      /* Number of elements in extent */
 
     unsigned rank;      /* Number of dimensions */
-    hsize_t *size;      /* Current size of the dimensions */
-    hsize_t *max;       /* Maximum size of the dimensions */
+    ck_size_t *size;      /* Current size of the dimensions */
+    ck_size_t *max;       /* Maximum size of the dimensions */
 } SDS_extent_t;
 
 /* end Simple Dataspace */
@@ -261,94 +261,94 @@ typedef struct {
 #define DT_VERSION_UPDATED       2
 #define DT_OPAQUE_TAG_MAX      256   
 
-typedef enum H5T_order_t {
-    H5T_ORDER_ERROR      = -1,  /*error                                      */
-    H5T_ORDER_LE         = 0,   /*little endian                              */
-    H5T_ORDER_BE         = 1,   /*bit endian                                 */
-    H5T_ORDER_VAX        = 2,   /*VAX mixed endian                           */
-    H5T_ORDER_NONE       = 3    /*no particular order (strings, bits,..)     */
-    /*H5T_ORDER_NONE must be last */
-} H5T_order_t;
+typedef enum DT_order_t {
+    DT_ORDER_ERROR      = -1,  /*error                                      */
+    DT_ORDER_LE         = 0,   /*little endian                              */
+    DT_ORDER_BE         = 1,   /*bit endian                                 */
+    DT_ORDER_VAX        = 2,   /*VAX mixed endian                           */
+    DT_ORDER_NONE       = 3    /*no particular order (strings, bits,..)     */
+    /*DT_ORDER_NONE must be last */
+} DT_order_t;
 
-typedef enum H5T_sign_t {
-    H5T_SGN_ERROR        = -1,  /*error                                      */
-    H5T_SGN_NONE         = 0,   /*this is an unsigned type                   */
-    H5T_SGN_2            = 1,   /*two's complement                           */
+typedef enum DT_sign_t {
+    DT_SGN_ERROR        = -1,  /*error                                      */
+    DT_SGN_NONE         = 0,   /*this is an unsigned type                   */
+    DT_SGN_2            = 1,   /*two's complement                           */
 
-    H5T_NSGN             = 2    /*this must be last!                         */
-} H5T_sign_t;
-
-
-typedef enum H5T_norm_t {
-    H5T_NORM_ERROR       = -1,  /*error                                      */
-    H5T_NORM_IMPLIED     = 0,   /*msb of mantissa isn't stored, always 1     */
-    H5T_NORM_MSBSET      = 1,   /*msb of mantissa is always 1                */
-    H5T_NORM_NONE        = 2    /*not normalized                             */
-    /*H5T_NORM_NONE must be last */
-} H5T_norm_t;
+    DT_NSGN             = 2    /*this must be last!                         */
+} DT_sign_t;
 
 
-typedef enum H5T_pad_t {
-    H5T_PAD_ERROR        = -1,  /*error                                      */
-    H5T_PAD_ZERO         = 0,   /*always set to zero                         */
-    H5T_PAD_ONE          = 1,   /*always set to one                          */
-    H5T_PAD_BACKGROUND   = 2,   /*set to background value                    */
-
-    H5T_NPAD             = 3    /*THIS MUST BE LAST                          */
-} H5T_pad_t;
-
-typedef enum H5T_cset_t {
-    H5T_CSET_ERROR       = -1,  /*error                                      */
-    H5T_CSET_ASCII       = 0,   /*US ASCII                                   */
-    H5T_CSET_RESERVED_1  = 1,   /*reserved for later use                     */
-    H5T_CSET_RESERVED_2  = 2,   /*reserved for later use                     */
-    H5T_CSET_RESERVED_3  = 3,   /*reserved for later use                     */
-    H5T_CSET_RESERVED_4  = 4,   /*reserved for later use                     */
-    H5T_CSET_RESERVED_5  = 5,   /*reserved for later use                     */
-    H5T_CSET_RESERVED_6  = 6,   /*reserved for later use                     */
-    H5T_CSET_RESERVED_7  = 7,   /*reserved for later use                     */
-    H5T_CSET_RESERVED_8  = 8,   /*reserved for later use                     */
-    H5T_CSET_RESERVED_9  = 9,   /*reserved for later use                     */
-    H5T_CSET_RESERVED_10 = 10,  /*reserved for later use                     */
-    H5T_CSET_RESERVED_11 = 11,  /*reserved for later use                     */
-    H5T_CSET_RESERVED_12 = 12,  /*reserved for later use                     */
-    H5T_CSET_RESERVED_13 = 13,  /*reserved for later use                     */
-    H5T_CSET_RESERVED_14 = 14,  /*reserved for later use                     */
-    H5T_CSET_RESERVED_15 = 15   /*reserved for later use                     */
-} H5T_cset_t;
+typedef enum DT_norm_t {
+    DT_NORM_ERROR       = -1,  /*error                                      */
+    DT_NORM_IMPLIED     = 0,   /*msb of mantissa isn't stored, always 1     */
+    DT_NORM_MSBSET      = 1,   /*msb of mantissa is always 1                */
+    DT_NORM_NONE        = 2    /*not normalized                             */
+    /*DT_NORM_NONE must be last */
+} DT_norm_t;
 
 
-typedef enum H5T_str_t {
-    H5T_STR_ERROR        = -1,  /*error                                      */
-    H5T_STR_NULLTERM     = 0,   /*null terminate like in C                   */
-    H5T_STR_NULLPAD      = 1,   /*pad with nulls                             */
-    H5T_STR_SPACEPAD     = 2,   /*pad with spaces like in Fortran            */
-    H5T_STR_RESERVED_3   = 3,   /*reserved for later use                     */
-    H5T_STR_RESERVED_4   = 4,   /*reserved for later use                     */
-    H5T_STR_RESERVED_5   = 5,   /*reserved for later use                     */
-    H5T_STR_RESERVED_6   = 6,   /*reserved for later use                     */
-    H5T_STR_RESERVED_7   = 7,   /*reserved for later use                     */
-    H5T_STR_RESERVED_8   = 8,   /*reserved for later use                     */
-    H5T_STR_RESERVED_9   = 9,   /*reserved for later use                     */
-    H5T_STR_RESERVED_10  = 10,  /*reserved for later use                     */
-    H5T_STR_RESERVED_11  = 11,  /*reserved for later use                     */
-    H5T_STR_RESERVED_12  = 12,  /*reserved for later use                     */
-    H5T_STR_RESERVED_13  = 13,  /*reserved for later use                     */
-    H5T_STR_RESERVED_14  = 14,  /*reserved for later use                     */
-    H5T_STR_RESERVED_15  = 15   /*reserved for later use                     */
-} H5T_str_t;
+typedef enum DT_pad_t {
+    DT_PAD_ERROR        = -1,  /*error                                      */
+    DT_PAD_ZERO         = 0,   /*always set to zero                         */
+    DT_PAD_ONE          = 1,   /*always set to one                          */
+    DT_PAD_BACKGROUND   = 2,   /*set to background value                    */
+
+    DT_NPAD             = 3    /*THIS MUST BE LAST                          */
+} DT_pad_t;
+
+typedef enum DT_cset_t {
+    DT_CSET_ERROR       = -1,  /*error                                      */
+    DT_CSET_ASCII       = 0,   /*US ASCII                                   */
+    DT_CSET_RESERVED_1  = 1,   /*reserved for later use                     */
+    DT_CSET_RESERVED_2  = 2,   /*reserved for later use                     */
+    DT_CSET_RESERVED_3  = 3,   /*reserved for later use                     */
+    DT_CSET_RESERVED_4  = 4,   /*reserved for later use                     */
+    DT_CSET_RESERVED_5  = 5,   /*reserved for later use                     */
+    DT_CSET_RESERVED_6  = 6,   /*reserved for later use                     */
+    DT_CSET_RESERVED_7  = 7,   /*reserved for later use                     */
+    DT_CSET_RESERVED_8  = 8,   /*reserved for later use                     */
+    DT_CSET_RESERVED_9  = 9,   /*reserved for later use                     */
+    DT_CSET_RESERVED_10 = 10,  /*reserved for later use                     */
+    DT_CSET_RESERVED_11 = 11,  /*reserved for later use                     */
+    DT_CSET_RESERVED_12 = 12,  /*reserved for later use                     */
+    DT_CSET_RESERVED_13 = 13,  /*reserved for later use                     */
+    DT_CSET_RESERVED_14 = 14,  /*reserved for later use                     */
+    DT_CSET_RESERVED_15 = 15   /*reserved for later use                     */
+} DT_cset_t;
+
+
+typedef enum DT_str_t {
+    DT_STR_ERROR        = -1,  /*error                                      */
+    DT_STR_NULLTERM     = 0,   /*null terminate like in C                   */
+    DT_STR_NULLPAD      = 1,   /*pad with nulls                             */
+    DT_STR_SPACEPAD     = 2,   /*pad with spaces like in Fortran            */
+    DT_STR_RESERVED_3   = 3,   /*reserved for later use                     */
+    DT_STR_RESERVED_4   = 4,   /*reserved for later use                     */
+    DT_STR_RESERVED_5   = 5,   /*reserved for later use                     */
+    DT_STR_RESERVED_6   = 6,   /*reserved for later use                     */
+    DT_STR_RESERVED_7   = 7,   /*reserved for later use                     */
+    DT_STR_RESERVED_8   = 8,   /*reserved for later use                     */
+    DT_STR_RESERVED_9   = 9,   /*reserved for later use                     */
+    DT_STR_RESERVED_10  = 10,  /*reserved for later use                     */
+    DT_STR_RESERVED_11  = 11,  /*reserved for later use                     */
+    DT_STR_RESERVED_12  = 12,  /*reserved for later use                     */
+    DT_STR_RESERVED_13  = 13,  /*reserved for later use                     */
+    DT_STR_RESERVED_14  = 14,  /*reserved for later use                     */
+    DT_STR_RESERVED_15  = 15   /*reserved for later use                     */
+} DT_str_t;
 
 
 typedef enum {
-    H5R_BADTYPE     =   (-1),   /*invalid Reference Type                     */
-    H5R_OBJECT,                 /*Object reference                           */
-    H5R_DATASET_REGION,         /*Dataset Region Reference                   */
-    H5R_INTERNAL,               /*Internal Reference                         */
-    H5R_MAXTYPE                 /*highest type (Invalid as true type)        */
-} H5R_type_t;
+    DTR_BADTYPE     =   (-1),   /*invalid Reference Type                     */
+    DTR_OBJECT,                 /*Object reference                           */
+    DTR_DATASET_REGION,         /*Dataset Region Reference                   */
+    DTR_INTERNAL,               /*Internal Reference                         */
+    DTR_MAXTYPE                 /*highest type (Invalid as true type)        */
+} DTR_type_t;
 
 
-typedef enum H5T_class_t {
+typedef enum DT_class_t {
     DT_NO_CLASS         = -1,  /* error                                      */
     DT_INTEGER          = 0,   /* integer types                              */
     DT_FLOAT            = 1,   /* floating-point types                       */
@@ -363,19 +363,19 @@ typedef enum H5T_class_t {
     DT_ARRAY            = 10,  /* array types                                */
 
     DT_NCLASSES                /* this must be last                          */
-} H5T_class_t;
+} DT_class_t;
 
 
 
-typedef struct H5T_atomic_t {
-    H5T_order_t         order;  /*byte order                                 */
+typedef struct DT_atomic_t {
+    DT_order_t         order;  /*byte order                                 */
     size_t              prec;   /*precision in bits                          */
     size_t              offset; /*bit position of lsb of value               */
-    H5T_pad_t           lsb_pad;/*type of lsb padding                        */
-    H5T_pad_t           msb_pad;/*type of msb padding                        */
+    DT_pad_t           lsb_pad; /*type of lsb padding                        */
+    DT_pad_t           msb_pad; /*type of msb padding                        */
     union {
         struct {
-            H5T_sign_t  sign;   /*type of integer sign                       */
+            DT_sign_t  sign;    /*type of integer sign                       */
         } i;                    /*integer; integer types                     */
 
         struct {
@@ -385,99 +385,99 @@ typedef struct H5T_atomic_t {
             uint64_t    ebias;  /*exponent bias                              */
             size_t      mpos;   /*position of lsb of mantissa                */
             size_t      msize;  /*size of mantissa                           */
-            H5T_norm_t  norm;   /*normalization                              */
-            H5T_pad_t   pad;    /*type of padding for internal bits          */
+            DT_norm_t  norm;    /*normalization                              */
+            DT_pad_t   pad;     /*type of padding for internal bits          */
         } f;                    /*floating-point types                       */
 
         struct {
-            H5T_cset_t  cset;   /*character set                              */
-            H5T_str_t   pad;    /*space or null padding of extra bytes       */
+            DT_cset_t  cset;   /*character set                              */
+            DT_str_t   pad;    /*space or null padding of extra bytes       */
         } s;                    /*string types                               */
 
         struct {
-            H5R_type_t  rtype;  /*type of reference stored                   */
+            DTR_type_t  rtype;  /*type of reference stored                   */
         } r;                    /*reference types                            */
     } u;
-} H5T_atomic_t;
+} DT_atomic_t;
 
-typedef enum H5T_sort_t {
-    H5T_SORT_NONE       = 0,            /*not sorted                         */
-    H5T_SORT_NAME       = 1,            /*sorted by member name              */
-    H5T_SORT_VALUE      = 2             /*sorted by memb offset or enum value*/
-} H5T_sort_t;
+typedef enum DT_sort_t {
+    DT_SORT_NONE       = 0,            /*not sorted                         */
+    DT_SORT_NAME       = 1,            /*sorted by member name              */
+    DT_SORT_VALUE      = 2             /*sorted by memb offset or enum value*/
+} DT_sort_t;
 
 
-typedef struct H5T_enum_t {
+typedef struct DT_enum_t {
     unsigned    nalloc;         /*num entries allocated              */
     unsigned    nmembs;         /*number of members defined in enum  */
-    H5T_sort_t  sorted;         /*how are members sorted?            */
+    DT_sort_t   sorted;         /*how are members sorted?            */
     uint8_t     *value;         /*array of values                    */
     char        **name;         /*array of symbol names              */
-} H5T_enum_t;
+} DT_enum_t;
 
 
-typedef struct H5T_compnd_t {
+typedef struct DT_compnd_t {
     unsigned    nalloc;         /*num entries allocated in MEMB array*/
     unsigned    nmembs;         /*number of members defined in struct*/
-    H5T_sort_t  sorted;         /*how are members sorted?            */
-    hbool_t     packed;         /*are members packed together?       */
-    struct H5T_cmemb_t  *memb;  /*array of struct members            */
-} H5T_compnd_t;
+    DT_sort_t  sorted;         /*how are members sorted?            */
+    ck_bool_t     packed;         /*are members packed together?       */
+    struct DT_cmemb_t  *memb;  /*array of struct members            */
+} DT_compnd_t;
 
 typedef enum {
-    H5T_VLEN_BADTYPE =  -1, /* invalid VL Type */
-    H5T_VLEN_SEQUENCE=0,    /* VL sequence */
-    H5T_VLEN_STRING,        /* VL string */
-    H5T_VLEN_MAXTYPE        /* highest type (Invalid as true type) */
-} H5T_vlen_type_t;
+    DT_VLEN_BADTYPE =  -1, /* invalid VL Type */
+    DT_VLEN_SEQUENCE=0,    /* VL sequence */
+    DT_VLEN_STRING,        /* VL string */
+    DT_VLEN_MAXTYPE        /* highest type (Invalid as true type) */
+} DT_vlen_type_t;
 
-typedef struct H5T_vlen_t {
-    H5T_vlen_type_t     type;   /* Type of VL data in buffer */
-    H5T_cset_t          cset;   /* For VL string. character set */
-    H5T_str_t           pad;    /* For VL string.  space or null padding of
+typedef struct DT_vlen_t {
+    DT_vlen_type_t     type;   /* Type of VL data in buffer */
+    DT_cset_t          cset;   /* For VL string. character set */
+    DT_str_t           pad;    /* For VL string.  space or null padding of
                                  * extra bytes */
-} H5T_vlen_t;
+} DT_vlen_t;
 
-typedef struct H5T_opaque_t {
+typedef struct DT_opaque_t {
     char                *tag;           /*short type description string      */
-} H5T_opaque_t;
+} DT_opaque_t;
 
 
-typedef struct H5T_array_t {
+typedef struct DT_array_t {
     size_t      nelem;          /* total number of elements in array */
     int         ndims;          /* member dimensionality        */
     size_t      dim[SDS_MAX_RANK];  /* size in each dimension       */
     int         perm[SDS_MAX_RANK]; /* index permutation            */
-} H5T_array_t;
+} DT_array_t;
 
-typedef struct H5T_shared_t {
-    hsize_t             fo_count; /* number of references to this file object */
-    H5T_class_t         type;   /*which class of type is this?               */
+typedef struct DT_shared_t {
+    ck_size_t             fo_count; /* number of references to this file object */
+    DT_class_t         type;   /*which class of type is this?               */
     size_t              size;   /*total size of an instance of this type     */
     struct type_t        *parent;/*parent type for derived datatypes          */
     union {
-        H5T_atomic_t    atomic; /* an atomic datatype              */
-        H5T_compnd_t    compnd;
-        H5T_enum_t      enumer;
-        H5T_vlen_t      vlen; 
-        H5T_array_t     array;  /* an array datatype                */
-        H5T_opaque_t    opaque;
+        DT_atomic_t    atomic; /* an atomic datatype              */
+        DT_compnd_t    compnd;
+        DT_enum_t      enumer;
+        DT_vlen_t      vlen; 
+        DT_array_t     array;  /* an array datatype                */
+        DT_opaque_t    opaque;
     } u;
-} H5T_shared_t;
+} DT_shared_t;
 
 typedef struct type_t type_t;
 
 struct type_t {
     GP_entry_t     ent;     /* entry information if the type is a named type */
-    H5T_shared_t   *shared; /* all other information */
+    DT_shared_t   *shared; /* all other information */
 };
 
-typedef struct H5T_cmemb_t {
+typedef struct DT_cmemb_t {
     char                *name;          /*name of this member                */
     size_t              offset;         /*offset from beginning of struct    */
     size_t              size;           /*total size: dims * type_size       */
     struct type_t        *type;          /*type of this member                */
-} H5T_cmemb_t;
+} DT_cmemb_t;
 
 /* end Datatype : TO BE PROCESSED */
 
@@ -508,7 +508,7 @@ typedef struct obj_fill_t {
     void                *buf;           /*the fill value                     */
     fill_alloc_time_t    alloc_time;     /* time to allocate space            */
     fill_time_t     fill_time;      /* time to write fill value          */
-    hbool_t             fill_defined;   /* whether fill value is defined     */
+    ck_bool_t             fill_defined;   /* whether fill value is defined     */
 } obj_fill_t;
 
 /* end Data Storage - Fill Value */
@@ -525,11 +525,11 @@ typedef struct obj_edf_entry_t {
     size_t      name_offset;            /*offset of name within heap         */
     char        *name;                  /*malloc'd name                      */
     off_t       offset;                 /*offset of data within file         */
-    hsize_t     size;                   /*size allocated within file         */
+    ck_size_t     size;                   /*size allocated within file         */
 } obj_edf_entry_t;
 
 typedef struct obj_edf_t {
-    haddr_t     heap_addr;              /*address of name heap               */
+    ck_addr_t     heap_addr;              /*address of name heap               */
     size_t      nalloc;                 /*number of slots allocated          */
     size_t      nused;                  /*number of slots used               */
     obj_edf_entry_t *slot;              /*array of external file entries     */
@@ -558,13 +558,13 @@ typedef enum DATA_layout_t {
 
 
 typedef struct OBJ_layout_contig_t {
-    haddr_t     addr;                   /* File address of data              */
-    hsize_t     size;                   /* Size of data in bytes             */
+    ck_addr_t     addr;                   /* File address of data              */
+    ck_size_t     size;                   /* Size of data in bytes             */
 } OBJ_layout_contig_t;
 
 
 typedef struct OBJ_layout_chunk_t {
-    haddr_t     addr;                   /* File address of B-tree            */
+    ck_addr_t     addr;                   /* File address of B-tree            */
     unsigned    ndims;                  /* Num dimensions in chunk           */
     size_t      dim[OBJ_LAYOUT_NDIMS];  /* Size of chunk in elements         */
     size_t      size;                   /* Size of chunk in bytes            */
@@ -575,7 +575,7 @@ typedef struct OBJ_layout_chunk_t {
 
 
 typedef struct OBJ_layout_compact_t {
-    hbool_t     dirty;                  /* Dirty flag for compact dataset    */
+    ck_bool_t     dirty;                  /* Dirty flag for compact dataset    */
     size_t      size;                   /* Size of buffer in bytes           */
     void        *buf;                   /* Buffer for compact dataset        */
 } OBJ_layout_compact_t;
@@ -587,7 +587,7 @@ typedef struct OBJ_layout_t {
     /* Structure for "unused" dimension information */
     struct {
         unsigned ndims;                 /*num dimensions in stored data      */
-        hsize_t dim[OBJ_LAYOUT_NDIMS];  /*size of data or chunk in bytes     */
+        ck_size_t dim[OBJ_LAYOUT_NDIMS];  /*size of data or chunk in bytes     */
     } unused;
     union {
         OBJ_layout_contig_t contig;     /* Information for contiguous layout */
@@ -669,7 +669,7 @@ typedef struct OBJ_comm_t {
  * Shared Object Message
  */
 typedef struct GH_t {
-    haddr_t             addr;           /*address of collection         */
+    ck_addr_t             addr;           /*address of collection         */
     size_t              idx;            /*object ID within collection   */
 } GH_t;
 
@@ -679,7 +679,7 @@ typedef struct GH_t {
 #define OBJ_SHARED_VERSION      2
 
 typedef struct OBJ_shared_t {
-    hbool_t             in_gh;       /* shared by global heap?             */
+    ck_bool_t             in_gh;       /* shared by global heap?             */
     union {
         GH_t          gh;            /* global heap info                   */
         GP_entry_t    ent;           /* symbol table entry info            */
@@ -691,7 +691,7 @@ typedef struct OBJ_shared_t {
 
 /* Object Header Continuation */
 typedef struct OBJ_cont_t {
-    haddr_t     addr;                   /*address of continuation block      */
+    ck_addr_t     addr;                   /*address of continuation block      */
     size_t      size;                   /*size of continuation block         */
 
     /* the following field(s) do not appear on disk */
@@ -701,8 +701,8 @@ typedef struct OBJ_cont_t {
 /* end Object Header Continuation */
 
 typedef struct H5O_stab_t {
-    haddr_t     btree_addr;             /*address of B-tree                  */
-    haddr_t     heap_addr;              /*address of name heap               */
+    ck_addr_t     btree_addr;             /*address of B-tree                  */
+    ck_addr_t     heap_addr;              /*address of name heap               */
 } H5O_stab_t;
 
 #define H5O_MTIME_VERSION       1
@@ -710,13 +710,13 @@ typedef struct H5O_stab_t {
 
 typedef struct obj_class_t {
     int id;                            		/* header message ID */
-    void        *(*decode)(const uint8_t*, const uint8_t*, haddr_t);	/* decode method */
+    void        *(*decode)(const uint8_t*, const uint8_t*, ck_addr_t);	/* decode method */
 } obj_class_t;
 
 
 typedef struct H5O_mesg_t {
     const obj_class_t   *type;          /*type of message                    */
-    hbool_t             dirty;          /*raw out of date wrt native         */
+    ck_bool_t             dirty;          /*raw out of date wrt native         */
     uint8_t             flags;          /*message flags                      */
     unsigned            chunkno;        /*chunk number for this mesg         */
     void                *native;        /*native format message              */
@@ -726,8 +726,8 @@ typedef struct H5O_mesg_t {
 
 
 typedef struct H5O_chunk_t {
-    hbool_t     dirty;                  /*dirty flag                         */
-    haddr_t     addr;                   /*chunk file address                 */
+    ck_bool_t     dirty;                  /*dirty flag                         */
+    ck_addr_t     addr;                   /*chunk file address                 */
     size_t      size;                   /*chunk size                         */
     uint8_t     *image;                 /*image of file                      */
 } H5O_chunk_t;
@@ -817,7 +817,7 @@ typedef struct H5HG_obj_t {
 } H5HG_obj_t;
 
 struct H5HG_heap_t {
-    haddr_t             addr;           /*collection address            */
+    ck_addr_t             addr;           /*collection address            */
     size_t              size;           /*total size of collection      */
     uint8_t             *chunk;         /*the collection, incl. header  */
     size_t              nalloc;         /*numb object slots allocated   */
@@ -854,7 +854,7 @@ typedef struct GP_node_key_t {
 
 typedef struct RAW_node_key_t {
     size_t      nbytes;                         /*size of stored data   */
-    hsize_t     offset[OBJ_LAYOUT_NDIMS];       /*logical offset to start*/
+    ck_size_t     offset[OBJ_LAYOUT_NDIMS];       /*logical offset to start*/
     unsigned    filter_mask;                    /*excluded filters      */
 } RAW_node_key_t;
 
@@ -873,12 +873,12 @@ typedef struct driver_class_t driver_class_t;
 
 struct driver_class_t { 
     const char 	*name;
-    herr_t  	(*decode_driver)(global_shared_t *_shared_info, const unsigned char *p);
+    ck_err_t  	(*decode_driver)(global_shared_t *_shared_info, const unsigned char *p);
     driver_t 	*(*open)(const char *name, int driver_id);
-    herr_t  	(*close)(driver_t *file);
-    herr_t  	(*read)(driver_t *file, haddr_t addr, size_t size, void *buffer); 
-    haddr_t 	(*get_eof)(driver_t *file);
-    char        *(*get_fname)(driver_t *file, haddr_t logi_addr);
+    ck_err_t  	(*close)(driver_t *file);
+    ck_err_t  	(*read)(driver_t *file, ck_addr_t addr, size_t size, void *buffer); 
+    ck_addr_t 	(*get_eof)(driver_t *file);
+    char        *(*get_fname)(driver_t *file, ck_addr_t logi_addr);
 };
 
 
@@ -891,7 +891,7 @@ struct driver_t {
 typedef struct driver_sec2_t {
     	driver_t      	pub;                  /* public stuff, must be first    */
     	int           	fd;                   /* the unix file                  */
-    	haddr_t       	eof;                  /* end of file; current file size */
+    	ck_addr_t       	eof;                  /* end of file; current file size */
 	char		*name;		      /* name passed to Fopen */
 } driver_sec2_t;
 
@@ -913,16 +913,33 @@ typedef enum driver_mem_t {
 typedef struct driver_multi_fapl_t {
     driver_mem_t  memb_map[FD_MEM_NTYPES];   /* memory usage map           */
     char          *memb_name[FD_MEM_NTYPES]; /* name generators            */
-    haddr_t       memb_addr[FD_MEM_NTYPES];  /* starting addr per member   */
+    ck_addr_t       memb_addr[FD_MEM_NTYPES];  /* starting addr per member   */
 } driver_multi_fapl_t;
 
 
 typedef struct driver_multi_t {
     driver_t      pub;            /* public stuff, must be first            */
     driver_multi_fapl_t fa;       /* driver-specific file access properties */
-    haddr_t       memb_next[FD_MEM_NTYPES]; /* addr of next member          */
+    ck_addr_t       memb_next[FD_MEM_NTYPES]; /* addr of next member          */
     driver_t      *memb[FD_MEM_NTYPES];     /* member pointers              */
-    haddr_t     eoa;            /* end of allocated addresses            */
+    ck_addr_t     eoa;            /* end of allocated addresses            */
     char        *name;          /* name passed to H5Fopen or H5Fcreate   */
 } driver_multi_t;
 
+
+typdef struct CK_file_t {
+	driver_t	*lf;
+        ck_addr_t       super_addr;         /* absolute address of the super block */
+        size_t          size_offsets;       /* size of offsets: sizeof_addr */
+        size_t          size_lengths;       /* size of lengths: sizeof_size */
+        unsigned        gr_leaf_node_k;     /* group leaf node k */
+        uint32_t        file_consist_flg;   /* file consistency flags */
+        unsigned        btree_k[BT_NUM_BTREE_ID];  /* internal node k for SNODE & ISTORE */
+        ck_addr_t       base_addr;          /* absolute base address for rel.addrs. */
+        ck_addr_t       freespace_addr;     /* relative address of free-space info  */
+        ck_addr_t       stored_eoa;         /* end of file address */
+        ck_addr_t       driver_addr;        /* file driver information block address*/
+        GP_entry_t      *root_grp;          /* ?? */
+        int             driverid;           /* the driver id to be used */
+        void            *fa;                /* driver specific info */
+}CK_file_t;
