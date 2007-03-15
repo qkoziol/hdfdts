@@ -52,18 +52,19 @@ typedef struct   secondary_err_mesg_t {
 } secondary_err_mesg_t;
 
 /* mainly used to report the version number decoded */
-typedef struct	error_info_t {
+typedef struct	err_rep_t {
 	int	reported;	/* whether to report the "bad_info" */
-	int	bad_info;
-} error_info_t;
+	int	badinfo;
+} err_rep_t;
 
 /* Information about an error */
 typedef struct  error_t {
         primary_err_t   prim_err;	/* Primary Format Level where error is found */
         secondary_err_t sec_err;	/* Secondary Format Level where error is found */
         const char      *desc;		/* Detail description of error */
-    	ck_addr_t		logical_addr;  	/* logical address where error occurs */
-	error_info_t	err_info;	/* for reporting wrong/correct version info */
+    	ck_addr_t	logical_addr;  	/* logical address where error occurs */
+	const char	*fname;		/* file name where errors occur */
+	err_rep_t	err_info;	/* for reporting wrong/correct version info */
 } error_t;
 
 #define	REPORTED	1
@@ -81,7 +82,7 @@ ERR_t	ERR_stack_g[1];
 
 #define	ERR_get_my_stack()	(ERR_stack_g+0)
 
-void 	error_push(primary_err_t, secondary_err_t, const char *, ck_addr_t, int, int);
+void 		error_push(primary_err_t, secondary_err_t, const char *, ck_addr_t, int *);
 ck_err_t 	error_clear(void);
-void 	error_print(FILE *, driver_t *);
-int 	found_error(void);
+void 		error_print(FILE *, driver_t *, global_shared_t *);
+int 		found_error(void);
