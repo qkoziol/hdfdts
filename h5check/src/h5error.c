@@ -9,8 +9,8 @@
 #include "h5_error.h"
 
 static	int	nerrors=0;	/* number of errors found */
-const char *get_prim_err(primary_err_t);
-const char *get_sec_err(secondary_err_t);
+static  const char *get_prim_err(primary_err_t);
+static  const char *get_sec_err(secondary_err_t);
 
 /* error handling */
 static  const   primary_err_mesg_t primary_err_mesg_g[] = {
@@ -56,45 +56,9 @@ static  const   secondary_err_mesg_t secondary_err_mesg_g[] = {
         {ERR_LEV_2C,    "2C-Data Object Data Storage"},
 };
 
-#if 0
-static  const   secondary_err_mesg_t secondary_err_mesg_g[] = {
-        {ERR_NONE_SEC, "No level specified"},
-        {ERR_LEV_0A,   "Disk Format Level 0A-File Signature and Super Block"},
-        {ERR_LEV_0B,   "Disk Format Level 0B-File Driver Info"},
-        {ERR_LEV_1A,    "Disk Format Level 1A-B-link Trees and B-tree Nodes"},
-        {ERR_LEV_1B,    "Disk Format Level 1B-Group"},
-        {ERR_LEV_1C,    "Disk Format Level 1C-Group Entry"},
-        {ERR_LEV_1D,    "Disk Format Level 1D-Local Heaps"},
-        {ERR_LEV_1E,    "Disk Format Level 1E-Global Heap"},
-        {ERR_LEV_1F,    "Disk Format Level 1F-Free-space Index"},
-        {ERR_LEV_2A,   "Disk Format Level 2A-Data Object Headers"},
-        {ERR_LEV_2A1,  "Disk Format Level 2A1-Header Message: NIL"},
-        {ERR_LEV_2A2,  "Disk Format Level 2A2-Header Message: Simple Dataspace"},
-        {ERR_LEV_2A3,  "Disk Format Level 2A3-Header Message: Reserved-not assigned yet"},
-        {ERR_LEV_2A4,  "Disk Format Level 2A4-Header Message: Datatype"},
-        {ERR_LEV_2A5,  "Disk Format Level 2A5-Header Message: Data Storage-Fill Value(Old)"},
-        {ERR_LEV_2A6,  "Disk Format Level 2A6-Header Message: Data Storage-Fill Value"},
-        {ERR_LEV_2A7,  "Disk Format Level 2A7-Header Message: Reserved-not assigned yet"},
-        {ERR_LEV_2A8,  "Disk Format Level 2A8-Header Message: Data Storage-External Data Files"},
-        {ERR_LEV_2A9,  "Disk Format Level 2A9-Header Message: Layout"},
-        {ERR_LEV_2A10, "Disk Format Level 2A10-Header Message: Reserved-not assigned yet"},
-        {ERR_LEV_2A11, "Disk Format Level 2A11-Header Message: Reserved-not assigned yet"},
-        {ERR_LEV_2A12, "Disk Format Level 2A12-Header Message: Data Storage-Filter Pipeline"},
-        {ERR_LEV_2A13, "Disk Format Level 2A13-Header Message: Attribute"},
-        {ERR_LEV_2A14, "Disk Format Level 2A14-Header Message: Object Comment"},
-        {ERR_LEV_2A15, "Disk Format Level 2A15-Header Message: Object Modification Data & Time(Old)"},
-        {ERR_LEV_2A16, "Disk Format Level 2A16-Header Message: Shared Object Message"},
-        {ERR_LEV_2A17, "Disk Format Level 2A17-Header Message: Object Header Continuation"},
-        {ERR_LEV_2A18, "Disk Format Level 2A18-Header Message: Group Message"},
-        {ERR_LEV_2A19, "Disk Format Level 2A19-Header Message: Object Modification Date & Time"},
-        {ERR_LEV_2B,    "Disk Format Level 2B-Shared Data Object Headers"},
-        {ERR_LEV_2C,    "Disk Format Level 2C-Data Object Data Storage"},
-};
-#endif
-
 
 void
-error_push(primary_err_t prim_err, secondary_err_t sec_err, const char *desc, ck_addr_t logical_addr, int reported, int bad_info)
+error_push(primary_err_t prim_err, secondary_err_t sec_err, const char *desc, ck_addr_t logical_addr, int *badinfo)
 {
 	
     	ERR_t   *estack = ERR_get_my_stack();
@@ -118,8 +82,13 @@ error_push(primary_err_t prim_err, secondary_err_t sec_err, const char *desc, ck
         	estack->slot[estack->nused].sec_err = sec_err;
         	estack->slot[estack->nused].desc = desc;
         	estack->slot[estack->nused].logical_addr = logical_addr;
-        	estack->slot[estack->nused].err_info.reported = reported;
-        	estack->slot[estack->nused].err_info.bad_info = bad_info;
+		if (badinfo != NULL) {
+        		estack->slot[estack->nused].err_info.reported = REPORTED;
+        		estack->slot[estack->nused].err_info.badinfo = *badinfo;
+		} else {
+        		estack->slot[estack->nused].err_info.reported = NOT_REP;
+        		estack->slot[estack->nused].err_info.badinfo = -1;
+		}
         	estack->nused++;
     	}
 }
@@ -145,7 +114,7 @@ error_clear(void)
 }
 
 void
-error_print(FILE *stream, driver_t *_file)
+error_print(FILE *stream, driver_t *file, global_shared_t *shared)
 {
 	int	i;
 	const char	*prim_str = NULL;
@@ -162,15 +131,13 @@ error_print(FILE *stream, driver_t *_file)
 			int sec_null = 0;
 			fprintf(stream, "%s", estack->slot[i].desc);
 			if ((int)estack->slot[i].logical_addr != -1) {
-#ifdef TEMP  /* NEED TO RETHINK HOW TO DO THIS */
-				fname = (char *)FD_get_fname(_file, estack->slot[i].logical_addr);
+				fname = FD_get_fname(file, shared, estack->slot[i].logical_addr);
 				fprintf(stream, "\n  file=%s;", fname);
-#endif
 				fprintf(stream, " at logical addr %llu",
 			     		(unsigned long long)estack->slot[i].logical_addr);
 				if (estack->slot[i].err_info.reported)
 					fprintf(stream, "; Value decoded: %d",
-			     			estack->slot[i].err_info.bad_info);
+			     			estack->slot[i].err_info.badinfo);
 			}
 			fprintf(stream, "\n");
 

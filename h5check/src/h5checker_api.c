@@ -44,7 +44,7 @@ h5checker_init(char *fname)
 
 	if (thefile == NULL) {
                 error_push(ERR_FILE, ERR_NONE_SEC,
-                  "Failure in opening input file using the default driver. Validation discontinued.", -1, NOT_REP, -1);
+                  "Failure in opening input file using the default driver. Validation discontinued.", -1, NULL);
                 goto done;
         }
 
@@ -52,7 +52,7 @@ h5checker_init(char *fname)
         /* superblock validation has to be all passed before proceeding further */
         if (ret != SUCCEED) {
                 error_push(ERR_LEV_0, ERR_NONE_SEC,
-                  "Errors found when checking superblock. Validation stopped.", -1, NOT_REP, -1);
+                  "Errors found when checking superblock. Validation stopped.", -1, NULL);
 		thefile = NULL;
                 goto done;
         }
@@ -62,7 +62,7 @@ h5checker_init(char *fname)
                 ret = FD_close(thefile);
                 if (ret != SUCCEED) {
                         error_push(ERR_FILE, ERR_NONE_SEC,
-                          "Errors in closing input file using the default driver", -1, NOT_REP, -1);
+                          "Errors in closing input file using the default driver", -1, NULL);
 			thefile = NULL;
                 	goto done;
                 }
@@ -70,7 +70,7 @@ h5checker_init(char *fname)
                 thefile = (driver_t *)FD_open(fname, shared, shared->driverid);
                 if (thefile == NULL) {
                         error_push(ERR_FILE, ERR_NONE_SEC,
-                          "Errors in opening input file. Validation stopped.", -1, NOT_REP, -1);
+                          "Errors in opening input file. Validation stopped.", -1, NULL);
                         goto done;
                 }
         }
@@ -79,7 +79,7 @@ h5checker_init(char *fname)
         if ((ss==CK_ADDR_UNDEF) || (ss<shared->stored_eoa)) {
                 error_push(ERR_FILE, ERR_NONE_SEC,
                   "Invalid file size or file size less than superblock eoa. Validation stopped.", 
-                  -1, NOT_REP, -1);
+                  -1, NULL);
 		thefile = NULL;
                 goto done;
         }
@@ -87,7 +87,7 @@ h5checker_init(char *fname)
 	if (g_fd_inuse == NUM_FD) {
                 error_push(ERR_FILE, ERR_NONE_SEC,
                   "Exceed limit of allowed file descriptors. Validation stopped.", 
-                  -1, NOT_REP, -1);
+                  -1, NULL);
 		thefile = NULL;
                 goto done;
 	}
@@ -129,7 +129,7 @@ h5checker_obj(char *fname, ck_addr_t obj_addr, ck_errmsg_t *errbuf)
 	if ((g_obj_addr != CK_ADDR_UNDEF) && (g_obj_addr >= fd_table[ret_fd].shared->stored_eoa)) {
                 error_push(ERR_FILE, ERR_NONE_SEC,
                   "Invalid Object header address provided. Validation stopped.",
-                  -1, NOT_REP, -1);
+                  -1, NULL);
 		g_obj_api_err++;
                 goto done;
         }
@@ -137,7 +137,7 @@ h5checker_obj(char *fname, ck_addr_t obj_addr, ck_errmsg_t *errbuf)
 	ret = table_init(&obj_table);
         if (ret != SUCCEED) {
                 error_push(ERR_INTERNAL, ERR_NONE_SEC,
-                  "Errors in initializing hard link table", -1, NOT_REP, -1);
+                  "Errors in initializing hard link table", -1, NULL);
 		g_obj_api_err++;
         }
 
@@ -149,7 +149,7 @@ h5checker_obj(char *fname, ck_addr_t obj_addr, ck_errmsg_t *errbuf)
 	status = check_obj_header(fd_table[ret_fd].file, fd_table[ret_fd].shared, g_obj_addr, 0, NULL, prev_entries);
 	if (status != SUCCEED) {
                 error_push(ERR_LEV_0, ERR_NONE_SEC,
-                  "Errors found when checking the object header", g_obj_addr, NOT_REP, -1);
+                  "Errors found when checking the object header", g_obj_addr, NULL);
 		g_obj_api_err++;
         }
 done:
@@ -168,7 +168,7 @@ h5checker_close(int fd)
 	ret = FD_close(fd_table[fd].file);
 	if (ret != SUCCEED) {
                 error_push(ERR_FILE, ERR_NONE_SEC,
-                	"Errors in closing the input file", -1, NOT_REP, -1);
+                	"Errors in closing the input file", -1, NULL);
 		g_obj_api_err++;
 	}
 	if (fd_table[fd].shared) {
