@@ -8,7 +8,6 @@
 #include "h5_check.h"
 #include "h5_error.h"
 
-extern global_shared_t shared_info;
 static	int	nerrors=0;	/* number of errors found */
 const char *get_prim_err(primary_err_t);
 const char *get_sec_err(secondary_err_t);
@@ -110,17 +109,6 @@ error_push(primary_err_t prim_err, secondary_err_t sec_err, const char *desc, ck
 	if (!desc) 
 		desc = "No description given";
 
-#if 0
-	new_desc = (unsigned char *)malloc((size_t) (strlen(desc)+1) * sizeof(char));
-	new_func = (unsigned char *)malloc((size_t) (strlen(function_name)+1) * sizeof(char));
-	strcpy(new_desc, desc);
-	strcpy(new_func, function_name);
-#endif
-
-#ifdef PRINT
-	printf("new_desc=%s\n", new_desc);
-	printf("new_func=%s\n", new_func);
-#endif
    	/*
      	 * Push the error if there's room.  Otherwise just forget it.
      	 */
@@ -174,9 +162,11 @@ error_print(FILE *stream, driver_t *_file)
 			int sec_null = 0;
 			fprintf(stream, "%s", estack->slot[i].desc);
 			if ((int)estack->slot[i].logical_addr != -1) {
+#ifdef TEMP  /* NEED TO RETHINK HOW TO DO THIS */
 				fname = (char *)FD_get_fname(_file, estack->slot[i].logical_addr);
 				fprintf(stream, "\n  file=%s;", fname);
-				fprintf(stream, "  at logical addr %llu",
+#endif
+				fprintf(stream, " at logical addr %llu",
 			     		(unsigned long long)estack->slot[i].logical_addr);
 				if (estack->slot[i].err_info.reported)
 					fprintf(stream, "; Value decoded: %d",
@@ -232,3 +222,15 @@ found_error(void)
     return(nerrors!=0);
 }
 
+void
+process_errors(ck_errmsg_t *errbuf)
+{
+	int 	i;
+	ERR_t   *estack = ERR_get_my_stack();
+
+	errbuf->nused = estack->nused;
+	for (i = estack->nused-1; i >=0; --i) {
+		errbuf->slot[i].desc = strdup(estack->slot[i].desc);
+		errbuf->slot[i].addr = estack->slot[i].logical_addr;
+	}
+}
