@@ -1,4 +1,5 @@
-#! /bin/sh
+#! /bin/sh -e
+# (Use -e to abort at any unexpected error.)
 # Submit daily tests of HDF4 base software
 # Usauge: DailyHDFTests [-r<version>]
 # Example: DailyHDFTests	# test the CVS current version
