@@ -2038,7 +2038,7 @@ OBJ_attr_decode(global_shared_t *shared, const uint8_t *p, const uint8_t *start_
     	SDS_extent_t    *extent;        /* extent dimensionality information  */
     	size_t          name_len;       /* attribute name length */
     	int             version;        /* message version number*/
-    	unsigned        unused_flags=0; /* Attribute flags */
+    	unsigned        flags=0; 	/* Attribute flags */
     	OBJ_attr_t     	*ret_value;     /* Return value */
 	int		ret;
 	ck_addr_t	logical;
@@ -2060,20 +2060,25 @@ OBJ_attr_decode(global_shared_t *shared, const uint8_t *p, const uint8_t *start_
     	/* Version number */
     	version = *p++;
 	/* The format specification only describes version 1 of attribute messages */
-    	if (version != H5O_ATTR_VERSION) {
+	if (version != OBJ_ATTR_VERSION && version != OBJ_ATTR_VERSION_NEW) {
 		badinfo = version;
 		error_push(ERR_LEV_2, ERR_LEV_2A13, 
-		  "Version number should be 1 for Attribute Message", logical, &badinfo);
-		ret++;  /* ?????SHOULD I LET IT CONTINUE */
+		  "Version number should be 1 or 2 for Attribute Message", logical, &badinfo);
+		ret++;
 	}
 
 	logical = get_logical_addr(p, start_buf, logi_base);
     	/* version 1 does not support flags; it is reserved and set to zero */
-        unused_flags = *p++;
-	if (unused_flags != 0) {
+	/* version 2 used this flag to indicate data type is shared or not shared */
+        flags = *p++;
+	if ((version==OBJ_ATTR_VERSION) && (flags!=0)) {
 		error_push(ERR_LEV_2, ERR_LEV_2A13, 
 		  "Flag is unused for version 1 of Attribute Message", logical, NULL);
-		ret++;  /* ?????SHOULD I LET IT CONTINUE */
+		ret++; 
+	} else if ((version==OBJ_ATTR_VERSION_NEW) && (flags>OBJ_ATTR_FLAG_TYPE_SHARED)) {
+		error_push(ERR_LEV_2, ERR_LEV_2A13, 
+		  "Flag for version 1 of Attribute Message should be 0 or 1", logical, NULL);
+		ret++; 
 	}
 
     	/*
@@ -2088,6 +2093,16 @@ OBJ_attr_decode(global_shared_t *shared, const uint8_t *p, const uint8_t *start_
 
  	/* Decode and store the name */
 	attr->name = NULL;
+	if (p) {
+		if ((attr->name = strdup((const char *)p)) == NULL) {
+			error_push(ERR_INTERNAL, ERR_NONE_SEC, 
+			  "Could not allocate space for name for Attribute Message", 
+			  logical, NULL);
+			ret++;
+			goto done;
+		}
+	}
+#if 0
 	if (name_len != 0) {
 		if ((attr->name = malloc(name_len)) == NULL) {
 			error_push(ERR_INTERNAL, ERR_NONE_SEC, 
@@ -2106,21 +2121,51 @@ OBJ_attr_decode(global_shared_t *shared, const uint8_t *p, const uint8_t *start_
 			ret++;
 		}
 	}
-
-        p += H5O_ALIGN(name_len);    /* advance the memory pointer */
+#endif
+	if(version < OBJ_ATTR_VERSION_NEW)
+        	p += CK_ALIGN(name_len);    /* advance the memory pointer */
+    	else
+        	p += name_len;    /* advance the memory pointer */
 
 
 	logical = get_logical_addr(p, start_buf, logi_base);
-/* NEED To check on this */
-        if((attr->dt=(OBJ_DT->decode)(shared, p, start_buf, logi_base))==NULL) {
+	
+	/* decode the attribute datatype */
+    	if (flags & OBJ_ATTR_FLAG_TYPE_SHARED) {
+	printf("OBJ_ATTR_FLAG_TYPE_SHARED not handled yet\n");
+	ret++;
+	goto done;
+#if 0
+        	OBJ_shared_t *sh_shared; 
+	
+        	/* Get the shared information */
+        	if (NULL == (sh_shared = (OBJ_SHARED->decode) (shared, p, start_buf, logi_base))) {
+            	printf("unable to decode shared message");
+		}
+        		/* Get the actual datatype information */
+			status = H5O_shared_read(file, shared, sh_shared, OBJ_DT)
+        	if ((attr->dt= H5O_shared_read(f, dxpl_id, shared, H5O_DTYPE, NULL))==NULL)
+             	HGOTO_ERROR(H5E_ATTR, H5E_CANTDECODE, NULL, "can't decode attribute datatype");
+
+        	/* Free the shared information */
+        	H5O_free_real(H5O_SHARED, shared);
+#endif
+    	} /* end if */
+    	else {
+        	if((attr->dt=(OBJ_DT->decode)(shared, p, start_buf, logi_base))==NULL) {
 		error_push(ERR_LEV_2, ERR_LEV_2A13, 
 		  "Errors found when decoding datatype description for Attribute Message", 
 		  logical, NULL);
 		ret++;
 		goto done;
+		}
 	}
+	
+	if (version < OBJ_ATTR_VERSION_NEW)
+        	p += CK_ALIGN(attr->dt_size);
+	else
+		p += attr->dt_size;
 
-        p += H5O_ALIGN(attr->dt_size);
 
     	/* decode the attribute dataspace */
 	/* ??? there is select info in the structure */
@@ -2151,7 +2196,11 @@ OBJ_attr_decode(global_shared_t *shared, const uint8_t *p, const uint8_t *start_
 	attr->data_size = attr->ds->extent.nelem * attr->dt->shared->size;
     	H5_ASSIGN_OVERFLOW(attr->data_size,attr->ds->extent.nelem*attr->dt->shared->size,ck_size_t,size_t);
 
-        p += H5O_ALIGN(attr->ds_size);
+	if (version < OBJ_ATTR_VERSION_NEW)
+        	p += CK_ALIGN(attr->ds_size);
+	else
+		p += attr->ds_size;
+
     	/* Go get the data */
 	logical = get_logical_addr(p, start_buf, logi_base);
     	if(attr->data_size) {
@@ -2271,12 +2320,10 @@ OBJ_shared_decode(global_shared_t *shared, const uint8_t *buf, const uint8_t *st
     	flags = *buf++;
     	mesg->in_gh = (flags & 0x01);
 
-#ifdef DEBUG
 if (mesg->in_gh)
 	printf("IN GLOBAL HEAP\n");
 else
 	printf("NOT IN GLOBAL HEAP\n");
-#endif
 
 	if ((flags>>1) != 0) {  /* should be reserved(zero) */
 		error_push(ERR_LEV_2, ERR_LEV_2A16, 
@@ -3236,7 +3283,7 @@ check_sym(driver_t *file, global_shared_t *shared, ck_addr_t sym_addr, int prev_
 			ret++;
 		}
 
-		ret = check_obj_header(file, shared, ent->header, 0, NULL, prev_entries);
+		ret = check_obj_header(file, shared, ent->header, NULL, NULL, prev_entries);
 		if (ret != SUCCEED) {
 			error_push(ERR_LEV_1, ERR_LEV_1C, 
 			  "Errors found when checking the object header in the group entry...", 
@@ -3347,7 +3394,8 @@ check_btree(driver_t *file, global_shared_t *shared, ck_addr_t btree_addr, unsig
 	if (!((nodelev==0) && (nodetype==0))) {
 		if (!((shared->btree_k[nodetype] <= entries) && 
 		     (entries < 2*shared->btree_k[nodetype])))
-			printf("entries should be >=K && < 2K\n");
+			printf("nodelev=%d, nodetype=%d, K=%d,entries should be >=K && < 2K=%d\n", 
+			nodelev, nodetype, shared->btree_k[nodetype], entries);
 	} else  {
 #if 0
 		printf("A SNOD leaf node, validate in check_sym()\n");
@@ -4047,7 +4095,7 @@ H5O_find_in_ohdr(driver_t *file, global_shared_t *shared, H5O_t *oh, const obj_c
     	const obj_class_t   *type = NULL;
     	unsigned            ret_value;
 	const uint8_t	*start_buf;
-	ck_addr_t		logi_base;
+	ck_addr_t	logi_base;
 
 /* DO I NEED TO PASS type_p, and modified it ??? */
     	/* Check args */
@@ -4099,10 +4147,13 @@ H5O_find_in_ohdr(driver_t *file, global_shared_t *shared, H5O_t *oh, const obj_c
 }
 
 
+/* SHOULD RETURN A POINTER TO A MESSAGE */
 static ck_err_t
 H5O_shared_read(driver_t *file, global_shared_t *shared, OBJ_shared_t *obj_shared, const obj_class_t *type, int prev_entries)
 {
     	int	ret = SUCCEED;
+	H5O_t	*oh;
+	int	idx, status;
 
 
     	/* check args */
@@ -4123,7 +4174,16 @@ H5O_shared_read(driver_t *file, global_shared_t *shared, OBJ_shared_t *obj_share
 
 #endif
     	} else {
-	  	ret = check_obj_header(file, shared, obj_shared->u.ent.header, 1, type, prev_entries);
+	  	ret = check_obj_header(file, shared, obj_shared->u.ent.header, &oh, type, prev_entries);
+
+		idx = H5O_find_in_ohdr(file, shared, oh, &type, 0);
+		if (oh->mesg[idx].flags & OBJ_FLAG_SHARED) {
+			OBJ_shared_t *sh_shared;
+			void	*ret_value;
+
+        		sh_shared = (OBJ_shared_t *)(oh->mesg[idx].native);
+        		status = H5O_shared_read(file, shared, sh_shared, type, prev_entries);
+		}
     	}
 	
 	return(ret);
@@ -4134,14 +4194,14 @@ H5O_shared_read(driver_t *file, global_shared_t *shared, OBJ_shared_t *obj_share
 
 ck_err_t
 check_obj_header(driver_t *file, global_shared_t *shared, ck_addr_t obj_head_addr, 
-int search, const obj_class_t *type, int prev_entries)
+H5O_t **ret_oh, const obj_class_t *type, int prev_entries)
 {
 	size_t		hdr_size, chunk_size;
-	ck_addr_t		chunk_addr;
+	ck_addr_t	chunk_addr;
 	uint8_t		buf[16], *p, flags;
 	uint8_t		*start_buf;
 	unsigned	nmesgs, id;
-	ck_addr_t		logical, logi_base;
+	ck_addr_t	logical, logi_base;
 	size_t		mesg_size;
 	int		version, nlink, ret, status;
 
@@ -4172,7 +4232,7 @@ int search, const obj_class_t *type, int prev_entries)
 			return(ret);
 		}
 	}
-    	hdr_size = H5O_SIZEOF_HDR(shared);
+    	hdr_size = CK_SIZEOF_HDR(shared);
     	assert(hdr_size<=sizeof(buf));
 
 	if (debug_verbose())
@@ -4282,7 +4342,7 @@ int search, const obj_class_t *type, int prev_entries)
 		for (p = oh->chunk[chunkno].image; p < oh->chunk[chunkno].image+chunk_size; p += mesg_size) {
 			UINT16DECODE(p, id);
             		UINT16DECODE(p, mesg_size);
-			assert(mesg_size==H5O_ALIGN(mesg_size));
+			assert(mesg_size==CK_ALIGN(mesg_size));
 			flags = *p++;
 			p += 3;  /* reserved */
 			/* Try to detect invalidly formatted object header messages */
@@ -4338,6 +4398,11 @@ int search, const obj_class_t *type, int prev_entries)
 	}  /* end while */
 
 	status = SUCCEED;
+	if (ret_oh)
+		*ret_oh = oh;
+	else
+		status = decode_validate_messages(file, shared, oh, prev_entries);
+#if 0
 	if (search) {
 		idx = H5O_find_in_ohdr(file, shared, oh, &type, 0);
 		if (oh->mesg[idx].flags & OBJ_FLAG_SHARED) {
@@ -4350,6 +4415,7 @@ int search, const obj_class_t *type, int prev_entries)
 	} else {
 		status = decode_validate_messages(file, shared, oh, prev_entries);
 	}
+#endif
 	if (status != SUCCEED)
 		ret++;
 

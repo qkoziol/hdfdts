@@ -186,11 +186,11 @@ typedef struct 	global_shared_t {
 } global_shared_t;
 
 
-#define H5O_ALIGN(X)            (8*(((X)+8-1)/8))
+#define CK_ALIGN(X)            (8*(((X)+8-1)/8))
 
 
-#define H5O_SIZEOF_HDR(F)                                                     \
-    H5O_ALIGN(1 +               /*version number        */                    \
+#define CK_SIZEOF_HDR(F)                                                     \
+    CK_ALIGN(1 +               /*version number        */                    \
               1 +               /*alignment             */                    \
               2 +               /*number of messages    */                    \
               4 +               /*reference count       */                    \
@@ -619,9 +619,9 @@ typedef struct OBJ_filter_t {
 /* 
  * Attribute
  */
-#define H5O_ATTR_VERSION        1
-#define H5O_ATTR_VERSION_NEW    2
-#define H5O_ATTR_FLAG_TYPE_SHARED       0x01
+#define OBJ_ATTR_VERSION        1
+#define OBJ_ATTR_VERSION_NEW    2
+#define OBJ_ATTR_FLAG_TYPE_SHARED       0x01  /* data type for flag */
 
 struct OBJ_space_t {
     SDS_extent_t extent;                /* Dataspace extent */
@@ -939,7 +939,7 @@ int             table_init(table_t **);
 
 /* Validation routines */
 ck_err_t        check_superblock(driver_t *, global_shared_t *);
-ck_err_t        Check_obj_header(driver_t *, global_shared_t *, ck_addr_t, int, const obj_class_t *, int);
+ck_err_t        check_obj_header(driver_t *, global_shared_t *, ck_addr_t, H5O_t **, const obj_class_t *, int);
 
 /* entering via h5checker_obj() API */
 int		g_obj_api;
