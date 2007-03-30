@@ -109,7 +109,7 @@ ck_err_t
 h5checker_obj(char *fname, ck_addr_t obj_addr, ck_errmsg_t *errbuf)
 {
 	ck_err_t	ret, ret_fd, status;
-	int		prev_entries = -1;
+	int             prev_entries = -1;
 
 	g_obj_api = TRUE;
 	g_obj_api_err = 0;
@@ -146,7 +146,7 @@ h5checker_obj(char *fname, ck_addr_t obj_addr, ck_errmsg_t *errbuf)
 		g_obj_addr = fd_table[ret_fd].shared->root_grp->header;
 	}
 
-	status = check_obj_header(fd_table[ret_fd].file, fd_table[ret_fd].shared, g_obj_addr, 0, NULL, prev_entries);
+	status = check_obj_header(fd_table[ret_fd].file, fd_table[ret_fd].shared, g_obj_addr, NULL, NULL, prev_entries);
 	if (status != SUCCEED) {
                 error_push(ERR_LEV_0, ERR_NONE_SEC,
                   "Errors found when checking the object header", g_obj_addr, NULL);

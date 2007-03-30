@@ -19,8 +19,8 @@ int main(int argc, char **argv)
 	ck_addr_t	gheap_addr;
 	FILE 		*inputfd;
 	driver_t	*thefile;
-	int		prev_entries = -1;
 	global_shared_t	*shared;
+	int             prev_entries = -1;
 
 
 	/* command line declarations */
@@ -159,7 +159,7 @@ int main(int argc, char **argv)
 	}
 
 
-	ss = thefile->cls->get_eof(thefile);
+	ss = FD_get_eof(thefile);
 	if ((ss==CK_ADDR_UNDEF) || (ss<shared->stored_eoa)) {
 		error_push(ERR_FILE, ERR_NONE_SEC, 
 		  "Invalid file size or file size less than superblock eoa. Validation stopped.", 
@@ -190,7 +190,7 @@ int main(int argc, char **argv)
 	if (g_obj_addr != CK_ADDR_UNDEF)
 		ret = check_obj_header(thefile, shared, g_obj_addr, 0, NULL, prev_entries);
 	else 
-		ret = check_obj_header(thefile, shared, shared->root_grp->header, 0, NULL, prev_entries);
+		ret = check_obj_header(thefile, shared, shared->root_grp->header, NULL, NULL, prev_entries);
 	if (ret != SUCCEED) {
 		error_push(ERR_LEV_0, ERR_NONE_SEC, 
 		  "Errors found when checking the object header", 
