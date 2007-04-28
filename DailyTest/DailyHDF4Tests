@@ -49,8 +49,8 @@ if [ -n "$DEBUGMODE" ]; then
     TOWHOM_FAILED=acheng
 else
     if [ $HOSTNAME = co-login1 ]; then
-	TOWHOM_PASSED="slu epourmal koziol"
-	TOWHOM_FAILED="slu epourmal koziol"
+	TOWHOM_PASSED="slu@ncsa.uiuc.edu epourmal@ncsa.uiuc.edu koziol@ncsa.uiuc.edu"
+	TOWHOM_PASSED="slu@ncsa.uiuc.edu epourmal@ncsa.uiuc.edu koziol@ncsa.uiuc.edu"
     else
 	TOWHOM_PASSED="hdf4repo@hdfgroup.org repo-all@hdfgroup.org"
 	TOWHOM_FAILED=hdf4lib@hdfgroup.org
