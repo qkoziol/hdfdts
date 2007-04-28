@@ -12,7 +12,7 @@ DEBUGMODE=""		# change to -debug for debug mode
 
 # Setup
 HOSTNAME=`hostname | cut -f1 -d.`       # no domain part
-TODAY=`date +%y%m%d`
+TODAY=`date +%m%d%a`
 SW=HDF4			# Name of Software.
 sw=hdf4			# Name of Software in lower cases.
 SWVER=			# Software version, default to current CVS version.
@@ -42,13 +42,19 @@ done
 # TOWHOM_PASSED--normal report
 # TOWHOM_FAILED--Failure Report
 # If in debug mode, email output to myself; else to the "group".
+# Host cobalt (co-login1) has a private list of addresses.
 if [ -n "$DEBUGMODE" ]; then
     echo "******** DEBUGMODE is $DEBUGMODE ************"
     TOWHOM_PASSED=acheng
     TOWHOM_FAILED=acheng
 else
-    TOWHOM_PASSED="hdf4repo@hdfgroup.org repo-all@hdfgroup.org"
-    TOWHOM_FAILED=hdf4lib@hdfgroup.org
+    if [ $HOSTNAME = co-login1 ]; then
+	TOWHOM_PASSED="slu epourmal koziol"
+	TOWHOM_FAILED="slu epourmal koziol"
+    else
+	TOWHOM_PASSED="hdf4repo@hdfgroup.org repo-all@hdfgroup.org"
+	TOWHOM_FAILED=hdf4lib@hdfgroup.org
+    fi
 fi
 
 # Setup test directories
@@ -71,7 +77,7 @@ CMD="bin/runtest $DEBUGMODE ${SWVER}"
 
 # Setup Mailing command and Report title
 MAIL=mail
-TEST_TITLE="$HOSTNAME ${SW}${SWVERSTR}_Daily_Tests"
+TEST_TITLE="$HOSTNAME ${SW}${SWVERSTR}_Daily_Tests_${TODAY}"
 
 # set up auto-cleanup
 trap "rm -f $LOGDIRLOCK" 0
