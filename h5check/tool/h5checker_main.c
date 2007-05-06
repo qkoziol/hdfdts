@@ -123,28 +123,29 @@ int main(int argc, char **argv)
 	if (thefile == NULL) {
 		error_push(ERR_FILE, ERR_NONE_SEC, 
 		  "Failure in opening input file using the default driver. Validation discontinued.", -1, NULL);
-		error_print(stderr, thefile, shared);
+		error_print(stderr, thefile);
 		error_clear();
 		goto done;
 	}
 
-	ret = check_superblock(thefile, shared);
+	ret = check_superblock(thefile);
 	/* superblock validation has to be all passed before proceeding further */
 	if (ret != SUCCEED) {
 		error_push(ERR_LEV_0, ERR_NONE_SEC, 
 		  "Errors found when checking superblock. Validation stopped.", -1, NULL);
-		error_print(stderr, thefile, shared);
+		error_print(stderr, thefile);
 		error_clear();
 		goto done;
 	}
 
 	/* not using the default driver */
-	if (shared->driverid != SEC2_DRIVER) {
+	if (thefile->shared->driverid != SEC2_DRIVER) {
+		/* still have and need info in shared */
 		ret = FD_close(thefile);
 		if (ret != SUCCEED) {
 			error_push(ERR_FILE, ERR_NONE_SEC, 
 			  "Errors in closing input file using the default driver", -1, NULL);
-			error_print(stderr, thefile, shared);
+			error_print(stderr, thefile);
 			error_clear();
 		}
 		printf("Switching to new file driver...\n");
@@ -152,7 +153,7 @@ int main(int argc, char **argv)
 		if (thefile == NULL) {
 			error_push(ERR_FILE, ERR_NONE_SEC, 
 			  "Errors in opening input file. Validation stopped.", -1, NULL);
-			error_print(stderr, thefile, shared);
+			error_print(stderr, thefile);
 			error_clear();
 			goto done;
         	}
@@ -164,7 +165,7 @@ int main(int argc, char **argv)
 		error_push(ERR_FILE, ERR_NONE_SEC, 
 		  "Invalid file size or file size less than superblock eoa. Validation stopped.", 
 		  -1, NULL);
-		error_print(stderr, thefile, shared);
+		error_print(stderr, thefile);
 		error_clear();
 		goto done;
 	}
@@ -173,7 +174,7 @@ int main(int argc, char **argv)
 		error_push(ERR_FILE, ERR_NONE_SEC, 
 		  "Invalid Object header address provided. Validation stopped.", 
 		  -1, NULL);
-		error_print(stderr, thefile, shared);
+		error_print(stderr, thefile);
 		error_clear();
 		goto done;
 	}
@@ -182,20 +183,20 @@ int main(int argc, char **argv)
 	if (ret != SUCCEED) {
 		error_push(ERR_INTERNAL, ERR_NONE_SEC, 
 		  "Errors in initializing hard link table", -1, NULL);
-		error_print(stderr, thefile, shared);
+		error_print(stderr, thefile);
 		error_clear();
 		ret = SUCCEED;
 	}
 
 	if (g_obj_addr != CK_ADDR_UNDEF)
-		ret = check_obj_header(thefile, shared, g_obj_addr, 0, NULL, prev_entries);
+		ret = check_obj_header(thefile, g_obj_addr, 0, NULL, prev_entries);
 	else 
-		ret = check_obj_header(thefile, shared, shared->root_grp->header, NULL, NULL, prev_entries);
+		ret = check_obj_header(thefile, shared->root_grp->header, NULL, NULL, prev_entries);
 	if (ret != SUCCEED) {
 		error_push(ERR_LEV_0, ERR_NONE_SEC, 
 		  "Errors found when checking the object header", 
 		  g_obj_addr==CK_ADDR_UNDEF?shared->root_grp->header:g_obj_addr, NULL);
-		error_print(stderr, thefile, shared);
+		error_print(stderr, thefile);
 		error_clear();
 		ret = SUCCEED;
 	}
@@ -206,11 +207,12 @@ done:
 		if (ret != SUCCEED) {
 			error_push(ERR_FILE, ERR_NONE_SEC, 
 				"Errors in closing input file", -1, NULL);
-			error_print(stderr, thefile, shared);
+			error_print(stderr, thefile);
 			error_clear();
 		}
 	}
 	
+/* WILL NEED TO free shared after FD_close() */
 	if (found_error()){
 	    printf("Non-compliance errors found\n");
 	    leave(EXIT_FORMAT_FAILURE);

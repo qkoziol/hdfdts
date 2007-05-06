@@ -164,6 +164,9 @@ typedef struct GP_node_t {
     GP_entry_t *entry;             /*array of symbol table entries      */
 } GP_node_t;
 
+/* forward references */
+typedef struct driver_t driver_t;
+typedef struct driver_class_t driver_class_t;
 
 /*
  *  A global structure for storing the information obtained
@@ -702,7 +705,9 @@ typedef struct H5O_stab_t {
 typedef struct obj_class_t {
     	int 		id;                 /* header message ID */
 	/* decode method */
-    	void        	*(*decode)(global_shared_t *,const uint8_t *, const uint8_t *, ck_addr_t);	
+    	void       *(*decode)(driver_t *, const uint8_t *, const uint8_t *, ck_addr_t);	
+	void       *(*copy)(const void*, void*);    /*copy native value         */
+
 } obj_class_t;
 
 
@@ -856,9 +861,6 @@ typedef struct RAW_node_key_t {
  *  Virtual file drivers
  */
 
-/* forward references */
-typedef struct driver_t driver_t;
-typedef struct driver_class_t driver_class_t;
 
 #define SEC2_DRIVER	1
 #define MULTI_DRIVER	2
@@ -868,7 +870,7 @@ struct driver_class_t {
     ck_err_t  	(*decode_driver)(global_shared_t *shared, const unsigned char *p);
     driver_t 	*(*open)(const char *name, global_shared_t *shared, int driver_id);
     ck_err_t  	(*close)(driver_t *file);
-    ck_err_t  	(*read)(driver_t *file, global_shared_t *shared, ck_addr_t addr, size_t size, void *buffer); 
+    ck_err_t  	(*read)(driver_t *file, ck_addr_t addr, size_t size, void *buffer); 
     ck_addr_t 	(*get_eof)(driver_t *file);
     char        *(*get_fname)(driver_t *file, ck_addr_t logi_addr);
 };
@@ -877,6 +879,7 @@ struct driver_class_t {
 
 struct driver_t {
     int			driver_id;      /* driver ID for this file   */
+    global_shared_t	*shared;
     const driver_class_t *cls;          /* constant class info       */
 };
 
@@ -924,7 +927,7 @@ typedef struct driver_multi_t {
 driver_t        *FD_open(const char *, global_shared_t *, int);
 ck_err_t        FD_close(driver_t *);
 ck_addr_t       FD_get_eof(driver_t *);
-char     	*FD_get_fname(driver_t *, global_shared_t *, ck_addr_t);
+char     	*FD_get_fname(driver_t *, ck_addr_t);
 
 /* command line option */
 int     	g_verbose_num;
@@ -938,8 +941,8 @@ table_t         *obj_table;
 int             table_init(table_t **);
 
 /* Validation routines */
-ck_err_t        check_superblock(driver_t *, global_shared_t *);
-ck_err_t        check_obj_header(driver_t *, global_shared_t *, ck_addr_t, H5O_t **, const obj_class_t *, int);
+ck_err_t        check_superblock(driver_t *);
+ck_err_t        check_obj_header(driver_t *, ck_addr_t, H5O_t **, const obj_class_t *, int);
 
 /* entering via h5checker_obj() API */
 int		g_obj_api;

@@ -24,6 +24,8 @@ typedef struct stored_fd {
 } stored_fd;
 
 stored_fd fd_table[NUM_FD];
+ /* NEEd TO TAKE CARE OF shared in stored_fd */
+
 
 static 	ck_err_t        h5checker_init(char *); 
 static	void            h5checker_close(int); 
@@ -40,6 +42,7 @@ h5checker_init(char *fname)
 
 	thefile = NULL;
 	shared = calloc(1, sizeof(global_shared_t));	
+	/* FD_open() initializes thefile->shared = shared */
 	thefile = (driver_t *)FD_open(fname, shared, SEC2_DRIVER);
 
 	if (thefile == NULL) {
@@ -48,7 +51,7 @@ h5checker_init(char *fname)
                 goto done;
         }
 
-        ret = check_superblock(thefile, shared);
+        ret = check_superblock(thefile);
         /* superblock validation has to be all passed before proceeding further */
         if (ret != SUCCEED) {
                 error_push(ERR_LEV_0, ERR_NONE_SEC,
@@ -59,6 +62,7 @@ h5checker_init(char *fname)
 
         /* not using the default driver */
         if (shared->driverid != SEC2_DRIVER) {
+		/* still has info in shared */
                 ret = FD_close(thefile);
                 if (ret != SUCCEED) {
                         error_push(ERR_FILE, ERR_NONE_SEC,
@@ -99,6 +103,7 @@ h5checker_init(char *fname)
 	}
 	
 	fd_table[i].file = thefile;
+/* NEED TO TAKE CARE OF THIS */
 	fd_table[i].shared = shared;
 	return(i);
 done:
@@ -126,6 +131,7 @@ h5checker_obj(char *fname, ck_addr_t obj_addr, ck_errmsg_t *errbuf)
 		goto done;
 	}
 
+/* NEED TO TAKE CARE OF shared in fd_table */
 	if ((g_obj_addr != CK_ADDR_UNDEF) && (g_obj_addr >= fd_table[ret_fd].shared->stored_eoa)) {
                 error_push(ERR_FILE, ERR_NONE_SEC,
                   "Invalid Object header address provided. Validation stopped.",
@@ -146,7 +152,7 @@ h5checker_obj(char *fname, ck_addr_t obj_addr, ck_errmsg_t *errbuf)
 		g_obj_addr = fd_table[ret_fd].shared->root_grp->header;
 	}
 
-	status = check_obj_header(fd_table[ret_fd].file, fd_table[ret_fd].shared, g_obj_addr, NULL, NULL, prev_entries);
+	status = check_obj_header(fd_table[ret_fd].file, g_obj_addr, NULL, NULL, prev_entries);
 	if (status != SUCCEED) {
                 error_push(ERR_LEV_0, ERR_NONE_SEC,
                   "Errors found when checking the object header", g_obj_addr, NULL);
@@ -171,9 +177,11 @@ h5checker_close(int fd)
                 	"Errors in closing the input file", -1, NULL);
 		g_obj_api_err++;
 	}
+/* NEED TO TAKE CARE OF THIS 
 	if (fd_table[fd].shared) {
 		free(fd_table[fd].shared);
 		fd_table[fd].shared = NULL;
 	}
+*/
 	g_fd_inuse--;
 }

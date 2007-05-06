@@ -114,7 +114,7 @@ error_clear(void)
 }
 
 void
-error_print(FILE *stream, driver_t *file, global_shared_t *shared)
+error_print(FILE *stream, driver_t *file)
 {
 	int	i;
 	const char	*prim_str = NULL;
@@ -131,7 +131,7 @@ error_print(FILE *stream, driver_t *file, global_shared_t *shared)
 			int sec_null = 0;
 			fprintf(stream, "%s", estack->slot[i].desc);
 			if ((int)estack->slot[i].logical_addr != -1) {
-				fname = FD_get_fname(file, shared, estack->slot[i].logical_addr);
+				fname = FD_get_fname(file, estack->slot[i].logical_addr);
 				fprintf(stream, "\n  file=%s;", fname);
 				fprintf(stream, " at logical addr %llu",
 			     		(unsigned long long)estack->slot[i].logical_addr);
