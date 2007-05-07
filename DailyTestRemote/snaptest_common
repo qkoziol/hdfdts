@@ -1,0 +1,11 @@
+# common part of snaptest.  Should be included by source.
+
+set TODAY=`date +%m%d%a`
+set hosttype=$myclustername
+set tmpoutput="log/#$hosttype.out"
+setenv HDF5_PARAPREFIX $HOME/$hosttype/scr/$snapshotname
+
+cd $HOME/$snapshotname
+touch log/CVS_LOG_$TODAY
+touch $tmpoutput
+(cd current; bin/runtest -nocvs -configname $hosttype) >> & $tmpoutput
