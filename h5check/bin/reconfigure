@@ -108,7 +108,7 @@ LIBTOOL_DIR=`dirname ${LIBTOOL}`
   echo $cmd
   $cmd || exit 1
 
-  cmd="${AUTOMAKE} --add-missing"
+  cmd="${AUTOMAKE}"
   echo $cmd
   $cmd || exit 1
 
