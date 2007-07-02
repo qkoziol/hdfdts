@@ -4,6 +4,7 @@
 AC_PREREQ(2.59)
 AC_INIT(FULL-PACKAGE-NAME, VERSION, BUG-REPORT-ADDRESS)
 AC_CONFIG_SRCDIR([test/testgen.c])
+AC_CONFIG_AUX_DIR([bin])
 AC_CONFIG_HEADER([src/h5chk_config.h])
 
 dnl AM_INIT_AUTOMAKE takes a list of options that should be applied to
