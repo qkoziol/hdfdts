@@ -11,7 +11,7 @@
 #define DEBUG_VERBOSE   2
 
 /* release version of h5checker */
-#define		H5Check_VERSION			"0.1-a2"
+#define		H5Check_VERSION			"0.1-b1"
 #define 	CK_ADDR_MAX            (CK_ADDR_UNDEF-1)
 
 
