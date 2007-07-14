@@ -65,10 +65,10 @@ H5CPP=$(bindir)/h5c++
 # H5_CFLAGS holds flags that should be used as CFLAGS when building hdf5,
 # but which shouldn't be exported to h5cc for building other programs.
 
-CFLAGS=@CFLAGS@ @H5_CFLAGS@
-CPPFLAGS=@CPPFLAGS@ @H5_CPPFLAGS@
-FCFLAGS=@FCFLAGS@ @H5_FCFLAGS@
-CXXFLAGS=@CXXFLAGS@ @H5_CXXFLAGS@
+CFLAGS=@CFLAGS@
+CPPFLAGS=@CPPFLAGS@
+FCFLAGS=@FCFLAGS@
+CXXFLAGS=@CXXFLAGS@
 
 # The trace script; this is used on source files from the C library to
 # insert tracing macros.

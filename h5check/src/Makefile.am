@@ -1,15 +1,21 @@
-LIB=libh5check.a
-LIB_SRC=h5checker.c h5checker_api.c h5error.c
-LIB_OBJ=h5checker.o h5checker_api.o h5error.o
+#
+# Copyright by The HDF Group 2007.
+# All rights reserved.
+#
+##
+## Makefile.am
+## Run automake to generate a Makefile.in from this file.
+#
+# HDF5 Library Makefile(.in)
+#
 
-$(LIB): $(LIB_OBJ)
-	ar cru $@ $(LIB_OBJ)
+include $(top_srcdir)/config/commence.am
 
-h5checker.o: h5checker.c h5_check.h
+# This is our main target, the h5tools library.
+lib_LIBRARIES=libh5check.a
 
-h5checker_api.o: h5checker_api.c h5_check.h
+libh5check_a_SOURCES=h5checker.c h5checker_api.c h5error.c
 
-h5error.o: h5error.c h5_error.h
 
-clean:
-	rm -f $(LIB_OBJ) $(LIB) *.o h5check 
+include $(top_srcdir)/config/conclude.am
+
