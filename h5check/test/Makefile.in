@@ -13,6 +13,16 @@
 # PARTICULAR PURPOSE.
 
 @SET_MAKE@
+
+# 
+#
+# Copyright by The HDF Group 2007.
+# All rights reserved.
+#
+#
+# HDF5 Library Makefile(.in)
+#
+
 srcdir = @srcdir@
 top_srcdir = @top_srcdir@
 VPATH = @srcdir@
@@ -33,8 +43,12 @@ POST_INSTALL = :
 NORMAL_UNINSTALL = :
 PRE_UNINSTALL = :
 POST_UNINSTALL = :
+DIST_COMMON = README $(srcdir)/Makefile.am $(srcdir)/Makefile.in \
+	$(top_srcdir)/config/commence.am \
+	$(top_srcdir)/config/conclude.am
+check_PROGRAMS = $(am__EXEEXT_1)
+bin_PROGRAMS = testgen$(EXEEXT)
 subdir = test
-DIST_COMMON = README $(srcdir)/Makefile.am $(srcdir)/Makefile.in
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/configure.ac
 am__configure_deps = $(am__aclocal_m4_deps) $(CONFIGURE_DEPENDENCIES) \
@@ -42,19 +56,42 @@ am__configure_deps = $(am__aclocal_m4_deps) $(CONFIGURE_DEPENDENCIES) \
 mkinstalldirs = $(install_sh) -d
 CONFIG_HEADER = $(top_builddir)/src/h5chk_config.h
 CONFIG_CLEAN_FILES =
-SOURCES =
-DIST_SOURCES =
+am__installdirs = "$(DESTDIR)$(bindir)"
+binPROGRAMS_INSTALL = $(INSTALL_PROGRAM)
+am__EXEEXT_1 = testgen$(EXEEXT)
+PROGRAMS = $(bin_PROGRAMS)
+testgen_SOURCES = testgen.c
+testgen_OBJECTS = testgen.$(OBJEXT)
+testgen_LDADD = $(LDADD)
+testgen_DEPENDENCIES = ../src/libh5check.a
+DEFAULT_INCLUDES = -I. -I$(srcdir) -I$(top_builddir)/src
+depcomp = $(SHELL) $(top_srcdir)/bin/depcomp
+am__depfiles_maybe = depfiles
+COMPILE = $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) \
+	$(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS)
+CCLD = $(CC)
+LINK = $(CCLD) $(AM_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o $@
+SOURCES = testgen.c
+DIST_SOURCES = testgen.c
+ETAGS = etags
+CTAGS = ctags
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
-ACLOCAL = @ACLOCAL@
+ACLOCAL = /home1/packages/automake/automake-1.9.6/bin/aclocal-1.9 -I /afs/ncsa/projects/hdf/packages/libtool_1.5.14/Linux_2.4/share/aclocal
 AMDEP_FALSE = @AMDEP_FALSE@
 AMDEP_TRUE = @AMDEP_TRUE@
 AMTAR = @AMTAR@
-AUTOCONF = @AUTOCONF@
-AUTOHEADER = @AUTOHEADER@
-AUTOMAKE = @AUTOMAKE@
+
+# Set the paths for AFS installs of autotools for Linux machines
+# Ideally, these tools should never be needed during the build.
+AUTOCONF = /home1/packages/autoconf/autoconf-2.60/bin/autoconf
+AUTOHEADER = /home1/packages/autoconf/autoconf-2.60/bin/autoheader
+AUTOMAKE = /home1/packages/automake/automake-1.9.6/bin/automake-1.9
 AWK = @AWK@
 CC = @CC@
 CCDEPMODE = @CCDEPMODE@
+
+# H5_CFLAGS holds flags that should be used as CFLAGS when building hdf5,
+# but which shouldn't be exported to h5cc for building other programs.
 CFLAGS = @CFLAGS@
 CPP = @CPP@
 CPPFLAGS = @CPPFLAGS@
@@ -66,7 +103,6 @@ ECHO_N = @ECHO_N@
 ECHO_T = @ECHO_T@
 EGREP = @EGREP@
 EXEEXT = @EXEEXT@
-GREP = @GREP@
 INSTALL_DATA = @INSTALL_DATA@
 INSTALL_PROGRAM = @INSTALL_PROGRAM@
 INSTALL_SCRIPT = @INSTALL_SCRIPT@
@@ -84,11 +120,19 @@ PACKAGE_STRING = @PACKAGE_STRING@
 PACKAGE_TARNAME = @PACKAGE_TARNAME@
 PACKAGE_VERSION = @PACKAGE_VERSION@
 PATH_SEPARATOR = @PATH_SEPARATOR@
+RANLIB = @RANLIB@
 SET_MAKE = @SET_MAKE@
-SHELL = @SHELL@
+
+# Hardcode SHELL to be /bin/sh.  Most machines have this shell, and
+# on at least one machine configure fails to detect its existence (janus).
+# Also, when HDF5 is configured on one machine but run on another,
+# configure's automatic SHELL detection may not work on the build machine.
+SHELL = /bin/sh
 STRIP = @STRIP@
 VERSION = @VERSION@
 ac_ct_CC = @ac_ct_CC@
+ac_ct_RANLIB = @ac_ct_RANLIB@
+ac_ct_STRIP = @ac_ct_STRIP@
 am__fastdepCC_FALSE = @am__fastdepCC_FALSE@
 am__fastdepCC_TRUE = @am__fastdepCC_TRUE@
 am__include = @am__include@
@@ -99,35 +143,112 @@ am__untar = @am__untar@
 bindir = @bindir@
 build_alias = @build_alias@
 datadir = @datadir@
-datarootdir = @datarootdir@
-docdir = @docdir@
-dvidir = @dvidir@
 exec_prefix = @exec_prefix@
 host_alias = @host_alias@
-htmldir = @htmldir@
-includedir = @includedir@
+
+# Install directories that automake doesn't know about
+includedir = $(exec_prefix)/include
 infodir = @infodir@
 install_sh = @install_sh@
 libdir = @libdir@
 libexecdir = @libexecdir@
-localedir = @localedir@
 localstatedir = @localstatedir@
 mandir = @mandir@
 mkdir_p = @mkdir_p@
 oldincludedir = @oldincludedir@
-pdfdir = @pdfdir@
 prefix = @prefix@
 program_transform_name = @program_transform_name@
-psdir = @psdir@
 sbindir = @sbindir@
 sharedstatedir = @sharedstatedir@
 sysconfdir = @sysconfdir@
 target_alias = @target_alias@
-H5CC = h5cc
+
+# Shell commands used in Makefiles
+RM = rm -f
+CP = cp
+
+# Some machines need a command to run executables; this is that command
+# so that our tests will run.
+# We use RUNTESTS instead of RUNSERIAL directly because it may be that
+# some tests need to be run with a different command.  Older versions
+# of the makefiles used the command
+# $(LIBTOOL) --mode=execute
+# in some directories, for instance.
+RUNTESTS = $(RUNSERIAL)
+
+# Libraries to link to while building
+LIBHDF5 = $(top_builddir)/src/libhdf5.la
+LIBH5TEST = $(top_builddir)/test/libh5test.la
+LIBH5F = $(top_builddir)/fortran/src/libhdf5_fortran.la
+LIBH5FTEST = $(top_builddir)/fortran/test/libh5test_fortran.la
+LIBH5CPP = $(top_builddir)/c++/src/libhdf5_cpp.la
+LIBH5TOOLS = $(top_builddir)/tools/lib/libh5tools.la
+LIBH5_HL = $(top_builddir)/hl/src/libhdf5_hl.la
+LIBH5F_HL = $(top_builddir)/hl/fortran/src/libhdf5hl_fortran.la
+LIBH5CPP_HL = $(top_builddir)/hl/c++/src/libhdf5_hl_cpp.la
+docdir = $(exec_prefix)/doc
+
+# Scripts used to build examples
+# If only shared libraries have been installed, have h5cc build examples with
+# shared libraries instead of static libraries
+H5CC = $(bindir)/h5cc
+H5CC_PP = $(bindir)/h5pcc
+H5FC = $(bindir)/h5fc
+H5FC_PP = $(bindir)/h5pfc
+H5CPP = $(bindir)/h5c++
+FCFLAGS = @FCFLAGS@
+CXXFLAGS = @CXXFLAGS@
+
+# The trace script; this is used on source files from the C library to
+# insert tracing macros.
+TRACE = perl $(top_srcdir)/bin/trace
+
+# Make sure that these variables are exported to the Makefiles
+F9XMODEXT = @F9XMODEXT@
+F9XMODFLAG = @F9XMODFLAG@
+
+# .chkexe files are used to mark tests that have run successfully.
+# .chklog files are output from those tests.
+# *.clog are from the MPE option.
+
+# Temporary files.  *.h5 are generated by h5dumpgentest.  They should
+# copied to the testfiles/ directory if update is required.
+CHECK_CLEANFILES = *.chkexe *.chklog *.clog *.h5 *.bin full*.data
+
+# Include files in /src directory and /tools/lib directory
+INCLUDES = -I$(top_srcdir)/src
+
+# Test programs and scripts
+TEST_PROG = testgen
+TEST_SCRIPT = testh5check.sh
+check_SCRIPTS = $(TEST_SCRIPT)
+SCRIPT_DEPEND = testgen$(EXEEXT)
+
+# All the programs depend on the hdf5 and h5tools libraries
+LDADD = ../src/libh5check.a
+DISTCLEANFILES = testh5dump.sh
+
+# Automake needs to be taught how to build lib, progs, and tests targets.
+# These will be filled in automatically for the most part (e.g.,
+# lib_LIBRARIES are built for lib target), but EXTRA_LIB, EXTRA_PROG, and
+# EXTRA_TEST variables are supplied to allow the user to force targets to
+# be built at certain times. 
+LIB = $(lib_LIBRARIES) $(lib_LTLIBRARIES) $(noinst_LIBRARIES)                 \
+      $(noinst_LTLIBRARIES) $(check_LIBRARIES) $(check_LTLIBRARIES) $(EXTRA_LIB)
+
+PROGS = $(bin_PROGRAMS) $(bin_SCRIPTS) $(noinst_PROGRAMS) $(noinst_SCRIPTS)   \
+        $(EXTRA_PROG)
+
+TESTS = $(check_PROGRAMS) $(check_SCRIPTS) $(EXTRA_TEST) 
+TEST_PROG_CHKEXE = $(TEST_PROG:=.chkexe_)
+TEST_PROG_PARA_CHKEXE = $(TEST_PROG_PARA:=.chkexe_)
+TEST_SCRIPT_CHKSH = $(TEST_SCRIPT:=.chkexe_)
+TEST_SCRIPT_PARA_CHKSH = $(TEST_SCRIPT_PARA:=.chkexe_)
 all: all-am
 
 .SUFFIXES:
-$(srcdir)/Makefile.in:  $(srcdir)/Makefile.am  $(am__configure_deps)
+.SUFFIXES: .c .o .obj
+$(srcdir)/Makefile.in:  $(srcdir)/Makefile.am $(top_srcdir)/config/commence.am $(top_srcdir)/config/conclude.am $(am__configure_deps)
 	@for dep in $?; do \
 	  case '$(am__configure_deps)' in \
 	    *$$dep*) \
@@ -156,15 +277,106 @@ $(top_srcdir)/configure:  $(am__configure_deps)
 	cd $(top_builddir) && $(MAKE) $(AM_MAKEFLAGS) am--refresh
 $(ACLOCAL_M4):  $(am__aclocal_m4_deps)
 	cd $(top_builddir) && $(MAKE) $(AM_MAKEFLAGS) am--refresh
+install-binPROGRAMS: $(bin_PROGRAMS)
+	@$(NORMAL_INSTALL)
+	test -z "$(bindir)" || $(mkdir_p) "$(DESTDIR)$(bindir)"
+	@list='$(bin_PROGRAMS)'; for p in $$list; do \
+	  p1=`echo $$p|sed 's/$(EXEEXT)$$//'`; \
+	  if test -f $$p \
+	  ; then \
+	    f=`echo "$$p1" | sed 's,^.*/,,;$(transform);s/$$/$(EXEEXT)/'`; \
+	   echo " $(INSTALL_PROGRAM_ENV) $(binPROGRAMS_INSTALL) '$$p' '$(DESTDIR)$(bindir)/$$f'"; \
+	   $(INSTALL_PROGRAM_ENV) $(binPROGRAMS_INSTALL) "$$p" "$(DESTDIR)$(bindir)/$$f" || exit 1; \
+	  else :; fi; \
+	done
+
+uninstall-binPROGRAMS:
+	@$(NORMAL_UNINSTALL)
+	@list='$(bin_PROGRAMS)'; for p in $$list; do \
+	  f=`echo "$$p" | sed 's,^.*/,,;s/$(EXEEXT)$$//;$(transform);s/$$/$(EXEEXT)/'`; \
+	  echo " rm -f '$(DESTDIR)$(bindir)/$$f'"; \
+	  rm -f "$(DESTDIR)$(bindir)/$$f"; \
+	done
+
+clean-binPROGRAMS:
+	-test -z "$(bin_PROGRAMS)" || rm -f $(bin_PROGRAMS)
+
+clean-checkPROGRAMS:
+	-test -z "$(check_PROGRAMS)" || rm -f $(check_PROGRAMS)
+
+mostlyclean-compile:
+	-rm -f *.$(OBJEXT)
+
+distclean-compile:
+	-rm -f *.tab.c
+
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/testgen.Po@am__quote@
+
+.c.o:
+@am__fastdepCC_TRUE@	if $(COMPILE) -MT $@ -MD -MP -MF "$(DEPDIR)/$*.Tpo" -c -o $@ $<; \
+@am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/$*.Tpo" "$(DEPDIR)/$*.Po"; else rm -f "$(DEPDIR)/$*.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$<' object='$@' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(COMPILE) -c $<
+
+.c.obj:
+@am__fastdepCC_TRUE@	if $(COMPILE) -MT $@ -MD -MP -MF "$(DEPDIR)/$*.Tpo" -c -o $@ `$(CYGPATH_W) '$<'`; \
+@am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/$*.Tpo" "$(DEPDIR)/$*.Po"; else rm -f "$(DEPDIR)/$*.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$<' object='$@' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(COMPILE) -c `$(CYGPATH_W) '$<'`
 uninstall-info-am:
+
+ID: $(HEADERS) $(SOURCES) $(LISP) $(TAGS_FILES)
+	list='$(SOURCES) $(HEADERS) $(LISP) $(TAGS_FILES)'; \
+	unique=`for i in $$list; do \
+	    if test -f "$$i"; then echo $$i; else echo $(srcdir)/$$i; fi; \
+	  done | \
+	  $(AWK) '    { files[$$0] = 1; } \
+	       END { for (i in files) print i; }'`; \
+	mkid -fID $$unique
 tags: TAGS
-TAGS:
 
+TAGS:  $(HEADERS) $(SOURCES)  $(TAGS_DEPENDENCIES) \
+		$(TAGS_FILES) $(LISP)
+	tags=; \
+	here=`pwd`; \
+	list='$(SOURCES) $(HEADERS)  $(LISP) $(TAGS_FILES)'; \
+	unique=`for i in $$list; do \
+	    if test -f "$$i"; then echo $$i; else echo $(srcdir)/$$i; fi; \
+	  done | \
+	  $(AWK) '    { files[$$0] = 1; } \
+	       END { for (i in files) print i; }'`; \
+	if test -z "$(ETAGS_ARGS)$$tags$$unique"; then :; else \
+	  test -n "$$unique" || unique=$$empty_fix; \
+	  $(ETAGS) $(ETAGSFLAGS) $(AM_ETAGSFLAGS) $(ETAGS_ARGS) \
+	    $$tags $$unique; \
+	fi
 ctags: CTAGS
-CTAGS:
+CTAGS:  $(HEADERS) $(SOURCES)  $(TAGS_DEPENDENCIES) \
+		$(TAGS_FILES) $(LISP)
+	tags=; \
+	here=`pwd`; \
+	list='$(SOURCES) $(HEADERS)  $(LISP) $(TAGS_FILES)'; \
+	unique=`for i in $$list; do \
+	    if test -f "$$i"; then echo $$i; else echo $(srcdir)/$$i; fi; \
+	  done | \
+	  $(AWK) '    { files[$$0] = 1; } \
+	       END { for (i in files) print i; }'`; \
+	test -z "$(CTAGS_ARGS)$$tags$$unique" \
+	  || $(CTAGS) $(CTAGSFLAGS) $(AM_CTAGSFLAGS) $(CTAGS_ARGS) \
+	     $$tags $$unique
 
+GTAGS:
+	here=`$(am__cd) $(top_builddir) && pwd` \
+	  && cd $(top_srcdir) \
+	  && gtags -i $(GTAGS_ARGS) $$here
+
+distclean-tags:
+	-rm -f TAGS ID GTAGS GRTAGS GSYMS GPATH tags
 
 distdir: $(DISTFILES)
+	$(mkdir_p) $(distdir)/../config
 	@srcdirstrip=`echo "$(srcdir)" | sed 's|.|.|g'`; \
 	topsrcdirstrip=`echo "$(top_srcdir)" | sed 's|.|.|g'`; \
 	list='$(DISTFILES)'; for file in $$list; do \
@@ -192,9 +404,14 @@ distdir: $(DISTFILES)
 	  fi; \
 	done
 check-am: all-am
+	$(MAKE) $(AM_MAKEFLAGS) $(check_PROGRAMS) $(check_SCRIPTS)
+	$(MAKE) $(AM_MAKEFLAGS) check-TESTS
 check: check-am
-all-am: Makefile
+all-am: Makefile $(PROGRAMS) all-local
 installdirs:
+	for dir in "$(DESTDIR)$(bindir)"; do \
+	  test -z "$$dir" || $(mkdir_p) "$$dir"; \
+	done
 install: install-am
 install-exec: install-exec-am
 install-data: install-data-am
@@ -215,15 +432,21 @@ clean-generic:
 
 distclean-generic:
 	-test -z "$(CONFIG_CLEAN_FILES)" || rm -f $(CONFIG_CLEAN_FILES)
+	-test -z "$(DISTCLEANFILES)" || rm -f $(DISTCLEANFILES)
 
 maintainer-clean-generic:
 	@echo "This command is intended for maintainers to use"
 	@echo "it deletes files that may require special tools to rebuild."
-clean-am: clean-generic mostlyclean-am
+clean: clean-am
+
+clean-am: clean-binPROGRAMS clean-checkPROGRAMS clean-generic \
+	mostlyclean-am
 
 distclean: distclean-am
+	-rm -rf ./$(DEPDIR)
 	-rm -f Makefile
-distclean-am: clean-am distclean-generic
+distclean-am: clean-am distclean-compile distclean-generic \
+	distclean-tags
 
 dvi: dvi-am
 
@@ -237,7 +460,7 @@ info-am:
 
 install-data-am:
 
-install-exec-am:
+install-exec-am: install-binPROGRAMS
 
 install-info: install-info-am
 
@@ -246,12 +469,14 @@ install-man:
 installcheck-am:
 
 maintainer-clean: maintainer-clean-am
+	-rm -rf ./$(DEPDIR)
 	-rm -f Makefile
 maintainer-clean-am: distclean-am maintainer-clean-generic
 
 mostlyclean: mostlyclean-am
 
-mostlyclean-am: mostlyclean-generic
+mostlyclean-am: mostlyclean-compile mostlyclean-generic \
+	mostlyclean-local
 
 pdf: pdf-am
 
@@ -261,29 +486,244 @@ ps: ps-am
 
 ps-am:
 
-uninstall-am: uninstall-info-am
+uninstall-am: uninstall-binPROGRAMS uninstall-info-am
 
-.PHONY: all all-am check check-am clean clean-generic distclean \
-	distclean-generic distdir dvi dvi-am html html-am info info-am \
-	install install-am install-data install-data-am install-exec \
-	install-exec-am install-info install-info-am install-man \
-	install-strip installcheck installcheck-am installdirs \
-	maintainer-clean maintainer-clean-generic mostlyclean \
-	mostlyclean-generic pdf pdf-am ps ps-am uninstall uninstall-am \
-	uninstall-info-am
+.PHONY: CTAGS GTAGS all all-am all-local check check-TESTS check-am \
+	clean clean-binPROGRAMS clean-checkPROGRAMS clean-generic \
+	ctags distclean distclean-compile distclean-generic \
+	distclean-tags distdir dvi dvi-am html html-am info info-am \
+	install install-am install-binPROGRAMS install-data \
+	install-data-am install-exec install-exec-am install-info \
+	install-info-am install-man install-strip installcheck \
+	installcheck-am installdirs maintainer-clean \
+	maintainer-clean-generic mostlyclean mostlyclean-compile \
+	mostlyclean-generic mostlyclean-local pdf pdf-am ps ps-am tags \
+	uninstall uninstall-am uninstall-binPROGRAMS uninstall-info-am
 
+
+# List all build rules defined by HDF5 Makefiles as "PHONY" targets here.
+# This tells the Makefiles that these targets are not files to be built but
+# commands that should be executed even if a file with the same name already
+# exists.
+.PHONY: build-check-clean build-check-p build-check-s build-lib build-progs \
+        build-tests check-clean check-install check-p check-s check-vfd \
+        install-doc lib progs tests uninstall-doc _exec_check-s _test help
+
+help:
+	@$(top_srcdir)/bin/makehelp
 
 testgen: testgen.c
-	$(H5CC) $< -o $@
-	./testgen
+	h5cc testgen.c -o testgen
 
-check: testh5check.sh
-	sh $<
+# lib/progs/tests targets recurse into subdirectories. build-* targets
+# build files in this directory.
+build-lib: $(LIB)
+build-progs: $(LIB) $(PROGS)
+build-tests: $(LIB) $(PROGS) $(TESTS)
 
-testh5check.sh: testgen
+# General rule for recursive building targets.
+# BUILT_SOURCES contain targets that need to be built before anything else
+# in the directory (e.g., for Fortran type detection)
+lib progs tests check-s check-p :: $(BUILT_SOURCES)
+	@$(MAKE) $(AM_MAKEFLAGS) build-$@ || exit 1;
+	@for d in X $(SUBDIRS); do                                             \
+	    if test $$d != X && test $$d != .; then                           \
+	        (set -x; cd $$d && $(MAKE) $(AM_MAKEFLAGS) $@) || exit 1;     \
+	    fi;                                                               \
+	done
 
-clean:
-	rm -f *.o testgen *.h5 *.data logfile.txt h5check.*.out h5check.*.err
+# General rule for recursive cleaning targets.  Like the rule above,
+# but doesn't require building BUILT_SOURCES.
+check-clean ::
+	@$(MAKE) $(AM_MAKEFLAGS) build-$@ || exit 1;
+	@for d in X $(SUBDIRS); do                                             \
+	    if test $$d != X && test $$d != .; then                           \
+	        (set -x; cd $$d && $(MAKE) $(AM_MAKEFLAGS) $@) || exit 1;     \
+	    fi;                                                               \
+	done
+
+# Tell Automake to build tests when the user types `make all' (this is
+# not its default behavior).  Also build EXTRA_LIB and EXTRA_PROG since
+# Automake won't build them automatically, either.
+all-local: $(EXTRA_LIB) $(EXTRA_PROG) $(TESTS)
+
+# make install-doc doesn't do anything outside of doc directory, but
+# Makefiles should recognize it.
+# UPDATE: docs no longer reside in this build tree, so this target
+# is depreciated.
+install-doc uninstall-doc:
+	@echo "Nothing to be done."
+
+# clean up files generated by tests so they can be re-run.
+build-check-clean:
+	$(RM) -rf $(CHECK_CLEANFILES)
+
+# run check-clean whenever mostlyclean is run
+mostlyclean-local: build-check-clean
+
+# check-install is just a synonym for installcheck
+check-install: installcheck
+
+# Run each test in order, passing $(TEST_FLAGS) to the program.
+# Since tests are done in a shell loop, "make -i" does apply inside it.
+# Set HDF5_Make_Ignore to a non-blank string to ignore errors inside the loop.
+# The timestamps give a rough idea how much time the tests use.
+#
+# Note that targets in TESTS (defined above) will be built when the user
+# types 'make tests' or 'make check', but only programs in TEST_PROG,
+# TEST_PROG_PARA, or TEST_SCRIPT will actually be executed.
+check-TESTS: test
+
+test _test:
+	@$(MAKE) build-check-s
+	@$(MAKE) build-check-p
+
+# Actual execution of check-s.
+build-check-s: $(LIB) $(PROGS) $(TESTS)
+	@if test -n "$(TEST_PROG)$(TEST_SCRIPT)"; then      \
+	   echo "===Serial tests in `echo ${PWD} | sed -e s:.*/::` begin `date`==="; \
+	fi
+	@$(MAKE) $(AM_MAKEFLAGS) _exec_check-s
+	@if test -n "$(TEST_PROG)$(TEST_SCRIPT)"; then      \
+	    echo "===Serial tests in `echo ${PWD} | sed -e s:.*/::` ended `date`===";\
+	fi
+
+_exec_check-s: $(TEST_PROG_CHKEXE) $(TEST_SCRIPT_CHKSH)
+
+# The dummy.chkexe here prevents the target from being
+# empty if there are no tests in the current directory.
+# $${log} is the log file.
+# $${tname} is the name of test.
+$(TEST_PROG_CHKEXE) $(TEST_PROG_PARA_CHKEXE) dummy.chkexe_:
+	@if test "X$@" != "X.chkexe_" && test "X$@" != "Xdummy.chkexe_"; then \
+	   tname=$(@:.chkexe_=)$(EXEEXT);\
+	   log=$(@:.chkexe_=.chklog); \
+	   echo "============================"; \
+	   if $(top_srcdir)/bin/newer $(@:.chkexe_=.chkexe) $${tname}; then \
+	      echo "No need to test $${tname} again."; \
+	   else \
+	      echo "============================" > $${log}; \
+	      if test "X$(HDF_FORTRAN)" = "Xyes"; then \
+	         echo "Fortran API: Testing $(HDF5_DRIVER) $${tname} $(TEST_FLAGS)"; \
+	         echo "Fortran API: $(HDF5_DRIVER) $${tname} $(TEST_FLAGS) Test Log" >> $${log}; \
+	      elif test "X$(HDF_CXX)" = "Xyes"; then \
+	         echo "C++ API: Testing $(HDF5_DRIVER) $${tname} $(TEST_FLAGS)"; \
+	         echo "C++ API: $(HDF5_DRIVER) $${tname} $(TEST_FLAGS) Test Log" >> $${log};\
+	      else \
+	         echo "Testing $(HDF5_DRIVER) $${tname} $(TEST_FLAGS)"; \
+	         echo "$(HDF5_DRIVER) $${tname} $(TEST_FLAGS) Test Log" >> $${log}; \
+	      fi; \
+	      echo "============================" >> $${log}; \
+	      srcdir="$(srcdir)" \
+	         $(TIME) $(RUNTESTS) ./$${tname} $(TEST_FLAGS) >> $${log} 2>&1 \
+	         && touch $(@:.chkexe_=.chkexe) || \
+	         (test $$HDF5_Make_Ignore && echo "*** Error ignored") || \
+	         (cat $${log} && false) || exit 1; \
+	      echo "" >> $${log}; \
+	      echo "Finished testing $${tname} $(TEST_FLAGS)" >> $${log}; \
+	      echo "============================" >> $${log}; \
+	      echo "Finished testing $${tname} $(TEST_FLAGS)"; \
+	      cat $${log}; \
+	   fi; \
+	fi
+
+# The dummysh.chkexe here prevents the target from being
+# empty if there are no tests in the current directory.
+# $${log} is the log file.
+# $${tname} is the name of test.
+$(TEST_SCRIPT_CHKSH) $(TEST_SCRIPT_PARA_CHKSH) dummysh.chkexe_:
+	@if test "X$@" != "X.chkexe_" && test "X$@" != "Xdummysh.chkexe_"; then \
+	   cmd=$(@:.chkexe_=);\
+	   tname=`basename $$cmd`;\
+	   chkname=`basename $(@:.chkexe_=.chkexe)`;\
+	   log=`basename $(@:.chkexe_=.chklog)`; \
+	   echo "============================"; \
+	   if $(top_srcdir)/bin/newer $${chkname} $$cmd $(SCRIPT_DEPEND); then \
+	      echo "No need to test $${tname} again."; \
+	   else \
+	      echo "============================" > $${log}; \
+	      if test "X$(HDF_FORTRAN)" = "Xyes"; then \
+	         echo "Fortran API: Testing $${tname} $(TEST_FLAGS)"; \
+	         echo "Fortran API: $${tname} $(TEST_FLAGS) Test Log" >> $${log}; \
+	      elif test "X$(HDF_CXX)" = "Xyes"; then \
+	         echo "C++ API: Testing $${tname} $(TEST_FLAGS)"; \
+	         echo "C++ API: $${tname} $(TEST_FLAGS) Test Log" >> $${log}; \
+	      else \
+	         echo "Testing $${tname} $(TEST_FLAGS)"; \
+	         echo "$${tname} $(TEST_FLAGS) Test Log" >> $${log}; \
+	      fi; \
+	      echo "============================" >> $${log}; \
+	      RUNSERIAL="$(RUNSERIAL)" RUNPARALLEL="$(RUNPARALLEL)"           \
+	      srcdir="$(srcdir)" \
+	         $(TIME) $(SHELL) $$cmd $(TEST_FLAGS) >> $${log} 2>&1 \
+	         && touch $${chkname} || \
+	         (test $$HDF5_Make_Ignore && echo "*** Error ignored") || \
+	         (cat $${log} && false) || exit 1; \
+	      echo "" >> $${log}; \
+	      echo "Finished testing $${tname} $(TEST_FLAGS)" >> $${log}; \
+	      echo "============================" >> $${log}; \
+	      echo "Finished testing $${tname} $(TEST_FLAGS)"; \
+	      cat $${log}; \
+	   fi; \
+	   echo "============================"; \
+	fi
+
+# Actual execution of check-p.
+build-check-p: $(LIB) $(PROGS) $(TESTS)
+	@if test -n "$(TEST_PROG_PARA)$(TEST_SCRIPT_PARA)"; then      \
+	   echo "===Parallel tests in `echo ${PWD} | sed -e s:.*/::` begin `date`==="; \
+	fi
+	@if test -n "$(TEST_PROG_PARA)"; then                                \
+	    echo "**** Hint ****";                                            \
+	    echo "Parallel test files reside in the current directory"        \
+	         "by default.";                                               \
+	    echo "Set HDF5_PARAPREFIX to use another directory. E.g.,";       \
+	    echo "    HDF5_PARAPREFIX=/PFS/user/me";                          \
+	    echo "    export HDF5_PARAPREFIX";                                \
+	    echo "    make check";                                            \
+	    echo "**** end of Hint ****";                                     \
+	fi
+	@for test in $(TEST_PROG_PARA) dummy; do                             \
+	   if test $$test != dummy; then                                      \
+	      $(MAKE) $(AM_MAKEFLAGS) $$test.chkexe_ \
+	      RUNTESTS="$(RUNPARALLEL)" || exit 1; \
+	   fi;                                                                \
+	done
+	@for test in $(TEST_SCRIPT_PARA) dummy; do                           \
+	  if test $$test != dummy; then                                      \
+	    $(MAKE) $(AM_MAKEFLAGS) $$test.chkexe_ || exit 1; \
+	  fi;                                                                 \
+	done
+	@if test -n "$(TEST_PROG_PARA)$(TEST_SCRIPT_PARA)"; then      \
+	    echo "===Parallel tests in `echo ${PWD} | sed -e s:.*/::` ended `date`===";\
+	fi
+
+# Run test with different Virtual File Driver
+check-vfd: $(LIB) $(PROGS) $(TESTS)
+	@for vfd in $(VFD_LIST) dummy; do                                     \
+	    if test $$vfd != dummy; then                                      \
+	        echo "============================";                          \
+	        echo "Testing Virtual File Driver $$vfd";                     \
+	        echo "============================";                          \
+	        $(MAKE) $(AM_MAKEFLAGS) check-clean || exit 1;                \
+	        HDF5_DRIVER=$$vfd $(MAKE) $(AM_MAKEFLAGS) check || exit 1;    \
+	    fi;                                                               \
+	done
+
+#================ previous ===================
+# H5CC=h5cc
+# 
+# testgen: testgen.c
+# 	$(H5CC) $< -o $@
+# 	./testgen
+# 
+# check: testh5check.sh
+# 	sh $<
+# 
+# testh5check.sh: testgen
+# 
+# clean:
+# 	rm -f *.o testgen *.h5 *.data logfile.txt h5check.*.out h5check.*.err
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.
 .NOEXPORT:
