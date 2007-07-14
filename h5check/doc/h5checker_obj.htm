@@ -1,0 +1,255 @@
+<html xmlns:v="urn:schemas-microsoft-com:vml"
+xmlns:o="urn:schemas-microsoft-com:office:office"
+xmlns:w="urn:schemas-microsoft-com:office:word"
+xmlns="http://www.w3.org/TR/REC-html40">
+
+<head>
+<meta http-equiv=Content-Type content="text/html; charset=windows-1252">
+<meta name=ProgId content=Word.Document>
+<meta name=Generator content="Microsoft Word 11">
+<meta name=Originator content="Microsoft Word 11">
+<link rel=File-List href="h5checker_obj_files/filelist.xml">
+<title>Name: h5checker_obj</title>
+<!--[if gte mso 9]><xml>
+ <o:DocumentProperties>
+  <o:Author>vchoi</o:Author>
+  <o:Template>Normal</o:Template>
+  <o:LastAuthor>Albert Cheng</o:LastAuthor>
+  <o:Revision>2</o:Revision>
+  <o:TotalTime>63</o:TotalTime>
+  <o:Created>2007-07-14T23:19:00Z</o:Created>
+  <o:LastSaved>2007-07-14T23:19:00Z</o:LastSaved>
+  <o:Pages>1</o:Pages>
+  <o:Words>310</o:Words>
+  <o:Characters>1773</o:Characters>
+  <o:Company> </o:Company>
+  <o:Lines>14</o:Lines>
+  <o:Paragraphs>4</o:Paragraphs>
+  <o:CharactersWithSpaces>2079</o:CharactersWithSpaces>
+  <o:Version>11.8122</o:Version>
+ </o:DocumentProperties>
+</xml><![endif]--><!--[if gte mso 9]><xml>
+ <w:WordDocument>
+  <w:GrammarState>Clean</w:GrammarState>
+  <w:PunctuationKerning/>
+  <w:ValidateAgainstSchemas/>
+  <w:SaveIfXMLInvalid>false</w:SaveIfXMLInvalid>
+  <w:IgnoreMixedContent>false</w:IgnoreMixedContent>
+  <w:AlwaysShowPlaceholderText>false</w:AlwaysShowPlaceholderText>
+  <w:Compatibility>
+   <w:BreakWrappedTables/>
+   <w:SnapToGridInCell/>
+   <w:WrapTextWithPunct/>
+   <w:UseAsianBreakRules/>
+   <w:DontGrowAutofit/>
+  </w:Compatibility>
+  <w:BrowserLevel>MicrosoftInternetExplorer4</w:BrowserLevel>
+ </w:WordDocument>
+</xml><![endif]--><!--[if gte mso 9]><xml>
+ <w:LatentStyles DefLockedState="false" LatentStyleCount="156">
+ </w:LatentStyles>
+</xml><![endif]-->
+<style>
+<!--
+ /* Style Definitions */
+ p.MsoNormal, li.MsoNormal, div.MsoNormal
+	{mso-style-parent:"";
+	margin:0in;
+	margin-bottom:.0001pt;
+	mso-pagination:widow-orphan;
+	font-size:12.0pt;
+	font-family:"Times New Roman";
+	mso-fareast-font-family:"Times New Roman";}
+span.GramE
+	{mso-style-name:"";
+	mso-gram-e:yes;}
+@page Section1
+	{size:8.5in 11.0in;
+	margin:1.0in 1.25in 1.0in 1.25in;
+	mso-header-margin:.5in;
+	mso-footer-margin:.5in;
+	mso-paper-source:0;}
+div.Section1
+	{page:Section1;}
+-->
+</style>
+<!--[if gte mso 10]>
+<style>
+ /* Style Definitions */
+ table.MsoNormalTable
+	{mso-style-name:"Table Normal";
+	mso-tstyle-rowband-size:0;
+	mso-tstyle-colband-size:0;
+	mso-style-noshow:yes;
+	mso-style-parent:"";
+	mso-padding-alt:0in 5.4pt 0in 5.4pt;
+	mso-para-margin:0in;
+	mso-para-margin-bottom:.0001pt;
+	mso-pagination:widow-orphan;
+	font-size:10.0pt;
+	font-family:"Times New Roman";
+	mso-ansi-language:#0400;
+	mso-fareast-language:#0400;
+	mso-bidi-language:#0400;}
+</style>
+<![endif]--><!--[if gte mso 9]><xml>
+ <o:shapedefaults v:ext="edit" spidmax="2050"/>
+</xml><![endif]--><!--[if gte mso 9]><xml>
+ <o:shapelayout v:ext="edit">
+  <o:idmap v:ext="edit" data="1"/>
+ </o:shapelayout></xml><![endif]-->
+</head>
+
+<body lang=EN-US style='tab-interval:.5in'>
+
+<div class=Section1>
+
+<p class=MsoNormal><b style='mso-bidi-font-weight:normal'>Name</b>: <i
+style='mso-bidi-font-style:normal'>h5checker_obj</i></p>
+
+<p class=MsoNormal><o:p>&nbsp;</o:p></p>
+
+<p class=MsoNormal><b style='mso-bidi-font-weight:normal'>Signature</b>: </p>
+
+<p class=MsoNormal><span style='mso-tab-count:1'>            </span><i
+style='mso-bidi-font-style:normal'>ck_err_t h5checker_<span class=GramE>obj(</span>char
+*fname,, ck_addr_t obj_addr, ck_errmsg_t *buf)<o:p></o:p></i></p>
+
+<p class=MsoNormal><o:p>&nbsp;</o:p></p>
+
+<p class=MsoNormal><b style='mso-bidi-font-weight:normal'>Description</b>:</p>
+
+<p class=MsoNormal><span style='mso-spacerun:yes'>        </span><span
+style='mso-tab-count:1'>    </span><i style='mso-bidi-font-style:normal'>h5checker_obj()</i>
+validates the object header of the HDF5 file <i style='mso-bidi-font-style:
+normal'>fname</i> at <i style='mso-bidi-font-style:normal'>obj_addr</i> <span
+style='mso-tab-count:1'>   </span>according to <b style='mso-bidi-font-weight:
+normal'><i style='mso-bidi-font-style:normal'>HDF5 File Format Specification Version
+1.1</i></b>, <i style='mso-bidi-font-style:normal'>section IV<span
+style='mso-spacerun:yes'>  </span>Disk <span style='mso-tab-count:1'>  </span>Format
+Level 2 - Data Objects<b style='mso-bidi-font-weight:normal'>.</b></i><span
+style='mso-spacerun:yes'>  </span>It first opens the file, <span class=GramE>then</span>
+it reads and validates <span style='mso-tab-count:1'>    </span>the superblock
+information.<span style='mso-spacerun:yes'>  </span>The validation of the
+superblock has to be all passed <span style='mso-tab-count:1'>  </span>before
+proceeding with the validation of the specified object header.</p>
+
+<p class=MsoNormal><span style='mso-tab-count:1'>            </span>All the
+header messages embedded in the specified object header are checked.<span
+style='mso-spacerun:yes'>  </span><span style='mso-tab-count:1'>     </span>Addresses
+of B-tree, object headers and local heap in some header messages of <span
+style='mso-tab-count:1'>   </span>the specified object header are also followed
+and validated.<span style='mso-spacerun:yes'>  </span>The file <i
+style='mso-bidi-font-style:normal'>fname </i>is <span style='mso-tab-count:
+1'>   </span>closed when validation is complete.</p>
+
+<p class=MsoNormal><span style='mso-tab-count:1'>            </span>When <span
+style='mso-tab-count:1'>  </span><i style='mso-bidi-font-style:normal'>h5checker_<span
+class=GramE>obj(</span>)</i> is called with an undefined <span
+style='mso-tab-count:1'> </span><i style='mso-bidi-font-style:normal'>obj_addr <span
+style='mso-tab-count:1'>         </span>(=CK_ADDR_UNDEF)</i>, the whole file is
+validated.<span style='mso-spacerun:yes'>  </span></p>
+
+<p class=MsoNormal><span style='mso-spacerun:yes'>        </span><span
+style='mso-tab-count:1'>    </span>When non-compliant errors are found in the
+object header and <i style='mso-bidi-font-style:normal'>buf</i> is non-null,</p>
+
+<p class=MsoNormal><span style='mso-spacerun:yes'>        </span><span
+style='mso-tab-count:1'>    </span><i style='mso-bidi-font-style:normal'>h5checker_<span
+class=GramE>obj(</span>)</i> fills in the following data structure (defined in <i
+style='mso-bidi-font-style:normal'>h5check_public.h</i>) <span
+style='mso-tab-count:1'>            </span>for the errors:</p>
+
+<p class=MsoNormal><o:p>&nbsp;</o:p></p>
+
+<p class=MsoNormal><span style='mso-spacerun:yes'>            </span>#define
+NSLOTS<span style='mso-tab-count:1'>        </span>32<span style='mso-tab-count:
+1'>        </span> /* number of error records */</p>
+
+<p class=MsoNormal><span style='mso-tab-count:1'>            </span><span
+class=GramE>typedef</span> struct ck_errmsg_t {</p>
+
+<p class=MsoNormal><span style='mso-tab-count:2'>                        </span><span
+class=GramE>int</span><span style='mso-tab-count:2'>                    </span>nused;<span
+style='mso-tab-count:1'>  </span><span style='mso-spacerun:yes'>   </span>/*
+number of error records currently in use */</p>
+
+<p class=MsoNormal><span style='mso-tab-count:1'>            </span><span
+style='mso-spacerun:yes'> </span><span style='mso-tab-count:1'>           </span><span
+class=GramE>errmsg_t</span><span style='mso-tab-count:1'>          </span>slot[NSLOTS];<span
+style='mso-spacerun:yes'>  </span>/* array of error records */</p>
+
+<p class=MsoNormal><span style='mso-spacerun:yes'>                </span>}
+ck_errmsg_t;</p>
+
+<p class=MsoNormal><o:p>&nbsp;</o:p></p>
+
+<p class=MsoNormal><span style='mso-tab-count:1'>            </span><span
+class=GramE>typedef</span> errmsg_t<span style='mso-tab-count:1'>         </span>{<span
+style='mso-tab-count:1'>          </span></p>
+
+<p class=MsoNormal><span style='mso-tab-count:2'>                        </span><span
+class=GramE>const</span><span style='mso-tab-count:1'>    </span>char <span
+style='mso-tab-count:1'>    </span>*desc;<span style='mso-tab-count:1'>  </span>/*
+error message */<span style='mso-tab-count:1'>      </span></p>
+
+<p class=MsoNormal><span style='mso-tab-count:2'>                        </span><span
+class=GramE>ck_addr_t</span><span style='mso-tab-count:1'>        </span>addr;<span
+style='mso-tab-count:1'>    </span>/* logical address where error occurs */</p>
+
+<p class=MsoNormal><span style='mso-tab-count:1'>            </span>} errmsg_t;</p>
+
+<p class=MsoNormal><o:p>&nbsp;</o:p></p>
+
+<p class=MsoNormal><b style='mso-bidi-font-weight:normal'>Parameters</b>:</p>
+
+<p class=MsoNormal><span style='mso-spacerun:yes'>        </span><span
+class=GramE><i style='mso-bidi-font-style:normal'>char</i></span><i
+style='mso-bidi-font-style:normal'><span style='mso-spacerun:yes'>     </span><span
+style='mso-spacerun:yes'>          </span><span
+style='mso-spacerun:yes'> </span><span style='mso-spacerun:yes'>  </span>*fname
+<span style='mso-tab-count:1'>  </span><span style='mso-spacerun:yes'> </span></i>IN:<span
+style='mso-spacerun:yes'>  </span><span style='mso-tab-count:1'>    </span>the name
+of the HDF5 file to be validated</p>
+
+<p class=MsoNormal><span style='mso-spacerun:yes'>        </span><i
+style='mso-bidi-font-style:normal'>ck_addr_t<span style='mso-spacerun:yes'> 
+</span><span style='mso-spacerun:yes'>      </span>obj_<span class=GramE>addr<span
+style='font-style:normal'><span style='mso-spacerun:yes'>  </span>IN</span></span></i>:<span
+style='mso-spacerun:yes'>  </span><span style='mso-tab-count:1'>    </span>the
+address of the object header to be validated</p>
+
+<p class=MsoNormal><span style='mso-spacerun:yes'>        </span><i
+style='mso-bidi-font-style:normal'>ck_errmsg_t <span
+style='mso-spacerun:yes'>   </span>*buf</i><span
+style='mso-spacerun:yes'>         </span>OUT: <span style='mso-tab-count:1'>  </span>buffer
+in which to return error information if there <span style='mso-tab-count:4'>                                       </span><span
+style='mso-tab-count:2'>                        </span>is error</p>
+
+<p class=MsoNormal><o:p>&nbsp;</o:p></p>
+
+<p class=MsoNormal><o:p>&nbsp;</o:p></p>
+
+<p class=MsoNormal><b style='mso-bidi-font-weight:normal'>Returns</b>:</p>
+
+<p class=MsoNormal><span style='mso-spacerun:yes'>        </span>Returns 0 if
+the object header associated with <i style='mso-bidi-font-style:normal'>fname</i>
+is compliant.<span style='mso-spacerun:yes'>  </span>Information in <span
+style='mso-tab-count:1'>     </span><i style='mso-bidi-font-style:normal'>buf</i>
+is undefined if provided.</p>
+
+<p class=MsoNormal><span style='mso-spacerun:yes'>        </span>Returns a
+negative value if the object header associated with <i style='mso-bidi-font-style:
+normal'>fname</i> is not compliant.<span style='mso-spacerun:yes'>  </span><span
+style='mso-tab-count:1'>           </span>If <i style='mso-bidi-font-style:
+normal'>buf </i>is non-null, information about the error is filled in.</p>
+
+<p class=MsoNormal><o:p>&nbsp;</o:p></p>
+
+<p class=MsoNormal><o:p>&nbsp;</o:p></p>
+
+</div>
+
+</body>
+
+</html>
