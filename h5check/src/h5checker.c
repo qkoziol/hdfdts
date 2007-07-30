@@ -265,7 +265,7 @@ BT_class_t BT_SNODE[1] = {
 };
 
 static size_t raw_node_sizeof_rkey(global_shared_t *, unsigned);
-static void *raw_node_decode_key(global_shared_t *, unsigned, const uint8_t **);
+static void *raw_node_decode_key(global_shared_t *shared, size_t ndims, const uint8_t **p);
 
 static BT_class_t BT_ISTORE[1] = {
     BT_ISTORE_ID,             /* id                    */

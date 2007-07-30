@@ -35,8 +35,8 @@ somewhere else like /usr/software/{bin,lib},
 ===================
 Platforms supported:
 ===================
-Linux 2.6 (32bit), Solaris 10
-Being ported: AIX 5.3, Linux 2.6 (64bit)
+Linux 2.6 (32bit, 64bit), Solaris 10 (32 bit)
+Being ported: AIX 5.3
 
 ========
 Question:
@@ -44,4 +44,4 @@ Question:
 Email help@hdfgroup.org.
 
 ---------------
-Last update: July 14, 2007
+Last update: July 30, 2007
