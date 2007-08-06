@@ -9,7 +9,7 @@
 #include <errno.h>
 #include <sys/mman.h>
 
-#ifdef FFIO_MACHINE
+#ifdef HAVE_FFIO
 #include "ffio.h"
 #endif
 
@@ -25,6 +25,8 @@
 #define	UNIX_DIRECTIO	3	/* Direct IO */
 #define	FFIO		4	/* basic write */
 #define	UNIX_NONBLOCK	5	/* Non-blocking IO */
+#define	MMAP_IO		6	/* mmap IO */
+#define	DIRECT_MMAP_IO	7	/* Direct mmap IO */
 #define UNIX_SYNC	8	/* Synchronous IO */
 
 /* IO Error Code */

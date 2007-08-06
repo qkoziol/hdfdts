@@ -92,10 +92,11 @@ typedef enum {
 /* if GOPT_PASSMALLOC is defined, use gopts("ab",&argc,&argv,&malloc)       */
 
 #ifdef GOPT_PASSMALLOC
-void *gopts(const char *shortoptswithargs, int* const mainargc, char** const*const mainargv, void *whichmalloc(size_t)){
+void *gopts(const char *shortoptswithargs, int* const mainargc, char** const*const mainargv, void *whichmalloc(size_t))
 #else
-void *gopts(const char *shortoptswithargs, int* const mainargc, char** const*const mainargv){
+void *gopts(const char *shortoptswithargs, int* const mainargc, char** const*const mainargv)
 #endif
+{
 
   bool expectingoptarg=FALSE;
   enum sorts_e *sorts;

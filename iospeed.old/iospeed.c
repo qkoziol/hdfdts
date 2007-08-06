@@ -17,7 +17,7 @@ unsigned char* initBuffer(size_t bsize)
     size_t i;
 
     /* mem_page_size is set in main. */
-    if (posix_memalign(&(void*)buffer, mem_page_size, bsize) != 0) {
+    if (posix_memalign((void**)&buffer, mem_page_size, bsize) != 0) {
         printf("\n Error unable to reserve memory\n\n");
         return NULL;
     }
@@ -303,6 +303,7 @@ double testUnixIO(int operation_type, int type, size_t fsize, size_t bsize, char
     return reportTime(timeval_start);
 }
 
+#if 0
 double test_UnixIO_aligned(int operation_type, int type, size_t fsize, size_t bsize, char *fname)
 {
     int file, flag;
@@ -318,9 +319,9 @@ double test_UnixIO_aligned(int operation_type, int type, size_t fsize, size_t bs
 
     if(bsize % FBSIZE != 0) {
     	alloc_size = (bsize / FBSIZE + 1) * FBSIZE + FBSIZE;
-    	if (posix_memalign(&(void*)copy_buf, mem_page_size, alloc_size) != 0) {
+    	if (posix_memalign((void**)&copy_buf, mem_page_size, alloc_size) != 0) {
             printf("\n Error unable to reserve memory\n\n");
-            return NULL;
+            return IOERR;
     	}
     }
 
@@ -497,7 +498,9 @@ double test_UnixIO_aligned(int operation_type, int type, size_t fsize, size_t bs
 
     return reportTime(timeval_start);
 }
+#endif
 
+#ifdef HAVE_MMAP
 double testMMAP(int operation_type, int type, size_t fsize, size_t bsize, char *fname)
 {
     int file, flag;
@@ -739,8 +742,9 @@ double testMMAP(int operation_type, int type, size_t fsize, size_t bsize, char *
 
     return reportTime(timeval_start);
 }
+#endif
 
-#ifdef FFIO_MACHINE
+#ifdef HAVE_FFIO
 double testFFIO(int operation_type, size_t fsize, size_t bsize, char *fname)
 {    
     int file, flag;
@@ -861,19 +865,23 @@ void printInfo()
         "                1 for Unix I/O\n"
         "                2 for Posix I/O\n"
         "                3 for Unix I/O with O_DIRECT\n"
-#ifdef FFIO_MACHINE
+#ifdef HAVE_FFIO
         "                4 for FFIO\n"
 #endif
         "                5 for Unix I/O with O_NONBlOCK\n"
+#ifdef HAVE_MMAP
         "                6 for mmap I/O\n"
         "                7 for Direct I/O with mmap\n"
+#endif
         "                8 for Synchronous Unix I/O\n"
         "    -r          read only\n"
         "    -w          write only (default to do both read and write)\n"
         "    -b <bsize>  data transfer block size (default 1KB=1024B)\n"
         "    -s <fsize>  total file size in MB=1024*1024B (default 128)\n"
         "    -f <fname>  temporary data file name (default current directory)\n"
+#ifdef HAVE_ALIGNED
         "    -a		 force I/O to align the data by file block size\n"
+#endif
         "    help        prints this message\n"
     );
 }
@@ -914,12 +922,16 @@ main (int argc, char **argv)
     mem_page_size = getpagesize();
     block_size = mem_page_size;		/* default to memory page size */
     file_size = 128 * MB;       
-    if ((validOptions=malloc(NUMOPTIONS*sizeof(char*))) == NULL)
-        return -1;
+    if ((validOptions=malloc(NUMOPTIONS*sizeof(char*))) == NULL){
+	fprintf(stderr, "Out of memory. Abort.\n");
+        return 2;
+    }
     for(i = 0; i < NUMOPTIONS; i++)
     {
-        if ((validOptions[i]=malloc(1*sizeof(char))) == NULL)
-            return -1;
+        if ((validOptions[i]=malloc(1*sizeof(char))) == NULL){
+	    fprintf(stderr, "Out of memory. Abort.\n");
+            return 2;
+	}
     }
 
     validOptions[0][0]='m';
@@ -939,14 +951,16 @@ main (int argc, char **argv)
     options=gopts("mbsf",&argc,&argv);    
     if(options==NULL)
     {
+	fprintf(stderr, "Option parser setup error. Abort.\n");
         printInfo();
-        return -1;
+        return 1;
     }
     /* Checking*/
    if ((!isValid(options,(const char**)validOptions,NUMOPTIONS)) && (oldargc > 1))
     {
+	fprintf(stderr, "Option parsing error. Abort.\n");
         printInfo();
-        return -1;
+        return 1;
     }
 
     /*mode*/
@@ -991,7 +1005,7 @@ main (int argc, char **argv)
                     printf(" Mode=Direct Unix I/O  ");      
                 }
             }
-#ifdef FFIO_MACHINE
+#ifdef HAVE_FFIO
             else if (*ptr == '4')
             {                
                 mode = FFIO;
@@ -1010,9 +1024,10 @@ main (int argc, char **argv)
                     printf(" Mode=Non-Blocking Unix I/O ");      
                 }
             }
+#ifdef HAVE_MMAP
             else if (*ptr == '6')
             {
-                mode = 6;
+                mode = MMAP_IO;
                 if (header)
                 {
                     printf(" Mode=Unix I/O with mmap");      
@@ -1020,12 +1035,13 @@ main (int argc, char **argv)
             }
             else if (*ptr == '7')
             {
-                mode = 7;
+                mode = DIRECT_MMAP_IO;
                 if (header)
                 {
                     printf(" Mode=Direct I/O with mmap");      
                 }
             }
+#endif
             else if (*ptr == '8')
             {
                 mode = UNIX_SYNC;
@@ -1169,10 +1185,12 @@ main (int argc, char **argv)
     /*run*/    
   switch(mode){
     case UNIX_BASIC:
+#ifdef HAVE_ALIGNED
       if(aligned)
-      	elapsed_time = test_UnixIO_aligned(input_operation,UNIX_BASIC,file_size, 
+      	elapsed_time = test_UnixIO_aligned(input_operation,UNIX_BASIC,file_size,
 				block_size, filename);
       else
+#endif
       	elapsed_time = testUnixIO(input_operation,UNIX_BASIC,file_size, 
 				block_size, filename);
       break;
@@ -1180,42 +1198,52 @@ main (int argc, char **argv)
       elapsed_time = testPosixIO(input_operation,file_size, block_size, filename);
       break;
     case UNIX_DIRECTIO:
+#ifdef HAVE_ALIGNED
       if(aligned)
       	elapsed_time = test_UnixIO_aligned(input_operation,UNIX_DIRECTIO,file_size, 
 				block_size, filename);
-      else {
+      else
+#endif
+      {
 	printf("Data has to be aligned for Direct I/O.\n");
 	elapsed_time = IOERR;
       }
       break;
-#ifdef FFIO_MACHINE
+#ifdef HAVE_FFIO
     case FFIO:
       elapsed_time = testFFIO(input_operation,file_size, block_size, filename);
       break;
 #endif
     case UNIX_NONBLOCK:
+#ifdef HAVE_ALIGNED
       if(aligned)
         elapsed_time = test_UnixIO_aligned(input_operation,UNIX_NONBLOCK,file_size, 
 				block_size, filename);
       else
+#endif
         elapsed_time = testUnixIO(input_operation,UNIX_NONBLOCK,file_size, 
 				block_size, filename);
       break;
-    case 6:
+#ifdef HAVE_MMAP
+    case MMAP_IO:
       elapsed_time = testMMAP(input_operation, UNIX_BASIC, file_size, block_size, filename);
       break;
-    case 7:
+    case DIRECT_MMAP_IO:
       elapsed_time = testMMAP(input_operation, UNIX_DIRECTIO, file_size, block_size, filename);
       break;
+#endif
     case UNIX_SYNC:
+#ifdef HAVE_ALIGNED
       if(aligned)
         elapsed_time = test_UnixIO_aligned(input_operation,UNIX_SYNC,file_size, 
 				block_size, filename);
       else
+#endif
         elapsed_time = testUnixIO(input_operation,UNIX_SYNC,file_size, 
 				block_size, filename);
       break;
     default:
+	fprintf(stderr, "Unknown IO mode(%d). Abort\n", mode);
         printInfo();
         return 1;
         break;
@@ -1234,7 +1262,7 @@ main (int argc, char **argv)
   free(options);
   /*remove(filename);*/
   if (elapsed_time < 0)
-      return -1;
+      return 3;
   return 0;
 }
 
