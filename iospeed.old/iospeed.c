@@ -303,7 +303,7 @@ double testUnixIO(int operation_type, int type, size_t fsize, size_t bsize, char
     return reportTime(timeval_start);
 }
 
-#if 0
+#ifdef HAVE_ALIGNED
 double test_UnixIO_aligned(int operation_type, int type, size_t fsize, size_t bsize, char *fname)
 {
     int file, flag;
@@ -779,7 +779,7 @@ double testFFIO(int operation_type, size_t fsize, size_t bsize, char *fname)
         }
         if (operation_type != READ_TEST)
         {
-            iospeed_min ((fsize/ reportTime(timeval_start)) < iospeed_min)
+            if ((fsize/ reportTime(timeval_start)) < iospeed_min)
             {
 		/* IO speed too slow. Abort. */
                 return IOSLOW;
