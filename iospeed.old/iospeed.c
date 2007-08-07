@@ -10,22 +10,38 @@
 /* memory page size needed for the Direct IO option. */
 size_t mem_page_size;
 
-unsigned char* initBuffer(size_t bsize)
+/* get a new buffer space that is memory aligned */
+unsigned char* newalignedbuffer(size_t bsize)
 {
-    unsigned char *buffer, *p;
-    int  ret;
-    size_t i;
+    unsigned char *buffer;
 
+#ifdef HAVE_ALIGNED
     /* mem_page_size is set in main. */
+printf("calling posix_memalign with bsize=%ld\n", (long)bsize);
     if (posix_memalign((void**)&buffer, mem_page_size, bsize) != 0) {
-        printf("\n Error unable to reserve memory\n\n");
+        printf("\n Error unable to reserve aligned memory\n\n");
         return NULL;
     }
 
+    return buffer;
+#else
+    printf("Error: no support for aligned memory.\n");
+    return NULL;
+#endif
+}
+
+/* get buffer space that is memory aligned and initialize it to zeros. */
+unsigned char* initBuffer(size_t bsize)
+{
+    unsigned char *buffer, *p;
+    size_t i;
+
+    if (NULL==(buffer=newalignedbuffer(bsize)))
+	return NULL;
+
     /*Initialize the buffer*/
-    p = buffer;
-    for(i=0; i<bsize; i++, p++)
-	*p = (unsigned char)i;
+    for(i=0, p=buffer; i<bsize; i++)
+	*p++ = (unsigned char)i;
 
     return buffer;
 }
@@ -303,7 +319,6 @@ double testUnixIO(int operation_type, int type, size_t fsize, size_t bsize, char
     return reportTime(timeval_start);
 }
 
-#ifdef HAVE_ALIGNED
 double test_UnixIO_aligned(int operation_type, int type, size_t fsize, size_t bsize, char *fname)
 {
     int file, flag;
@@ -319,10 +334,8 @@ double test_UnixIO_aligned(int operation_type, int type, size_t fsize, size_t bs
 
     if(bsize % FBSIZE != 0) {
     	alloc_size = (bsize / FBSIZE + 1) * FBSIZE + FBSIZE;
-    	if (posix_memalign((void**)&copy_buf, mem_page_size, alloc_size) != 0) {
-            printf("\n Error unable to reserve memory\n\n");
+	if (NULL==(copy_buf=newalignedbuffer(alloc_size)))
             return IOERR;
-    	}
     }
 
     /*start timing*/
@@ -331,14 +344,23 @@ double test_UnixIO_aligned(int operation_type, int type, size_t fsize, size_t bs
         gettimeofday(&timeval_start,NULL);
     }    
     /* create file*/
-    if(type == UNIX_DIRECTIO)    
+
+    switch (type){
+#ifdef HAVE_DIRECTIO
+    case UNIX_DIRECTIO:
         flag = O_CREAT|O_TRUNC|O_RDWR|O_DIRECT;
-    else if (type == UNIX_NONBLOCK)
+	break;
+#endif
+    case  UNIX_NONBLOCK:
         flag = O_CREAT|O_TRUNC|O_RDWR|O_NONBLOCK;
-    else if (type == UNIX_SYNC)
+	break;
+    case  UNIX_SYNC:
         flag = O_CREAT|O_TRUNC|O_RDWR|O_SYNC;
-    else
-        flag = O_CREAT|O_TRUNC|O_RDWR;
+	break;
+    default:
+	flag = O_CREAT|O_TRUNC|O_RDWR;
+	break;
+    }
 
     if ((file=open(fname,flag,S_IRWXU))== -1)
     {
@@ -429,14 +451,22 @@ double test_UnixIO_aligned(int operation_type, int type, size_t fsize, size_t bs
         gettimeofday(&timeval_start,NULL);
     }
  
-    if(type == UNIX_DIRECTIO)    
+    switch (type){
+#ifdef HAVE_DIRECTIO
+    case UNIX_DIRECTIO:
         flag = O_RDONLY | O_DIRECT;
-    else if (type == UNIX_NONBLOCK)
+	break;
+#endif
+    case  UNIX_NONBLOCK:
         flag = O_RDONLY | O_NONBLOCK;
-    else if (type == UNIX_SYNC)
+	break;
+    case  UNIX_SYNC:
         flag = O_RDONLY | O_SYNC;
-    else
-        flag = O_RDONLY;
+	break;
+    default:
+	flag = O_RDONLY;
+	break;
+    }
 
     if ((file=open(fname,flag))== -1)
     {
@@ -498,7 +528,6 @@ double test_UnixIO_aligned(int operation_type, int type, size_t fsize, size_t bs
 
     return reportTime(timeval_start);
 }
-#endif
 
 #ifdef HAVE_MMAP
 double testMMAP(int operation_type, int type, size_t fsize, size_t bsize, char *fname)
@@ -526,8 +555,14 @@ double testMMAP(int operation_type, int type, size_t fsize, size_t bsize, char *
     }    
 
     /* create file*/
-    if(type == UNIX_DIRECTIO)    
+    if(type == UNIX_DIRECTIO){
+#ifdef HAVE_DIRECTIO
         flag = O_CREAT|O_TRUNC|O_RDWR|O_DIRECT;
+#else
+	printf(" DIRECT IO not supported\n");
+        return IOERR;
+#endif
+    }
     else
         flag = O_CREAT|O_TRUNC|O_RDWR;
 
@@ -646,8 +681,14 @@ double testMMAP(int operation_type, int type, size_t fsize, size_t bsize, char *
         gettimeofday(&timeval_start,NULL);
     }
  
-    if(type == UNIX_DIRECTIO)    
+    if(type == UNIX_DIRECTIO){
+#ifdef HAVE_DIRECTIO
         flag = O_RDONLY | O_DIRECT;
+#else
+	printf(" DIRECT IO not supported\n");
+        return IOERR;
+#endif
+    }
     else
         flag = O_RDONLY;
 
@@ -864,14 +905,18 @@ void printInfo()
 	"    -m          I/O API <mode> to test.\n"
         "                1 for Unix I/O\n"
         "                2 for Posix I/O\n"
+#ifdef HAVE_DIREC
         "                3 for Unix I/O with O_DIRECT\n"
+#endif
 #ifdef HAVE_FFIO
         "                4 for FFIO\n"
 #endif
         "                5 for Unix I/O with O_NONBlOCK\n"
 #ifdef HAVE_MMAP
         "                6 for mmap I/O\n"
+#ifdef HAVE_DIRECTIO
         "                7 for Direct I/O with mmap\n"
+#endif
 #endif
         "                8 for Synchronous Unix I/O\n"
         "    -r          read only\n"
@@ -879,9 +924,7 @@ void printInfo()
         "    -b <bsize>  data transfer block size (default 1KB=1024B)\n"
         "    -s <fsize>  total file size in MB=1024*1024B (default 128)\n"
         "    -f <fname>  temporary data file name (default current directory)\n"
-#ifdef HAVE_ALIGNED
         "    -a		 force I/O to align the data by file block size\n"
-#endif
         "    help        prints this message\n"
     );
 }
@@ -997,6 +1040,7 @@ main (int argc, char **argv)
                     printf(" Mode=Posix I/O ");      
                 }
             }
+#ifdef HAVE_DIRECTIO
             else if (*ptr == '3')
             {
                 mode = UNIX_DIRECTIO;
@@ -1005,6 +1049,7 @@ main (int argc, char **argv)
                     printf(" Mode=Direct Unix I/O  ");      
                 }
             }
+#endif
 #ifdef HAVE_FFIO
             else if (*ptr == '4')
             {                
@@ -1033,6 +1078,7 @@ main (int argc, char **argv)
                     printf(" Mode=Unix I/O with mmap");      
                 }
             }
+#ifdef HAVE_DIRECTIO
             else if (*ptr == '7')
             {
                 mode = DIRECT_MMAP_IO;
@@ -1041,6 +1087,7 @@ main (int argc, char **argv)
                     printf(" Mode=Direct I/O with mmap");      
                 }
             }
+#endif
 #endif
             else if (*ptr == '8')
             {
@@ -1128,8 +1175,11 @@ main (int argc, char **argv)
       return 1;
       break;
     }
-    if(aligned)
+    if(aligned){
 	printf("forced to be aligned (only meaningful for Unix, Direct, Synchronous, and Non-block I/O).\n");
+	printf("Memory alignment not supported. Abort.\n");
+	return 1;
+    }
     else
 	printf("not aligned (only meaningful for Unix, Direct, Synchronous, and Non-block I/O).\n");
            
@@ -1185,12 +1235,10 @@ main (int argc, char **argv)
     /*run*/    
   switch(mode){
     case UNIX_BASIC:
-#ifdef HAVE_ALIGNED
       if(aligned)
       	elapsed_time = test_UnixIO_aligned(input_operation,UNIX_BASIC,file_size,
 				block_size, filename);
       else
-#endif
       	elapsed_time = testUnixIO(input_operation,UNIX_BASIC,file_size, 
 				block_size, filename);
       break;
@@ -1198,12 +1246,10 @@ main (int argc, char **argv)
       elapsed_time = testPosixIO(input_operation,file_size, block_size, filename);
       break;
     case UNIX_DIRECTIO:
-#ifdef HAVE_ALIGNED
       if(aligned)
       	elapsed_time = test_UnixIO_aligned(input_operation,UNIX_DIRECTIO,file_size, 
 				block_size, filename);
       else
-#endif
       {
 	printf("Data has to be aligned for Direct I/O.\n");
 	elapsed_time = IOERR;
@@ -1215,12 +1261,10 @@ main (int argc, char **argv)
       break;
 #endif
     case UNIX_NONBLOCK:
-#ifdef HAVE_ALIGNED
       if(aligned)
         elapsed_time = test_UnixIO_aligned(input_operation,UNIX_NONBLOCK,file_size, 
 				block_size, filename);
       else
-#endif
         elapsed_time = testUnixIO(input_operation,UNIX_NONBLOCK,file_size, 
 				block_size, filename);
       break;
