@@ -1,12 +1,5 @@
 #include "iospeed.h"
 
-#define READWRITE_TEST 0
-#define WRITE_TEST  1
-#define READ_TEST   2
-#define iospeed_min (1 * KB)
-#define DEFAULT_FILE_NAME "./test_temp_file.dat"
-#define FBSIZE	(4*KB)
-
 /* memory page size needed for the Direct IO option. */
 size_t mem_page_size;
 
@@ -31,12 +24,16 @@ printf("calling posix_memalign with bsize=%ld\n", (long)bsize);
 }
 
 /* get buffer space that is memory aligned and initialize it to zeros. */
-unsigned char* initBuffer(size_t bsize)
+unsigned char* initBuffer(size_t bsize, int mem_mode)
 {
     unsigned char *buffer, *p;
     size_t i;
 
-    if (NULL==(buffer=newalignedbuffer(bsize)))
+    if (mem_mode==MEM_aligned)
+	buffer=newalignedbuffer(bsize);
+    else
+	buffer=malloc(bsize);
+    if (NULL==buffer)
 	return NULL;
 
     /*Initialize the buffer*/
@@ -90,7 +87,7 @@ double testPosixIO(int operation_type, size_t fsize, size_t bsize, char *fname)
     struct timeval timeval_start;    
     unsigned char* buffer;
 
-    if ((buffer = initBuffer(bsize)) == NULL)
+    if ((buffer = initBuffer(bsize, MEM_none)) == NULL)
         return IOERR;
     if (operation_type != READ_TEST)
     {
@@ -199,7 +196,7 @@ double testUnixIO(int operation_type, int type, size_t fsize, size_t bsize, char
     struct timeval timeval_diff;
     unsigned char* buffer;
 
-    if ((buffer = initBuffer(bsize)) == NULL)
+    if ((buffer = initBuffer(bsize, MEM_none)) == NULL)
         return IOERR;
 
     /*start timing*/
@@ -329,7 +326,7 @@ double test_UnixIO_aligned(int operation_type, int type, size_t fsize, size_t bs
     struct timeval timeval_diff;
     unsigned char *data_buf, *copy_buf, *p;
 
-    if ((data_buf = initBuffer(bsize)) == NULL)
+    if ((data_buf = initBuffer(bsize, MEM_aligned)) == NULL)
         return IOERR;
 
     if(bsize % FBSIZE != 0) {
@@ -545,7 +542,7 @@ double testMMAP(int operation_type, int type, size_t fsize, size_t bsize, char *
         return IOERR;
     }
  
-    if ((buffer = initBuffer(bsize)) == NULL)
+    if ((buffer = initBuffer(bsize, MEM_aligned)) == NULL)
         return IOERR;
 
     /*start timing*/
@@ -795,7 +792,7 @@ double testFFIO(int operation_type, size_t fsize, size_t bsize, char *fname)
     struct timeval timeval_diff;
     unsigned char* buffer;
 
-    if ((buffer = initBuffer(bsize)) == NULL)
+    if ((buffer = initBuffer(bsize, MEM_none)) == NULL)
         return IOERR;
     if (operation_type != READ_TEST)
     {
@@ -1176,9 +1173,12 @@ main (int argc, char **argv)
       break;
     }
     if(aligned){
+#ifdef HAVE_ALIGNED
 	printf("forced to be aligned (only meaningful for Unix, Direct, Synchronous, and Non-block I/O).\n");
+#else
 	printf("Memory alignment not supported. Abort.\n");
 	return 1;
+#endif
     }
     else
 	printf("not aligned (only meaningful for Unix, Direct, Synchronous, and Non-block I/O).\n");

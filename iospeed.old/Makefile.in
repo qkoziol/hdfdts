@@ -13,8 +13,9 @@ CC=gcc
 # Uncomment this if you want to use MMAP
 #MMAP_FLAGS=-DHAVE_MMAP
 
-# Uncomment this if Aligned memory is supported.
-#ALIGNED_FLAGS=-DHAVE_ALIGNED
+# Comment this if Aligned memory support is not desired or if posix_memalign()
+# is not supported.
+ALIGNED_FLAGS=-DHAVE_ALIGNED
 
 # Uncomment this if the definition of posix_memalign() is not found.
 #XOPEN_FLAGS=-D_XOPEN_SOURCE=600

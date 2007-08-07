@@ -29,8 +29,21 @@
 #define	DIRECT_MMAP_IO	7	/* Direct mmap IO */
 #define UNIX_SYNC	8	/* Synchronous IO */
 
+/* Different test types */
+#define READWRITE_TEST 0
+#define WRITE_TEST  1
+#define READ_TEST   2
+
+/* different memory modes */
+#define MEM_none	0	/* memory that has nothing special */
+#define MEM_aligned	1	/* memory that is aligned */
+
 /* IO Error Code */
 #define IOERR		-1	/* IO error occured */
 #define IOSLOW		-2	/* IO speed too slow */
+
+#define iospeed_min (1 * KB)
+#define DEFAULT_FILE_NAME "./test_temp_file.dat"
+#define FBSIZE	(4*KB)
 
 #define NUMOPTIONS	7	/* number of options */
