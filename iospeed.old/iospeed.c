@@ -11,7 +11,9 @@ unsigned char* newalignedbuffer(size_t bsize)
 
 #ifdef HAVE_ALIGNED
     /* mem_page_size is set in main. */
-printf("calling posix_memalign with bsize=%ld\n", (long)bsize);
+#ifndef NDEBUG
+    printf("calling posix_memalign with bsize=%ld\n", (long)bsize);
+#endif
     if (posix_memalign((void**)&buffer, mem_page_size, bsize) != 0) {
         printf("\n Error unable to reserve aligned memory\n\n");
         return NULL;
