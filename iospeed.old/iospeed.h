@@ -42,7 +42,7 @@
 #define IOERR		-1	/* IO error occured */
 #define IOSLOW		-2	/* IO speed too slow */
 
-#define iospeed_min (1 * KB)
+#define IOSPEED_MIN (0.5*MB)	/* Default minimum acceptable io speed (.5MB/sec) */
 #define DEFAULT_FILE_NAME "./test_temp_file.dat"
 #define FBSIZE	(4*KB)
 

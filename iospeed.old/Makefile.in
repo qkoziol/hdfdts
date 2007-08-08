@@ -32,7 +32,7 @@ CFLAGS=-DNDEBUG $(CPPFLAGS)
 LIBS=$(FFIO_LIBS)
 
 
-iospeed: gopt.c iospeed.c
+iospeed: gopt.c iospeed.c iospeed.h
 	$(CC) $(CFLAGS) gopt.c iospeed.c $(LIBS) -o $@
 
 clean:

@@ -1,7 +1,8 @@
 #include "iospeed.h"
 
 /* memory page size needed for the Direct IO option. */
-size_t mem_page_size;
+size_t	mem_page_size;
+float	iospeed_min = IOSPEED_MIN;
 
 /* get a new buffer space that is memory aligned */
 unsigned char* newalignedbuffer(size_t bsize)
@@ -233,6 +234,10 @@ double testUnixIO(int operation_type, int type, size_t fsize, size_t bsize, char
         }
         if(operation_type != READ_TEST)
         {
+#ifndef NDEBUG
+	    printf("iospeed_min=%d, current speed=%g\n",\
+		iospeed_min, (fsize/ reportTime(timeval_start)));
+#endif
             if ((fsize/ reportTime(timeval_start)) < iospeed_min)
             {
 		/* IO speed too slow. Abort. */
@@ -1296,7 +1301,7 @@ main (int argc, char **argv)
   if (elapsed_time  == IOERR)
       printf("IO Error encountered.  Test aborted.\n");
   else if (elapsed_time  == IOSLOW)
-      printf("IO Speed too slow (<%dMB/s). Test aborted.\n", iospeed_min/MB);
+      printf("IO Speed too slow (<%gMB/s). Test aborted.\n", iospeed_min/MB);
   else
   {
       printf("elapsed time=%fs,", elapsed_time);      
