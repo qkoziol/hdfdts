@@ -36,4 +36,4 @@ iospeed: gopt.c iospeed.c iospeed.h
 	$(CC) $(CFLAGS) gopt.c iospeed.c $(LIBS) -o $@
 
 clean:
-	rm -f iospeed
+	rm -f iospeed test_temp_file.dat
