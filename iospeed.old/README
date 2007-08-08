@@ -16,6 +16,7 @@ IO API's.
 	Direct I/O with mmap.
 
 How to build:
+    % cp Makefile.in Makefile	# then customize it accordingly.
     % make clean	# clean out previous built binary
     % make		# to build iospeed
 
