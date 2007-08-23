@@ -1,10 +1,3 @@
 #!/bin/csh
-set TODAY=`date +%y%m%d`
 set snapshotname=snapshots-hdf5_1_6
-set hosttype=$myclustername
-setenv HDF5_PARAPREFIX $HOME/$hosttype/scr/$snapshotname
-
-cd $HOME/$snapshotname
-touch log/CVS_LOG_$TODAY
-cd current
-bin/runtest -nocvs -configname $hosttype
+source snaptest_common
