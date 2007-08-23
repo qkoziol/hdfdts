@@ -8,14 +8,18 @@ extra_option=
 
 # Default job_time is 2 hours.
 # flash is slow and need more time.  
-# qsc's Testdir disks are slow, need more time.
-# qsc's Testdir disks are much faster now.  Need normal time.
+# qsc's try use smallq.
 # flash: can only use largeq, longq. Use longq which is less crowded.
 # Stopped asking for longq since it is crowded.
 case `hostname` in
     ffe*)
 	job_time=180	# 3 hours
 	#extra_option="-q longq"
+	;;
+    qscfe*)
+	job_time=120	# 2 hours
+	# smallq is too crowded. use default devq.
+	#extra_option="-q smallq"
 	;;
     *)
 	job_time=120	# 2 hours
