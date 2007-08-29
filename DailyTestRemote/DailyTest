@@ -10,7 +10,7 @@ DEBUGMODE=""		# change to -debug for debug mode
 
 # Setup
 HOSTNAME=`hostname | cut -f1 -d.`       # no domain part
-TODAY=`date +%y%m%d`
+TODAY=`date +%m%d%a`
 H5VER=			# default to current CVS version
 H5VERSTR=		# default to current CVS version
 TITLE="HDF5 Tests on $TODAY"
@@ -53,11 +53,11 @@ done
 # If in debug mode, email output to myself; else to the "group".
 if [ -n "$DEBUGMODE" ]; then
     echo "******** DEBUGMODE is $DEBUGMODE ************"
-    TOWHOM_PASSED=acheng@ncsa.uiuc.edu
-    TOWHOM_FAILED=acheng@ncsa.uiuc.edu
+    TOWHOM_PASSED=acheng@hdfgroup.org
+    TOWHOM_FAILED=acheng@hdfgroup.org
 else
-    TOWHOM_PASSED=acheng@ncsa.uiuc.edu
-    TOWHOM_FAILED=acheng@ncsa.uiuc.edu
+    TOWHOM_PASSED=acheng@hdfgroup.org
+    TOWHOM_FAILED=acheng@hdfgroup.org
 fi
 
 # Setup test directories
@@ -76,7 +76,8 @@ RELEASE_NOT=${LOGDIR}/../release_not		# Do not release
 RELEASED=${LOGDIR}/RELEASED_${TODAY}
 WATCHERFILE=${LOGDIR}/../watchers		# List of platform watchers
 SOURCEDIR=${LOGDIR}/../current			# Source directory
-CVSDATE=$SOURCEDIR/cvs_lastdate			# Date of last cvs update
+CVSDATE=$SOURCEDIR/src_lastdate			# Date of last source update
+TMP_OUTPUT=${LOGDIR}/"#"*.out			# output from different machines
 
 # Setup Mailing command and Report title
 MAIL=Mail
@@ -93,10 +94,14 @@ case "$CMD" in
 	# to OLD.
 	# Clean up files older than 10 days in OLD.
 	(   
-	    cd $LOGDIR
+	    if ! cd $LOGDIR; then
+		echo $LOGDIR not found. Clean command aborted.
+		exit 1
+	    fi
 	    oldfiles=`find * -type d -prune -o -type f ! -name '*'$TODAY'*' -print`
 	    test -n "$oldfiles" && mv $oldfiles OLD/.
-	    find OLD -mtime +21 -exec rm '{}' \;
+	    echo Purging old files
+	    find OLD -mtime +21 -print -exec rm '{}' \;
 	)
 	;;
     report)
@@ -150,6 +155,19 @@ case "$CMD" in
 	     echo "============================="
 	     cat $FAILEDDETAIL
 	 fi
+	 if [ -n "$TMP_OUTPUT" ]; then
+	     echo ""
+	     echo "============================="
+	     echo "   Tests Details"
+	     echo "============================="
+	     for f in $TMP_OUTPUT; do
+		 echo "========================"
+		 echo "   $f"
+		 echo "========================"
+		cat $f
+		rm $f
+	     done
+	 fi | tee -a $REPORTED
 	 echo ""
 	) | $MAIL -s "$REPORT_TITLE" $TOWHOM
 	;;
