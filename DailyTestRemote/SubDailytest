@@ -53,7 +53,7 @@ default:
 breaksw
 endsw
 
-cd $HOME/JOBS
+cd $HOME/DailyTest
 set echo
 # run one snaptest at a time so that parallel tests won't conflict.
 # Can run multiple parallel jobs since each specifies its own $HDF5_PARAPREFIX.

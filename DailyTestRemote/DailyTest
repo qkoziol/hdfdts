@@ -93,16 +93,15 @@ case "$CMD" in
 	# Clean up LOGDIR by moving all files that are not "of today"
 	# to OLD.
 	# Clean up files older than 10 days in OLD.
-	(   
-	    if ! cd $LOGDIR; then
-		echo $LOGDIR not found. Clean command aborted.
-		exit 1
-	    fi
+	(if cd $LOGDIR; then
 	    oldfiles=`find * -type d -prune -o -type f ! -name '*'$TODAY'*' -print`
 	    test -n "$oldfiles" && mv $oldfiles OLD/.
 	    echo Purging old files
 	    find OLD -mtime +21 -print -exec rm '{}' \;
-	)
+	else
+	    echo $LOGDIR not found. Clean command aborted.
+	    exit 1
+	fi)
 	;;
     report)
 	# gather up the test results and report it.
@@ -172,7 +171,7 @@ case "$CMD" in
 	) | $MAIL -s "$REPORT_TITLE" $TOWHOM
 	;;
     launch)
-	LAUNCH_CMD=JOBS/SubDailytest
+	LAUNCH_CMD=DailyTest/SubDailytest
 	# Make sure at $HOME
 	(
 	cd
