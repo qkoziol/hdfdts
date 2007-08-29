@@ -3,15 +3,16 @@
 #bsub -q threadq -o $taskname.$nproc.$today.$$ -W $job_time $* $task
 
 nproc=4
-myemail=acheng@ncsa.uiuc.edu
+myemail=acheng@hdfgroup.org
 extra_option=
 
-# Default job_time is 2 hours.
-# flash is slow and need more time.  
-# qsc's try use smallq.
-# flash: can only use largeq, longq. Use longq which is less crowded.
-# Stopped asking for longq since it is crowded.
 case `hostname` in
+    # LANL Hosts
+    # Default job_time is 2 hours.
+    # flash is slow and need more time.  
+    # qsc's try use smallq.
+    # flash: can only use largeq, longq. Use longq which is less crowded.
+    # Stopped asking for longq since it is crowded.
     ffe*)
 	job_time=180	# 3 hours
 	#extra_option="-q longq"
