@@ -1,28 +1,56 @@
 #!/bin/csh
 # Do not use -f since it needs initialization when run by cron.
 
-switch ( `uname -n` )
-case pink.lanl.gov:
-case pfe[12].lanl.gov:
-    set hosttype=pink
-    breaksw
-case ffe[12].lanl.gov:
-    set hosttype=flash
-    breaksw
-case qsc[0-9]*:
-case qscfe[12]:
-    set hosttype=qsc
-    breaksw
-case theta:
-case t0[0-9]:
-    set hosttype=theta
-    breaksw
-case lambda:
-    set hosttype=lambda
-    breaksw
+switch ( $mydomain )
+case lanl:
+    # LANL hosts
+    set SUBJOBCMD=subjob
+    switch ( `uname -n` )
+    case pink.lanl.gov:
+    case pfe[12].lanl.gov:
+	set hosttype=pink
+	breaksw
+    case ffe[12].lanl.gov:
+	set hosttype=flash
+	breaksw
+    case qsc[0-9]*:
+    case qscfe[12]:
+	set hosttype=qsc
+	breaksw
+    case theta:
+    case t0[0-9]:
+	set hosttype=theta
+	breaksw
+    case lambda:
+	set hosttype=lambda
+	breaksw
+    default:
+	echo "Unknown system name (`uname -n`).  Aborted."
+	exit 1
+    endsw
+    breaksw	# end of LANL hosts
+case sandia:
+    # Sandia hosts
+    set SUBJOBCMD=csh		# run it by csh.
+    switch ( $myclustername )
+    case spirit:
+	set hosttype=spirit
+	breaksw
+    case liberty:
+	set hosttype=liberty
+	breaksw
+    case tbird:
+	set hosttype=tbird
+	breaksw
+    default:
+	echo "Unknown system name (`uname -n`).  Aborted."
+	exit 1
+    endsw
+    breaksw	# end of Sandia hosts
 default:
-    echo "Unknown system name (`uname -n`).  Aborted."
+    echo "Unknown mydomain ($mydomain).  Aborted."
     exit 1
+breaksw
 endsw
 
 cd $HOME/JOBS
@@ -31,6 +59,7 @@ set echo
 # Can run multiple parallel jobs since each specifies its own $HDF5_PARAPREFIX.
 set depend=""
 foreach job (snaptest_hdf5 snaptest_hdf5_1_6)
-    subjob $job -J ${job}_$hosttype $depend
+    $SUBJOBCMD $job
+#    subjob $job -J ${job}_$hosttype $depend
 #    set depend="-w ended($job)"
 end
