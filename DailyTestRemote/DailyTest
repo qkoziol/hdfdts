@@ -60,8 +60,17 @@ else
     TOWHOM_FAILED=acheng@hdfgroup.org
 fi
 
+#################################
 # Setup test directories
-LOGDIR=$HOME/snapshots-hdf5${H5VERSTR}/log
+#################################
+SNAPYARD=$HOME/snapshots-hdf5${H5VERSTR}
+# initial processing of setup option if requested
+if [ ! -d ${SNAPYARD} ]; then
+    echo "SNAPYARD ($SNAPYARD) does not exist"
+    exit 1
+fi
+
+LOGDIR=${SNAPYARD}/log
 LOGDIRLOCK=${LOGDIR}/.lock-${HOSTNAME}
 LOGFILE=${LOGDIR}/${PROGRAMNAME}-${HOSTNAME}_${TODAY}
 FAILEDLOG=${LOGDIR}/FAILED_LOG_${TODAY}
@@ -71,11 +80,11 @@ SKIPPEDLOG=${LOGDIR}/SKIPPED_LOG_${TODAY}
 TIMELOG=${LOGDIR}/TIME_LOG_${TODAY}
 REPORTED=${LOGDIR}/REPORTED_${TODAY}
 SNAPSHOTLOG=${LOGDIR}/SNAPSHOT_LOG_${TODAY}
-RELEASE_ASAP=${LOGDIR}/../release_asap		# make a special release asap
-RELEASE_NOT=${LOGDIR}/../release_not		# Do not release
+RELEASE_ASAP=${SNAPYARD}/release_asap		# make a special release asap
+RELEASE_NOT=${SNAPYARD}/release_not		# Do not release
 RELEASED=${LOGDIR}/RELEASED_${TODAY}
-WATCHERFILE=${LOGDIR}/../watchers		# List of platform watchers
-SOURCEDIR=${LOGDIR}/../current			# Source directory
+WATCHERFILE=${SNAPYARD}/watchers		# List of platform watchers
+SOURCEDIR=${SNAPYARD}/current			# Source directory
 CVSDATE=$SOURCEDIR/src_lastdate			# Date of last source update
 TMP_OUTPUT=${LOGDIR}/"#"*.out			# output from different machines
 
