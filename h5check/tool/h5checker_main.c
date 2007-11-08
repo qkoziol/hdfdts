@@ -20,7 +20,6 @@ int main(int argc, char **argv)
 	FILE 		*inputfd;
 	driver_t	*thefile;
 	global_shared_t	*shared;
-	int             prev_entries = -1;
 
 
 	/* command line declarations */
@@ -189,9 +188,9 @@ int main(int argc, char **argv)
 	}
 
 	if (g_obj_addr != CK_ADDR_UNDEF)
-		ret = check_obj_header(thefile, g_obj_addr, 0, NULL, prev_entries);
+		ret = check_obj_header(thefile, g_obj_addr, NULL);
 	else 
-		ret = check_obj_header(thefile, shared->root_grp->header, NULL, NULL, prev_entries);
+		ret = check_obj_header(thefile, shared->root_grp->header, NULL);
 	if (ret != SUCCEED) {
 		error_push(ERR_LEV_0, ERR_NONE_SEC, 
 		  "Errors found when checking the object header", 

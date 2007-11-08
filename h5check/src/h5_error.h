@@ -7,38 +7,48 @@ typedef enum primary_err_t {
 	ERR_INTERNAL
 } primary_err_t;
 
+
 typedef enum secondary_err_t {
 	ERR_NONE_SEC 	= 0,
         ERR_LEV_0A,
         ERR_LEV_0B,
-        ERR_LEV_1A,
+        ERR_LEV_0C,
+        ERR_LEV_1A1,
+        ERR_LEV_1A2,
         ERR_LEV_1B,
         ERR_LEV_1C,
         ERR_LEV_1D,
         ERR_LEV_1E,
         ERR_LEV_1F,
+        ERR_LEV_1G,
+        ERR_LEV_1H,
         ERR_LEV_2A,
-        ERR_LEV_2A1,	/* NIL */
-        ERR_LEV_2A2,	/* Simple Dataspace */
-        ERR_LEV_2A3,	/* Reserved - not assigned yet */
-        ERR_LEV_2A4,	/* Datatype */
-        ERR_LEV_2A5,	/* Data Storage - Fill Value (Old) */
-        ERR_LEV_2A6,	/* Data Storage - Fill Value */
-        ERR_LEV_2A7,	/* Reserved - not assigned yet */
-        ERR_LEV_2A8,	/* Data Storage - External Data Files */
-        ERR_LEV_2A9,	/* Data Storage - Layout */
-        ERR_LEV_2A10,	/* Reserved - not assigned yet */
-        ERR_LEV_2A11,	/* Reserved - not assigned yet */
-        ERR_LEV_2A12,	/* Data Storage - Filter Pipeline */
-        ERR_LEV_2A13,	/* Attribute */
-        ERR_LEV_2A14,	/* Object Comment */
-        ERR_LEV_2A15,	/* Object Modification Date & Time (Old) */
-        ERR_LEV_2A16,	/* Shared Object Message */
-        ERR_LEV_2A17,	/* Object Header Continuation */
-        ERR_LEV_2A18,	/* Group Message */
-        ERR_LEV_2A19,	/* Object Modification Date & Time */
-        ERR_LEV_2B,	/* Shared Data Object Headers */
-        ERR_LEV_2C	/* Data Object Data Storage */
+        ERR_LEV_2A1a,
+        ERR_LEV_2A1b,
+        ERR_LEV_2A2a,	/* NIL */
+        ERR_LEV_2A2b,	/* Dataspace */
+        ERR_LEV_2A2c,	/* Link Info */
+        ERR_LEV_2A2d,	/* Datatype */
+        ERR_LEV_2A2e,	/* Data Storage-Fill Value(Old) */
+        ERR_LEV_2A2f,	/* Data Storage-FIll Value */
+        ERR_LEV_2A2g,	/* Link Message */
+        ERR_LEV_2A2h,	/* Data Storage-External Data Files */
+        ERR_LEV_2A2i,	/* Data Storage-Layout */
+        ERR_LEV_2A2j,	/* Reserved-not assigned yet */
+        ERR_LEV_2A2k,	/* Group Info */
+        ERR_LEV_2A2l,	/* Data Storage-Filter Pipeline */
+        ERR_LEV_2A2m,	/* Attribute */
+        ERR_LEV_2A2n,	/* Object COmment */
+        ERR_LEV_2A2o,	/* Object Modification Time (Old) */
+        ERR_LEV_2A2p,	/* Shared Message Table */
+        ERR_LEV_2A2q,	/* Object Header Continuation */
+        ERR_LEV_2A2r,	/* Symbol Table */
+        ERR_LEV_2A2s,	/* Object Modification Time */
+        ERR_LEV_2A2t,	/* B-tree 'K' Values */
+        ERR_LEV_2A2u,	/* Driver Info */
+        ERR_LEV_2A2v,	/* Attibute Info" */
+	ERR_LEV_2A2w,	/* Reference Count */
+        ERR_LEV_2B	/* Data Object Data Storage */
 } secondary_err_t;	
 
 typedef struct   primary_err_mesg_t {

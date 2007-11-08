@@ -152,7 +152,7 @@ h5checker_obj(char *fname, ck_addr_t obj_addr, ck_errmsg_t *errbuf)
 		g_obj_addr = fd_table[ret_fd].shared->root_grp->header;
 	}
 
-	status = check_obj_header(fd_table[ret_fd].file, g_obj_addr, NULL, NULL, prev_entries);
+	status = check_obj_header(fd_table[ret_fd].file, g_obj_addr, NULL);
 	if (status != SUCCEED) {
                 error_push(ERR_LEV_0, ERR_NONE_SEC,
                   "Errors found when checking the object header", g_obj_addr, NULL);
