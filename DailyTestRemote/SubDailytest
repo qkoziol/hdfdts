@@ -29,6 +29,24 @@ case lanl:
 	exit 1
     endsw
     breaksw	# end of LANL hosts
+case llnl:
+    # LLNL hosts
+    set SUBJOBCMD=csh		# run it by csh.
+    switch ( $myclustername )
+    case zeus:
+	set hosttype=zeus
+	breaksw
+    case up:
+	set hosttype=up
+	breaksw
+    case thunder:
+	set hosttype=thunder
+	breaksw
+    default:
+	echo "Unknown system name (`uname -n`).  Aborted."
+	exit 1
+    endsw
+    breaksw	# end of LLNL hosts
 case sandia:
     # Sandia hosts
     set SUBJOBCMD=csh		# run it by csh.
