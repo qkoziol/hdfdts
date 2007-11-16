@@ -1,4 +1,4 @@
-#! /bin/sh -e
+#! /bin/sh
 # (Use -e to abort at any unexpected error.)
 # Submit daily tests of HDF5 base software
 # Usauge: DailyHDFTests [-r<version>]
@@ -91,6 +91,9 @@ trap "rm -f $LOGDIRLOCK" 1 2 3 4 5 6 7 8 9 10 12 13 14 15
 # which should be in AFS space so that the files are available to most hosts.
 # The second tier is OLDER which could be in HDF's own NFS space which has
 # much bigger capacity but not as widely available.
+# Do all these in a sub-shell with -e to abort the cleaning if any error is
+# encountered.
+(set -e
 nold=6
 nolder=31
 echo cleaning $LOGDIR by moving all old logfiles to OLD
@@ -115,6 +118,7 @@ if [ -f $LOGFILE ]; then
     fi
     exit 1
 fi
+)
 
 # set up the lock file
 # if one already exists, just show it and continues
@@ -225,7 +229,7 @@ fi
 ) | $MAIL -s "$REPORT_TITLE" $TOWHOM
 
 # remove lock
-rm $LOGDIRLOCK
+rm -f $LOGDIRLOCK
 
 # do a snapshot release if
 #   test-passed && 
