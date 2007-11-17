@@ -24,16 +24,19 @@
 # File cache
 
 # for Albert personal tree
-^acheng		$CVSROOT/CVSROOT/log.pl %s -f $CVSROOT/CVSROOT/commitlog.acheng -m acheng@ncsa.uiuc.edu
+^acheng		$CVSROOT/CVSROOT/log.pl %s -f $CVSROOT/CVSROOT/commitlog.acheng -m acheng@hdfgroup.org
 
 # for Vailin personal tree
-^vchoi         $CVSROOT/CVSROOT/log.pl %s -f $CVSROOT/CVSROOT/commitlog.vchoi -m vailin@ncsa.uiuc.edu
+^vchoi         $CVSROOT/CVSROOT/log.pl %s -f $CVSROOT/CVSROOT/commitlog.vchoi -m vailin@hdfgroup.org
 
 # Parallel HDF stuff
-^h5check		$CVSROOT/CVSROOT/log.pl %s -f $CVSROOT/CVSROOT/commitlog.phdf -m "acheng@hdfgroup.org chilan@hdfgroup.org slu@hdfgroup.org vchoi@hdfgroup.org"
+^h5check		$CVSROOT/CVSROOT/log.pl %s -f $CVSROOT/CVSROOT/commitlog -m "acheng@hdfgroup.org vchoi@hdfgroup.org"
 
 # iospeed code (old name was ffio)
-^iospeed		$CVSROOT/CVSROOT/log.pl %s -f $CVSROOT/CVSROOT/commitlog.phdf -m "acheng@hdfgroup.org slu@hdfgroup.org"
+^iospeed		$CVSROOT/CVSROOT/log.pl %s -f $CVSROOT/CVSROOT/commitlog -m "acheng@hdfgroup.org slu@hdfgroup.org"
+
+# DailyTest and DailyTestRemote code
+^DailyTest		$CVSROOT/CVSROOT/log.pl %s -f $CVSROOT/CVSROOT/commitlog -m hdftest@hdfgroup.org
 
 # default goes to the CVS mailing list
-DEFAULT                 $CVSROOT/CVSROOT/log.pl %s -f $CVSROOT/CVSROOT/commitlog  -m acheng@hdfgroup.org
+DEFAULT                 $CVSROOT/CVSROOT/log.pl %s -f $CVSROOT/CVSROOT/commitlog -m acheng@hdfgroup.org
