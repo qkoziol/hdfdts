@@ -56,8 +56,8 @@ else
         TOWHOM_PASSED=lrknox
         TOWHOM_FAILED=lrknox
     else
-	TOWHOM_PASSED="hdf5repo@hdfgroup.org repo-all@hdfgroup.org"
-	TOWHOM_FAILED=hdf5lib@hdfgroup.org
+	TOWHOM_PASSED="hdf5repo@hdfgroup.org repo-all@hdfgroup.org ed@unidata.ucar.edu"
+	TOWHOM_FAILED="hdf5lib@hdfgroup.org ed@unidata.ucar.edu"
 #        TOWHOM_PASSED=lrknox
 #        TOWHOM_FAILED=lrknox
     fi
@@ -80,7 +80,6 @@ RELEASE_ALWAYS=${LOGDIR}/../release_always	# always release
 RELEASE_NOT=${LOGDIR}/../release_not		# Do not release
 RELEASED=${LOGDIR}/RELEASED_${TODAY}
 WATCHERFILE=${LOGDIR}/../watchers		# List of platform watchers
-#CMD="bin/h5compattest $DEBUGMODE ${SWVER}"
 CMD="bin/runtest $DEBUGMODE ${SWVER}"
 
 # Setup Mailing command and Report title
@@ -150,13 +149,12 @@ fi
 #    ssh $h -n /usr/hdf/bin/mpich2/mpd  --daemon
 #done
 
-#(cd $HOME/${SW}/${SWSRC_VER}/${sw}; $CMD -all) > $LOGFILE 2>&1
-(cd $HOME/${SW}/${SWSRC_VER}/${sw}; $CMD ) > $LOGFILE 2>&1
-#(cd $HOME/${SW}; svn co http://svn.hdfgroup.uiuc.edu/h5compat/trunk ./h5compat; cd h5compat; ./h5compat.sh) > $LOGFILE 2>&1
+(cd $HOME/${SW}/${SWSRC_VER}/${sw}; $CMD -all) > $LOGFILE 2>&1
+#(cd $HOME/${SW}/${SWSRC_VER}/${sw}; $CMD ) > $LOGFILE 2>&1
 
 # Verify test script did complete by checking the last lines
-#(tail -4 $LOGFILE | grep -s "^*** finished .* in $HOSTNAME ***" > /dev/null 2>&1) ||
-#    (echo "****snaptest launcher FAILED to complete in $HOSTNAME****" >> $FAILEDLOG)
+(tail -4 $LOGFILE | grep -s "^*** finished .* in $HOSTNAME ***" > /dev/null 2>&1) ||
+    (echo "****snaptest launcher FAILED to complete in $HOSTNAME****" >> $FAILEDLOG)
 
 
 # Check result
