@@ -56,8 +56,8 @@ if [ -n "$DEBUGMODE" ]; then
     TOWHOM_PASSED=acheng@hdfgroup.org
     TOWHOM_FAILED=acheng@hdfgroup.org
 else
-    TOWHOM_PASSED=acheng@hdfgroup.org
-    TOWHOM_FAILED=acheng@hdfgroup.org
+    TOWHOM_PASSED=asc-passed@hdfgroup.org
+    TOWHOM_FAILED=asc-failed@hdfgroup.org
 fi
 
 #################################
