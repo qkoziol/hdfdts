@@ -1,10 +1,10 @@
 #! /bin/sh -e
 # (Use -e to abort at any unexpected error.)
-# Submit daily tests of HDF4 base software
-# Usauge: DailyHDFTests [-r<version>]
-# Example: DailyHDFTests	# test the CVS current version
-#	   DailyHDFTests -r1.2	# test version 1.2
-#	   DailyHDFTests -r1.4	# test version 1.4
+# Submit daily tests of HDF5 base software
+# Usauge: DailyNetCDF4Tests [-r<version>]
+# Example: DailyNetCDF4Tests	# test the CVS current version
+#	   DailyNetCDF4Tests -r1.2	# test version 1.2
+#	   DailyNetCDF4Tests -r1.4	# test version 1.4
 
 # general setup
 PROGRAMNAME=`basename $0`
@@ -13,8 +13,8 @@ DEBUGMODE=""		# change to -debug for debug mode
 # Setup
 HOSTNAME=`hostname | cut -f1 -d.`       # no domain part
 TODAY=`date +%m%d%a`
-SW=HDF4			# Name of Software.
-sw=hdf4			# Name of Software in lower cases.
+SW=HDFEOS5		# Name of Software.
+sw=hdfeos5			# Name of Software in lower cases.
 SWVER=			# Software version, default to current CVS version.
 SWVERSTR=		# Software version string.
 TITLE="${SW} Tests on $TODAY"
@@ -45,15 +45,21 @@ done
 # Host cobalt (co-login1) has a private list of addresses.
 if [ -n "$DEBUGMODE" ]; then
     echo "******** DEBUGMODE is $DEBUGMODE ************"
-    TOWHOM_PASSED=hdftest
-    TOWHOM_FAILED=hdftest
+#    TOWHOM_PASSED=acheng
+#    TOWHOM_FAILED=acheng
+    TOWHOM_PASSED=lrknox
+    TOWHOM_FAILED=lrknox
 else
     if [ $HOSTNAME = co-login1 ]; then
-        TOWHOM_PASSED=cobalt-passed@hdfgroup.org
-        TOWHOM_FAILED=cobalt-failer@hdfgroup.org
+#	TOWHOM_PASSED="slu@ncsa.uiuc.edu epourmal@ncsa.uiuc.edu koziol@ncsa.uiuc.edu lrknox@ncsa.uiuc.edu"
+#	TOWHOM_FAILED="slu@ncsa.uiuc.edu epourmal@ncsa.uiuc.edu koziol@ncsa.uiuc.edu lrknox@ncsa.uiuc.edu"
+        TOWHOM_PASSED=lrknox
+        TOWHOM_FAILED=lrknox
     else
-	TOWHOM_PASSED="hdf4repo@hdfgroup.org repo-all@hdfgroup.org"
-	TOWHOM_FAILED=hdf4lib@hdfgroup.org
+	TOWHOM_PASSED="hdf5repo@hdfgroup.org repo-all@hdfgroup.org"
+	TOWHOM_FAILED="hdf5lib@hdfgroup.org"
+#        TOWHOM_PASSED=lrknox
+#        TOWHOM_FAILED=lrknox
     fi
 fi
 
@@ -66,6 +72,7 @@ FAILEDDETAIL=${LOGDIR}/FAILED_DETAIL_${TODAY}
 PASSEDLOG=${LOGDIR}/PASSED_LOG_${TODAY}
 SKIPPEDLOG=${LOGDIR}/SKIPPED_LOG_${TODAY}
 TIMELOG=${LOGDIR}/TIME_LOG_${TODAY}
+TIMEKEEPERLOG=${LOGDIR}/TIMEKEEPER_LOG_${TODAY}
 REPORTED=${LOGDIR}/REPORTED_${TODAY}
 SNAPSHOTLOG=${LOGDIR}/SNAPSHOT_LOG_${TODAY}
 RELEASE_ASAP=${LOGDIR}/../release_asap		# make a special release asap
@@ -83,7 +90,7 @@ TEST_TITLE="$HOSTNAME ${SW}${SWVERSTR}_Daily_Tests_${TODAY}"
 trap "rm -f $LOGDIRLOCK" 0
 trap "rm -f $LOGDIRLOCK" 1 2 3 4 5 6 7 8 9 10 12 13 14 15
 
-# Clean up LOGDIR by moving all files that are not "of today" to OLD.
+#  Clean up LOGDIR by moving all files that are not "of today" to OLD.
 # Then go into OLD and move all files older than 7 days to OLDER.
 # Then go into OLDer and remove all files older than 30 days.
 # This procedure keeps old logfiles in two tiers.  The first tier is OLD
@@ -136,11 +143,19 @@ else
     SWSRC_VER=v$SWVERSTR
 fi
 
+# Make sure daily test has an mpich2 daemon running in each of the
+# following hosts.
+#for h in kagiso.hdfgroup.uiuc.edu smirom.hdfgroup.uiuc.edu; do
+#    ssh $h -n /usr/hdf/bin/mpich2/mpd  --daemon
+#done
+
 (cd $HOME/${SW}/${SWSRC_VER}/${sw}; $CMD -all) > $LOGFILE 2>&1
+#(cd $HOME/${SW}/${SWSRC_VER}/${sw}; $CMD ) > $LOGFILE 2>&1
 
 # Verify test script did complete by checking the last lines
 (tail -4 $LOGFILE | grep -s "^*** finished .* in $HOSTNAME ***" > /dev/null 2>&1) ||
     (echo "****snaptest launcher FAILED to complete in $HOSTNAME****" >> $FAILEDLOG)
+
 
 # Check result
 if [ -f $FAILEDLOG ]; then
@@ -161,6 +176,7 @@ fi
  echo "============================="
  if [ -f $FAILEDLOG ]; then
     sort $FAILEDLOG | tee -a $REPORTED
+    echo ""
     rm $FAILEDLOG
  fi
  if [ -f $SKIPPEDLOG ]; then
@@ -179,6 +195,15 @@ fi
  if [ -f $TIMELOG ]; then
     cat $TIMELOG | tee -a $REPORTED
     rm $TIMELOG
+ fi
+ echo ""
+ echo ""
+ echo "============================="
+ echo "   Timekeeper log"
+ echo "============================="
+ if [ -f $TIMEKEEPERLOG ]; then
+    cat $TIMEKEEPERLOG | tee -a $REPORTED
+    rm $TIMEKEEPERLOG
  fi
  # If failures detected, show failed details, watchers list and test details.
  # Else just show test details file name.
@@ -207,11 +232,6 @@ fi
  fi
 ) | $MAIL -s "$REPORT_TITLE" $TOWHOM
 
-# see if any real tests occurred
-if grep -s "^NO TEST:" $REPORTED > /dev/null; then
-    tests_done="none"
-fi
-
 # remove lock
 rm $LOGDIRLOCK
 
@@ -222,11 +242,11 @@ rm $LOGDIRLOCK
 # The difference between release_asap and release_always is that release_asap
 # is a one time deal and needs to be set again if desire; while release_always
 # stays in effect until removed.
-if [ $errcode -eq 0 -a x-$tests_done != x-none -a \
+if [ $errcode -eq 0 -a \
     ! -f $RELEASE_NOT -a \
     \( `date +%a` = Sun -o -f $RELEASE_ASAP -o -f $RELEASE_ALWAYS \) ]; then
     # do a snapshot.
-    SWDIR=$HOME/${SW}/current/${sw}
+    SWDIR=$HOME/${SW}/v${SWVERSTR:-dev}/${sw}
     if [ -f $RELEASE_ASAP ]; then
 	RELEASE_MESG="Special snapshot release launched for ${SW}${SWVERSTR}."
     elif [ -f $RELEASE_ALWAYS ]; then

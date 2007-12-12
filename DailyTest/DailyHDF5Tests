@@ -45,12 +45,12 @@ done
 # Host cobalt (co-login1) has a private list of addresses.
 if [ -n "$DEBUGMODE" ]; then
     echo "******** DEBUGMODE is $DEBUGMODE ************"
-    TOWHOM_PASSED=acheng
-    TOWHOM_FAILED=acheng
+    TOWHOM_PASSED=hdftest
+    TOWHOM_FAILED=hdftest
 else
     if [ $HOSTNAME = co-login1 ]; then
-	TOWHOM_PASSED="slu@ncsa.uiuc.edu epourmal@ncsa.uiuc.edu koziol@ncsa.uiuc.edu lrknox@ncsa.uiuc.edu"
-	TOWHOM_FAILED="slu@ncsa.uiuc.edu epourmal@ncsa.uiuc.edu koziol@ncsa.uiuc.edu lrknox@ncsa.uiuc.edu"
+	TOWHOM_PASSED=cobalt-passed@hdfgroup.org
+	TOWHOM_FAILED=cobalt-failer@hdfgroup.org
     else
 	TOWHOM_PASSED="hdf5repo@hdfgroup.org repo-all@hdfgroup.org"
 	TOWHOM_FAILED=hdf5lib@hdfgroup.org
