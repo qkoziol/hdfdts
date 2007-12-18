@@ -143,9 +143,9 @@ fi
 
 # Make sure daily test has an mpich2 daemon running in each of the
 # following hosts.
-for h in kagiso.hdfgroup.uiuc.edu smirom.hdfgroup.uiuc.edu; do
-    ssh $h -n /usr/hdf/bin/mpich2/mpd  --daemon
-done
+#for h in kagiso.hdfgroup.uiuc.edu smirom.hdfgroup.uiuc.edu; do
+#    ssh $h -n /usr/hdf/bin/mpich2/mpd  --daemon
+#done
 
 (cd $HOME/${SW}/${SWSRC_VER}/${sw}; $CMD -all) > $LOGFILE 2>&1
 
