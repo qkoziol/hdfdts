@@ -50,7 +50,7 @@ if [ -n "$DEBUGMODE" ]; then
 else
     if [ $HOSTNAME = co-login1 ]; then
         TOWHOM_PASSED=cobalt-passed@hdfgroup.org
-        TOWHOM_FAILED=cobalt-failer@hdfgroup.org
+        TOWHOM_FAILED=cobalt-failed@hdfgroup.org
     else
 	TOWHOM_PASSED="hdf4repo@hdfgroup.org repo-all@hdfgroup.org"
 	TOWHOM_FAILED=hdf4lib@hdfgroup.org
