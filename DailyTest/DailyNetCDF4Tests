@@ -13,7 +13,7 @@ DEBUGMODE=""		# change to -debug for debug mode
 # Setup
 HOSTNAME=`hostname | cut -f1 -d.`       # no domain part
 TODAY=`date +%m%d%a`
-SW=NETCDF-4		# Name of Software.
+SW=NETCDF4		# Name of Software.
 sw=netcdf4			# Name of Software in lower cases.
 SWVER=			# Software version, default to current CVS version.
 SWVERSTR=		# Software version string.
