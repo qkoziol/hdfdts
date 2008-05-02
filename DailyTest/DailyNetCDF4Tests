@@ -80,7 +80,7 @@ RELEASE_ALWAYS=${LOGDIR}/../release_always	# always release
 RELEASE_NOT=${LOGDIR}/../release_not		# Do not release
 RELEASED=${LOGDIR}/RELEASED_${TODAY}
 WATCHERFILE=${LOGDIR}/../watchers		# List of platform watchers
-CMD="bin/runtest $DEBUGMODE ${SWVER}"
+CMD="bin/runtest ${sw} $DEBUGMODE ${SWVER}"
 
 # Setup Mailing command and Report title
 MAIL=mail
