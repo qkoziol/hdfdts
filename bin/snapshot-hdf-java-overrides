@@ -1,0 +1,19 @@
+EXTRACT()
+{
+   echo "Error: hdf-java is in svn.  No extraction necessary."
+}
+
+DISTCLEAN()
+{
+#       (cd ${TESTDIR} && ${MAKE} distclean)
+# distclean not working for hdf-java - some .class files left behind
+        echo "Removing $SRCDIRNAME.\n"
+        (cd ${BASEDIR}/TestDir && rm -rf ${SRCDIRNAME} && mkdir ${SRCDIRNAME})
+        sleep 2
+        echo "$SRCDIRNAME removed and newly created.\n"
+}
+
+CPSRC="yes"
+H5VERSION=hdf-java
+
+
