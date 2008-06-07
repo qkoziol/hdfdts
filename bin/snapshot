@@ -13,12 +13,13 @@
 # http://hdfgroup.org/HDF5/doc/Copyright.html.  If you do not have
 # access to either file, you may request a copy from help@hdfgroup.org.
 
-# This script should be run nightly from cron.  It checks out netcdf4
+# This script should be run nightly from cron.  It checks out the source 
 # from the source repository and compares it against the previous
 # snapshot.  If anything significant changed then a new snapshot is
 # created, the minor version number is incremented, and the change is
 # checked back into the source repository.
 #
+
 
 # function definitions
 TIMESTAMP()
@@ -40,11 +41,24 @@ DISKUSAGE()
 
 EXTRACT()
 {
-   (tar zxvf netcdf-4-daily.tar.gz; \
-   EXTRACTDIR=`ls | grep netcdf-4.0-snapshot`; \
-   echo "netcdf-4-daily.tar extracted into $EXTRACTDIR; moving it to ${CURRENT}."; \
-   mv ${CURRENT} ${PREVIOUS}; \
-   mv $EXTRACTDIR ${CURRENT})
+   echo "Error:  ${sw} is in svn repository - does not need extraction."
+}
+
+RUNCONFIGURE()
+{
+    if [ "${CURRENT}" != "${TESTDIR}" ] && [ $CPSRC ]; then
+        echo "Copying source files to ${TESTDIR}."
+        cp -pr ${CURRENT}/* ${TESTDIR}
+        cd ${TESTDIR}
+        ./${CONFIGURE}
+    else 
+        ${srcdir:+${CURRENT}/}${CONFIGURE}
+    fi
+}
+
+DISTCLEAN()
+{
+       (cd ${TESTDIR} && ${MAKE} distclean)
 }
 
 # MAIN
@@ -52,6 +66,10 @@ EXTRACT()
 # Set the name here to avoid that ambiguity and better style too.
 PROGNAME=$0
 
+sw=`pwd | awk -F/ '{print $NF}' | sed -e 's/snapshots-//' -e 's/_[0-9]*//g'`
+if [ -f bin/snapshot-${sw}-overrides ]; then
+    . bin/snapshot-${sw}-overrides
+fi
 
 echo "====================================="
 echo "$PROGNAME $*"
@@ -328,11 +346,12 @@ echo "Configure command is $CONFIGURE"
 # Execute the requests
 snapshot=yes
 
-if [ -f bin/snapshot_version ]; then
-    . bin/snapshot_version
-else
-    H5VERSION=netcdf4
-fi
+#if [ -f bin/snapshot_version ]; then
+#    . bin/snapshot_version
+#else
+#   echo "Error:  no software specified for testing."
+#   exit 1
+#fi
 
 BASEDIR=${HOME}/snapshots-${H5VERSION}
 if [ ! -d ${BASEDIR} ]; then
@@ -344,11 +363,11 @@ CURRENT=${BASEDIR}/current
 PREVIOUS=${BASEDIR}/previous
 ReleaseDir=${ReleaseDir:=${BASEDIR}/${ReleaseDir_default}}
 HOSTNAME=`hostname | cut -f1 -d.`	# no domain part
-if [ $H5VERSION != netcdf4 ]; then
-    SVNVERSION="netcdf4/branches/$H5VERSION"
-else
-    SVNVERSION=netcdf4/trunk		# use the default (trunk) version
-fi
+#if [ $H5VERSION != netcdf4 ]; then
+#    SVNVERSION="netcdf4/branches/$H5VERSION"
+#else
+#    SVNVERSION=netcdf4/trunk		# use the default (trunk) version
+#fi
 echo "CURRENT is $CURRENT"
 
 
@@ -432,9 +451,7 @@ if [ "$cmd" = "all" -o -n "$cmdtest" -o -n "$cmddiff" ]; then
     echo "Check to see if TESTDIR $TESTDIR exists"
     # Make sure current version exists and is clean
     if [ -d ${TESTDIR} ]; then
-#	(cd ${TESTDIR} && ${MAKE} distclean)
-# distclean not working for netcdf4
-	(cd ${BASEDIR}/TestDir && mv ${SRCDIRNAME} previous${SRCDIRNAME} && mkdir ${TESTDIR})
+        DISTCLEAN    
     else
 	errcode=$?
         snapshot=no
@@ -474,10 +491,10 @@ if [ "$cmd" = "all" -o -n "$cmdtest" -o -n "$cmddiff" ]; then
     echo "TESTDIR is $TESTDIR"
     echo "snapshot is $snapshot"
     # Build, run tests and install procedures
-    if [ "$snapshot" = "yes" ]; then
+    if [ "$snapshot" = "yes" ] && [ "$NOMAKE" != "yes" ]; then
 	if (cd ${TESTDIR} && \
 	    TIMESTAMP "configure" && \
-	    ${srcdir:+${CURRENT}/}${CONFIGURE} && \
+	    RUNCONFIGURE && \
             sleep 2 && \
 	    TIMESTAMP "make" && \
 	    ${MAKE} && DISKUSAGE \
@@ -495,6 +512,10 @@ if [ "$cmd" = "all" -o -n "$cmdtest" -o -n "$cmddiff" ]; then
 	    snapshot=no
 	    exit $errcode
 	fi
+    else
+        if [ $CPSRC ]; then
+           cp -pr ${CURRENT}/* ${TESTDIR}
+        fi
     fi
 fi # Test the HDF5 library
 
@@ -516,7 +537,7 @@ if [ "$EXTTEST" != "" ]; then
     esac
     TESTDIR=${BASEDIR}/TestDir/${SRCDIRNAME}
     test -d ${TESTDIR} || mkdir ${TESTDIR}
-    cp ../bin/$EXTTEST $TESTDIR
+    cp bin/$EXTTEST $TESTDIR
     cd $TESTDIR
     #echo "Should now be in $TESTDIR"
     sleep 1
@@ -554,7 +575,7 @@ fi # Deploy
 if [ "$cmd" = "all" -o -n "$cmdrel" ]; then
     if [ "$snapshot" = "yes" ]; then
 	TIMESTAMP "release"
-	(cd ${CURRENT} && ${MAKE} distclean)
+        DISTCLEAN
 	(
 	    # Turn on exit on error in the sub-shell so that it does not
 	    # commit source if errors encounter here.

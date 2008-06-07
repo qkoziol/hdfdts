@@ -1,0 +1,22 @@
+# netcdf-4 function overrides and flags for snapshot
+
+EXTRACT()
+{
+   (tar zxvf netcdf-4-daily.tar.gz; \
+   EXTRACTDIR=`ls | grep netcdf-4.0-snapshot`; \
+   echo "netcdf-4-daily.tar extracted into $EXTRACTDIR; moving it to ${CURRENT}."; \
+   rm -rf ${CURRENT}; \
+   mv $EXTRACTDIR ${CURRENT})
+}
+
+DISTCLEAN()
+{
+#       (cd ${TESTDIR} && ${MAKE} distclean)
+# distclean not working for netcdf4
+        echo "Removing $SRCDIRNAME.\n"
+        (cd ${BASEDIR}/TestDir && rm -rf ${SRCDIRNAME} && mkdir ${SRCDIRNAME})
+        echo "$SRCDIRNAME removed and newly created.\n"
+}
+
+H5VERSION=netcdf4
+
