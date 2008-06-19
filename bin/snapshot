@@ -346,14 +346,14 @@ echo "Configure command is $CONFIGURE"
 # Execute the requests
 snapshot=yes
 
-#if [ -f bin/snapshot_version ]; then
-#    . bin/snapshot_version
-#else
-#   echo "Error:  no software specified for testing."
-#   exit 1
-#fi
+if [ -f bin/snapshot_version ]; then
+    . bin/snapshot_version
+else
+   echo "Error:  no software specified for testing."
+   exit 1
+fi
 
-BASEDIR=${HOME}/snapshots-${H5VERSION}
+BASEDIR=${HOME}/snapshots-${SWVERSION}
 if [ ! -d ${BASEDIR} ]; then
     echo "BASEDIR ($BASEDIR) does not exist"
     exit 1
@@ -363,11 +363,11 @@ CURRENT=${BASEDIR}/current
 PREVIOUS=${BASEDIR}/previous
 ReleaseDir=${ReleaseDir:=${BASEDIR}/${ReleaseDir_default}}
 HOSTNAME=`hostname | cut -f1 -d.`	# no domain part
-#if [ $H5VERSION != netcdf4 ]; then
-#    SVNVERSION="netcdf4/branches/$H5VERSION"
-#else
-#    SVNVERSION=netcdf4/trunk		# use the default (trunk) version
-#fi
+if [ "${SWVERSION}" != "${HDFREPOS}" ]; then
+    SVNVERSION="$HDFREPOS/branches/$SWVERSION"
+else
+    SVNVERSION="$HDFREPOS/trunk"	# use the default (trunk) version
+fi
 echo "CURRENT is $CURRENT"
 
 

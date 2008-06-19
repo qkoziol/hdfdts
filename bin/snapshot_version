@@ -18,4 +18,4 @@
 # latest revision of that branch.  If set to "hdf5", it uses the main
 # version.
 # H5VER tells runtest which version to run
-H5VERSION=netcdf4
+SWVERSION=netcdf4

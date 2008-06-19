@@ -18,5 +18,5 @@ DISTCLEAN()
         echo "$SRCDIRNAME removed and newly created.\n"
 }
 
-H5VERSION=netcdf4
+HDFREPOS=netcdf4
 

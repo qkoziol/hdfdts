@@ -726,6 +726,7 @@ FAILEDDETAIL=${LOGDIR}/FAILED_DETAIL_${TODAY}
 SKIPPEDLOG=${LOGDIR}/SKIPPED_LOG_${TODAY}
 TIMELOG=${LOGDIR}/TIME_LOG_${TODAY}
 TIMEKEEPERLOG=${LOGDIR}/TIMEKEEPER_LOG_${TODAY}
+#REPORTED=${LOGDIR}/REPORTED_${TODAY}
 CVSLOG=${LOGDIR}/CVS_LOG_${TODAY}
 CVSLOG_LOCK=${LOGDIR}/CVS_LOG_LOCK_${TODAY}
 DIFFLOG=${LOGDIR}/DIFF_LOG_${TODAY}
@@ -904,7 +905,9 @@ fi
 # the current and previous versions
 #NODIFF=""
 if [ -z "$NODIFF" ]; then
-    ../$SNAPSHOT diff >> $DIFFLOG 2>&1
+#    (cd $SNAPYARD/current;svn info | grep "Last Changed" >> $REPORTED 2>&1)
+#    $SNAPYARD/$SNAPSHOT diff >> $DIFFLOG 2>&1
+    $SNAPSHOT diff >> $DIFFLOG 2>&1
     errcode=$?
     # check the errcode only if NOT in DEBUG MODE
     if [ -z "$DEBUGMODE" -a $errcode -eq 0 ]; then
