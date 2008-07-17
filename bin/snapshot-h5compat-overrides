@@ -1,0 +1,12 @@
+EXTRACT()
+{
+   echo "Error: h5compat is in svn.  No extraction necessary."
+}
+
+CPSRC="yes"
+NOMAKE="yes"
+HDFREPOS=h5compat
+SWVERSION=h5compat
+
+
+

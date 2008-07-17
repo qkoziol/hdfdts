@@ -15,5 +15,6 @@ DISTCLEAN()
 
 CPSRC="yes"
 HDFREPOS=hdf-java
+SWVERSION=hdf-java
 
 

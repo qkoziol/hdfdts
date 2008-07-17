@@ -346,12 +346,6 @@ echo "Configure command is $CONFIGURE"
 # Execute the requests
 snapshot=yes
 
-if [ -f bin/snapshot_version ]; then
-    . bin/snapshot_version
-else
-   echo "Error:  no software specified for testing."
-   exit 1
-fi
 
 BASEDIR=${HOME}/snapshots-${SWVERSION}
 if [ ! -d ${BASEDIR} ]; then
@@ -602,7 +596,7 @@ fi #Release snapshot
 #=============================
 # Clean the test area.  Default is no clean.
 #=============================
-if [ -n "$cmdclean" ]; then
+if [ -n "$cmdclean" ] && [ "$NOMAKE" != "yes" ]; then
     TIMESTAMP "clean"
     # setup if srcdir is used.
     if [ -z "$srcdir" ]; then
