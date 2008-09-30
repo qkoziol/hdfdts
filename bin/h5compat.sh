@@ -1,20 +1,17 @@
 #! /bin/sh
 
-if [ -r ~hdftest/snapshots-h5compat/.h5compatrc ]; then
-   cp ~hdftest/snapshots-h5compat/.h5compatrc ./api
-   cp ~hdftest/snapshots-h5compat/.h5compatrc ./format
+if [ -r ${HOME}/snapshots-h5compat/.h5compatrc ]; then
+   cp ${HOME}/snapshots-h5compat/.h5compatrc ./api
+   cp ${HOME}/snapshots-h5compat/.h5compatrc ./format
 fi
 
-if (cd ./api &&
-    ./check_api.sh &&
-    cd ../format &&
-    ./check_format.sh &&
+if (cd ./api &&\
+    ./check_api.sh &&\
+    cd ../format &&\
+    ./check_format.sh &&\
     cd ..); then
-    :   #continue
+    exit 0
 else
-    errcode=$?
-    echo "===== Exit h5compat.sh with status=$errcode ====="
-    echo ""
-    exit $errcode
+    exit 1
 fi
 

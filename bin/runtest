@@ -957,10 +957,10 @@ if [ -n "$TESTHOST" -a $HOSTNAME != "$TESTHOST" ]; then
 
 		# launch concurrent tests only if srcdir is used
 		if [ -n "$SRCDIR" ]; then
-		    $CMD || (REPORT_ERR "****FAILED ${h}: Abnormal exit from runtest****" && PRINT_BLANK) &
+		    $CMD || echo "****FAILED ${h}: Abnormal exit from runtest ****" && PRINT_BLANK &
 		    echo $! > PID.${h}_${CONFIGNAME}
 		else
-		    $CMD || (REPORT_ERR "****FAILED ${h}: Abnormal exit from runtest****" && PRINT_BLANK) 
+		    $CMD || echo "****FAILED ${h}: Abnormal exit from runtest ****" && PRINT_BLANK
 		fi
 		;;
 	    NoRemoteCommand)
@@ -970,7 +970,7 @@ if [ -n "$TESTHOST" -a $HOSTNAME != "$TESTHOST" ]; then
 		PRINT $h is not reachable  "(`date`)"
 		;;
 	    *)
-		PRINT "CHECK_RSH for $h returned unknow result ($RSH)"
+		PRINT "CHECK_RSH for $h returned unknown result ($RSH)"
 		;;
 	esac >> $TMP_OUTPUT 2>&1
     done
@@ -984,9 +984,15 @@ if [ -n "$TESTHOST" -a $HOSTNAME != "$TESTHOST" ]; then
 	TMP_OUTPUT="#${h}_${CONFIGNAME}.out"
 	cat $TMP_OUTPUT
 	# Verify test script did complete by checking the last lines
-	(tail -2 $TMP_OUTPUT | grep -s 'Grand total' > /dev/null 2>&1) ||
+	if (tail -3 $TMP_OUTPUT | grep -s 'Abnormal' > /dev/null 2>&1) ; then
+           (REPORT_ERR "****FAILED ${h}: runtest command failed ****" &&
+                PRINT_BLANK)
+        else          
+            (tail -3 $TMP_OUTPUT | grep -s 'Grand total' > /dev/null 2>&1) ||
 	    (REPORT_ERR "****FAILED ${h}: snaptest did not complete****" &&
 		PRINT_BLANK)
+        fi
+
 	rm -f $TMP_OUTPUT PID.${h}_${CONFIGNAME}
     done
     exit 0
