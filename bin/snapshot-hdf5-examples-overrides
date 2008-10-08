@@ -1,0 +1,9 @@
+EXTRACT()
+{
+   echo "Error: hdf5-examples is an svn repository.  No extraction necessary."
+}
+
+CPSRC=""
+NOMAKE=""
+HDFREPOS=hdf5-examples
+SWVERSION=hdf5-examples
