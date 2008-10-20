@@ -47,10 +47,17 @@ if [ $# != 1 ]; then
 fi
 
 installdir=$1
+POS=`perl -e "print index(\"${installdir}\", 'hdf4')"`
+if [ "${POS}" -ge "0" ]; then
+   REDEPLOY="h4redeploy"
+else
+   REDEPLOY="h5redeploy"
+fi
+
 # create installdir if it does not exist yet.
 if [ -d $installdir ] || mkdir $installdir ; then
     ${MAKE:-gmake} install prefix=$installdir  && \
-	( cd $installdir/bin; ./h5redeploy -force)
+	( cd $installdir/bin; ./$REDEPLOY -force )
     exit $?
 else
     echo $installdir is not a valid directory
