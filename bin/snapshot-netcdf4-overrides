@@ -3,7 +3,7 @@
 EXTRACT()
 {
    (tar zxvf netcdf-4-daily.tar.gz; \
-   EXTRACTDIR=`ls | grep netcdf-4.0-snapshot`; \
+   EXTRACTDIR=`ls | grep netcdf-4.0 | grep snapshot`; \
    echo "netcdf-4-daily.tar extracted into $EXTRACTDIR; moving it to ${CURRENT}."; \
    rm -rf ${CURRENT}; \
    mv $EXTRACTDIR ${CURRENT})
