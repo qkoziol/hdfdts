@@ -61,6 +61,19 @@ DISTCLEAN()
        (cd ${TESTDIR} && ${MAKE} distclean)
 }
 
+CHECKINSTALL()
+{
+#Put this in override file for tests supporting check-install
+#     TIMESTAMP "check-install $1" 
+#     ${MAKE} check-install $1
+    echo "check-install is not supported for ${sw}"
+}
+
+COMMITSNAPSHOT
+{
+    echo "original hdf5 script checked code back into svn at this point."
+}
+
 # MAIN
 # SGI /bin/sh replaces $0 as function name if used in a function.
 # Set the name here to avoid that ambiguity and better style too.
@@ -508,8 +521,8 @@ if [ "$cmd" = "all" -o -n "$cmdtest" -o -n "$cmddiff" ]; then
 	    ${MAKE} ${CHECKVAL} && DISKUSAGE \
 	    TIMESTAMP "install" && \
 	    ${MAKE} install && DISKUSAGE \
-	    #TIMESTAMP "check-install" && \
-	    #${MAKE} check-install && DISKUSAGE \
+            TIMESTAMP "check-install" && \
+	    CHECKINSTALL && DISKUSAGE \
 	    TIMESTAMP "uninstall" && \
 	    ${MAKE} uninstall) && DISKUSAGE ; then
 	    :
@@ -557,7 +570,7 @@ if [ -n "$DEPLOYDIRNAME" ]; then
             TIMESTAMP "clean" && \
             ${MAKE} clean && \
             TIMESTAMP "check-install prefix=${deploydir}/${DEPLOYDIRNAME}" && \
-            ${MAKE} check-install prefix=${deploydir}/${DEPLOYDIRNAME}); then
+            CHECKINSTALL prefix=${deploydir}/${DEPLOYDIRNAME}); then
 	    :	#continue
 	else
 	    errcode=$?
@@ -583,7 +596,7 @@ if [ "$cmd" = "all" -o -n "$cmdrel" ]; then
 	    echo "Making snapshot release ($RELEASE_VERSION) to ${ReleaseDir}..."
 	    ../bin/release -d $ReleaseDir $METHODS
 	    perl ../bin/h5vers -i
-#	    svn -q commit -m "Snapshot $RELEASE_VERSION"
+            COMMITSNAPSHOT
 	)
 	errcode=$?
     fi

@@ -822,10 +822,14 @@ if [ -z "$NOCVS" ]; then
     # ===================
     # Check MANIFEST file
     # ===================
-    PRINT Checking MAINFEST file ...
-#    (cd $SNAPYARD/current; ../bin/chkmanifest) > $TMPFILE 2>&1
-#    errcode=$?
+    PRINT Checking MANIFEST file ...
     errcode=0
+    POS4=`perl -e "print index(\"${sw}\", 'hdf4')"`
+    POS5=`perl -e "print index(\"${sw}\", 'hdf4')"`
+    if [ "${sw}" ==  "hdf4" ] || [ "${sw}" == "hdf5" ]; then
+        (cd $SNAPYARD/current; ../bin/chkmanifest) > $TMPFILE 2>&1
+        errcode=$?
+    fi
     if [ $errcode -eq 0 ]; then
 	# test passed.
 	cat $TMPFILE
@@ -1007,8 +1011,10 @@ fi
 # a $TYPE_TYPES that has no ';' (only 1 tst ).  That results in no
 # test at all.
 # Note that n_test must start as 1.
-# 
-echo "Running $SNAPSHOT checkout"
+#
+cd $SNAPYARD
+PWD=`pwd` 
+echo "Running $SNAPSHOT checkout from ${PWD}"
 echo "FTP flag is $FTP"
 if [ -n "$FTP" ]; then
     $SNAPSHOT ftp $FTPURL

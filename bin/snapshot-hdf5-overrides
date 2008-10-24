@@ -1,2 +1,15 @@
+CHECKINSTALL()
+{
+#Put this in override file for tests supporting check-install
+     TIMESTAMP "check-install $1"
+     ${MAKE} check-install $1
+}
+
+# uncomment this function after trying this a few days.
+#COMMITSNAPSHOT()
+#{
+#   svn -q commit -m "Snapshot $RELEASE_VERSION"
+#}
+
 H5VERSION=hdf5
 SWVERSION=hdf5
