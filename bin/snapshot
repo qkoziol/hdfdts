@@ -548,8 +548,8 @@ if [ "$EXTTEST" != "" ]; then
     TIMESTAMP ${EXTTEST}
     TESTDIR=${BASEDIR}/TestDir/${SRCDIRNAME}
     test -d ${TESTDIR} || mkdir ${TESTDIR}
-    cp bin/$EXTTEST $TESTDIR
-    cd $TESTDIR
+    cp ${BASEDIR}/bin/${EXTTEST} ${TESTDIR}
+    cd ${TESTDIR}
     #echo "Should now be in $TESTDIR"
     sleep 1
     TIMESTAMP $pwd
