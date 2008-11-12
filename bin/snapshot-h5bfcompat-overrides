@@ -1,0 +1,12 @@
+EXTRACT()
+{
+   echo "Error: No extraction necessary for h5bfcompat."
+}
+
+CPSRC=""
+NOMAKE="yes"
+HDFREPOS=h5bfcompat
+SWVERSION=h5bfcompat
+
+
+
