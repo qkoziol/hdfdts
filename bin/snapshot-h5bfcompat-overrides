@@ -3,6 +3,14 @@ EXTRACT()
    echo "Error: No extraction necessary for h5bfcompat."
 }
 
+DOWNLOAD()
+{
+   echo "Run script to download sample NASA files."
+   rm /mnt/scr1/NASA/selected/*
+   sleep 10
+   perl ./bin/get_todays_nasa_files.pl
+}
+
 CPSRC=""
 NOMAKE="yes"
 HDFREPOS=h5bfcompat
