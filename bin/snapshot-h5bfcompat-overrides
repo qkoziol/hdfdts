@@ -3,6 +3,7 @@ EXTRACT()
    echo "Error: No extraction necessary for h5bfcompat."
 }
 
+# This script downloads files from subdirectories matching this day of the
 DOWNLOAD()
 {
    echo "Run script to download sample NASA files."
