@@ -3,10 +3,14 @@
 EXTRACT()
 {
    (tar zxvf netcdf-4-daily.tar.gz; \
-   EXTRACTDIR=`ls | grep netcdf-4.0 | grep snapshot`; \
-   echo "netcdf-4-daily.tar extracted into $EXTRACTDIR; moving it to ${CURRENT}."; \
-   rm -rf ${CURRENT}; \
-   mv $EXTRACTDIR ${CURRENT})
+   EXTRACTDIR=`ls | grep netcdf-4. | grep snapshot`; \
+   if [ -n "$EXTRACTDIR" ]; then \
+      echo "netcdf-4-daily.tar extracted into $EXTRACTDIR; moving it to ${CURRENT}."; \
+      rm -rf ${CURRENT}; \
+      mv $EXTRACTDIR ${CURRENT} ; \
+   else \
+      echo "***** Error: NetCDF-4 daily snapshot directory not found ****." ; \
+   fi)
 }
 
 DISTCLEAN()
