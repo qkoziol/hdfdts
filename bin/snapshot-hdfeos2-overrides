@@ -1,4 +1,4 @@
-H5VERSION=hdfeos2
+HDFREPOS=hdfeos2
 SWVERSION=hdfeos2
 
 CPSRC="yes"

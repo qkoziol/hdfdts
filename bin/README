@@ -1,0 +1,10 @@
+Each snapshot-<TestName> directory should have 2 local files (not checked into svn):
+
+snapshot_params - containing 
+HDFREPOS=<name of the svn repository> and 
+SNAPSHOTNAME=<TestName>
+
+snapshot_version - containing
+SWVERSION=<name of the svn repository> and
+SWVER="-r1.8" or other version number.  This may be changed to allow branch names 
+that are unrelated to numeric versions 

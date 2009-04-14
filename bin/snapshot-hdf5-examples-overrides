@@ -5,5 +5,3 @@ EXTRACT()
 
 CPSRC=""
 NOMAKE=""
-HDFREPOS=hdf5-examples
-SWVERSION=hdf5-examples

@@ -11,5 +11,3 @@ CHECKINSTALL()
 #   svn -q commit -m "Snapshot $RELEASE_VERSION"
 #}
 
-H5VERSION=hdf5
-SWVERSION=hdf5

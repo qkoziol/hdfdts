@@ -43,8 +43,13 @@ PROGNAME="bin/runtest $DEBUGMODE"
 HOSTNAME=`hostname | cut -f1 -d.`	# no domain part
 TODAY=`date +%m%d%a`
 WEEKDAY=`date +%a`
-H5VER=			# default to current CVS version
-H5VERSION=		# default to current CVS version
+SNAPSHOTNAME=
+HDFREPOS=
+if [ -f bin/snapshot_params ]; then
+   . bin/snapshot_params
+fi
+SWVER=			# default to current CVS version
+SWVERSION=		# default to current CVS version
 n_test=0		# Number of tests ran
 n_pass=0		# Number of tests passed
 n_fail=0		# Number of tests failed
@@ -610,8 +615,6 @@ timelimit=300			# time limit (minutes) for the timekeeper
 #################################
 # Parse options
 #################################
-sw=$1
-shift
 while [ $# -gt 0 ]; do
     case "$1" in
 	-h) # help--show usage
@@ -627,10 +630,10 @@ while [ $# -gt 0 ]; do
 	    ;;
 	-r*)
 	    # version string
-	    H5VER="$1"
+	    SWVER="$1"
 	    ;;
 	-all)
-            echo "Testing all hosts - both kagiso and smirom."
+            echo "Testing all hosts."
 	    # Test all hosts.
 	    TESTHOST=-all
 	    ;;
@@ -689,24 +692,27 @@ while [ $# -gt 0 ]; do
     shift
 done
 
-# setup H5VER if not set yet
-if [ -z "$H5VER" -a -f bin/snapshot_version ]
+# setup SWVER if not set yet
+if [ -z "$SWVER" -a -f bin/snapshot_version ]
 then
     . bin/snapshot_version
 fi
 
-if [ -n "$H5VER" ]
+echo $SWVER
+echo $SWVERSION
+
+if [ -n "$SWVER" ]
 then
-    H5VERSION=${sw}_`echo $H5VER | sed -e s/-r// -e s/\\\./_/g`
-    PROGNAME="$PROGNAME $H5VER"
-else
-    H5VERSION=${sw}
+    SWVERSION=${HDFREPOS}_`echo $SWVER | sed -e s/-r// -e s/\\\./_/g`
+    PROGNAME="$PROGNAME $SWVER"
+elif [ -z "$SWVERSION" ]; then
+    SWVERSION=${HDFREPOS}
 fi
 
 #################################
 # Setup snapshot test directories
 #################################
-BASEDIR=${HOME}/snapshots-${H5VERSION}
+BASEDIR=${HOME}/snapshots-${SNAPSHOTNAME}
 # initial processing of setup option if requested
 if test x-$CMD = x-setup; then
     CHECK_DIR $BASEDIR
@@ -824,9 +830,9 @@ if [ -z "$NOCVS" ]; then
     # ===================
     PRINT Checking MANIFEST file ...
     errcode=0
-    POS4=`perl -e "print index(\"${sw}\", 'hdf4')"`
-    POS5=`perl -e "print index(\"${sw}\", 'hdf4')"`
-    if [ "${sw}" ==  "hdf4" ] || [ "${sw}" == "hdf5" ]; then
+    POS4=`perl -e "print index(\"$HDFREPOS}\", 'hdf4')"`
+    POS5=`perl -e "print index(\"${HDFREPOS}\", 'hdf4')"`
+    if [ "${HDFREPOS}" ==  "hdf4" ] || [ "${HDFREPOS}" == "hdf5" ]; then
         (cd $SNAPYARD/current; ../bin/chkmanifest) > $TMPFILE 2>&1
         errcode=$?
     fi
@@ -880,7 +886,7 @@ if [ -z "$NOCVS" ]; then
 		echo ...
 		tail -$ntaillines $COPYRIGHT_ERR
 	    fi 
-	)  | Mail -s "${H5VERSION} Copyrights check Failed" hdf5lib
+	)  | Mail -s "${SWVERSION} Copyrights check Failed" hdf5lib
     fi
     rm $TMPFILE
     PRINT_BLANK
@@ -924,7 +930,7 @@ fi
 
 # we can use the version of script in SNAPYARD now.
 # Don't do the diff or cvs update any more.
-PROGNAME="$SNAPYARD/$PROGNAME ${sw} -nodiff -nocvs"
+PROGNAME="$SNAPYARD/$PROGNAME -nodiff -nocvs"
 
 # Decide to do test for the local host or for remote hosts
 if [ -n "$TESTHOST" -a $HOSTNAME != "$TESTHOST" ]; then
@@ -956,7 +962,7 @@ if [ -n "$TESTHOST" -a $HOSTNAME != "$TESTHOST" ]; then
 	# run the remote shell command with output to $TMP_OUTPUT
 	case "$RSH" in
 	    rsh|ssh)
-		CMD="$RSH $h -n $PROGNAME -configname $CONFIGNAME"
+		CMD="$RSH $h -n cd $BASEDIR;$PROGNAME -configname $CONFIGNAME"
 		PRINT $CMD
 
 		# launch concurrent tests only if srcdir is used
@@ -1019,9 +1025,9 @@ echo "FTP flag is $FTP"
 if [ -n "$FTP" ]; then
     $SNAPSHOT ftp $FTPURL
     echo "Ran $SNAPSHOT ftp $FTPURL in line 979"
-else
-    $SNAPSHOT checkout
-    echo "Ran $SNAPSHOT checkout"
+#else
+#    $SNAPSHOT checkout
+#    echo "Ran $SNAPSHOT checkout"
 fi 
 n_test=1
 runtest_type="tests"

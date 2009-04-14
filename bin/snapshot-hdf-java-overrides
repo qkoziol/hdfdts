@@ -7,10 +7,13 @@ DISTCLEAN()
 {
 #       (cd ${TESTDIR} && ${MAKE} distclean)
 # distclean not working for hdf-java - some .class files left behind
-        echo "Removing $SRCDIRNAME.\n"
-        (cd ${BASEDIR}/TestDir && rm -rf ${SRCDIRNAME} && mkdir ${SRCDIRNAME})
-        sleep 2
-        echo "$SRCDIRNAME removed and newly created.\n"
+   if [ -n "${SRCDIRNAME}" -a -d ${BASEDIR}/TestDir/${SRCDIRNAME} ]; then
+      echo "Removing contents of $SRCDIRNAME.\n"
+      rm -rf ${BASEDIR}/TestDir/${SRCDIRNAME}/*
+   else
+      echo "${BASEDIR}/TestDir/${SRCDIRNAME} is not a directory.  Its contents cannot be removed."
+   fi
+   sleep 2
 }
 
 CPSRC="yes"
