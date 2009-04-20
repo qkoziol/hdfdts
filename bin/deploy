@@ -47,8 +47,8 @@ if [ $# != 1 ]; then
 fi
 
 installdir=$1
-POS4=`perl -e "print index(\"${installdir}\", 'hdf4')"`
-POS5=`perl -e "print index(\"${installdir}\", 'hdf5')"`
+POS4=`perl -e "print index(lc(\"${installdir}\"), 'hdf4')"`
+POS5=`perl -e "print index(lc(\"${installdir}\"), 'hdf5')"`
 if [ "${POS4}" -ge "0" ]; then
    REDEPLOY="h4redeploy"
 elif [ "${POS5}" -ge "0" ]; then
