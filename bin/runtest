@@ -35,12 +35,13 @@ DEBUGMODE=""
 test -n "$DEBUGMODE" && echo "******** DEBUGMODE is $DEBUGMODE ************"
 WHEREAMI='pwd'
 CMD=
+BATCHMODE=""
 
 # the name of this program
 PROGNAME="bin/runtest $DEBUGMODE"
 
 # Setup
-HOSTNAME=`hostname | cut -f1 -d.`	# no domain part
+HOST_NAME=`hostname | cut -f1 -d.`	# no domain part
 TODAY=`date +%m%d%a`
 WEEKDAY=`date +%a`
 SNAPSHOTNAME=
@@ -65,7 +66,7 @@ SNAPCMD="$SRCDIR test clean"
 # Default Standard snaptest command options
 STANDARD_OPT=""
 ENABLE_PARALLEL="--enable-parallel"
-CONFIGNAME=$HOSTNAME	# Name used in the SNAPTESTCFG file
+CONFIGNAME=$HOST_NAME	# Name used in the SNAPTESTCFG file
 
 # test host default as local host.
 TESTHOST=""
@@ -124,15 +125,15 @@ REPORT_RESULT()
     if [ $retcode -eq 0 ]; then
 	if [ $skiptest = yes ]; then
 	    n_skip=`expr $n_skip + 1`
-	    PRINT "SKIPPED ${HOSTNAME}: $TEST_TYPE" | tee -a $SKIPPEDLOG
+	    PRINT "SKIPPED ${HOST_NAME}: $TEST_TYPE" | tee -a $SKIPPEDLOG
 	else
 	    n_pass=`expr $n_pass + 1`
-	    PRINT "PASSED ${HOSTNAME}: $TEST_TYPE" | tee -a $PASSEDLOG
+	    PRINT "PASSED ${HOST_NAME}: $TEST_TYPE" | tee -a $PASSEDLOG
 	fi
     else
 	# test failed.
 	n_fail=`expr $n_fail + 1`
-	REPORT_ERR "****FAILED ${HOSTNAME}: $TEST_TYPE****"
+	REPORT_ERR "****FAILED ${HOST_NAME}: $TEST_TYPE****"
     fi
 }
 
@@ -145,7 +146,7 @@ PRINT_BLANK()
 # Print test trailer
 PRINT_TEST_TRAILER()
 {
-    PRINT "*** finished $TEST_TYPE tests for $HOSTNAME ***"
+    PRINT "*** finished $TEST_TYPE tests for $HOST_NAME ***"
     date; EndTime=`SecOfDay`
     PRINT Total time = `ElapsedTime $StartTime $EndTime`
     PRINT_BLANK
@@ -154,9 +155,9 @@ PRINT_TEST_TRAILER()
 # Print trailer summary
 PRINT_TRAILER()
 {
-    PRINT "*** finished tests in $HOSTNAME ***"
+    PRINT "*** finished tests in $HOST_NAME ***"
     date; TotalEndTime=`SecOfDay`
-    PRINT "${HOSTNAME}: Ran $n_test($n_pass/$n_fail/$n_skip) $runtest_type, Grand total test time = " \
+    PRINT "${HOST_NAME}: Ran $n_test($n_pass/$n_fail/$n_skip) $runtest_type, Grand total test time = " \
           "`ElapsedTime $TotalStartTime $TotalEndTime`" | tee -a $TIMELOG
     PRINT_BLANK
 }
@@ -275,7 +276,7 @@ WAITTILL()
 RUNSNAPTEST()
 {
     SNAPCMD_OPT="$STANDARD_OPT"		# snapshot test option
-    SRCDIRNAME=${HOSTNAME}
+    SRCDIRNAME=${HOST_NAME}
     # restore CC, PATH in case they were changed in the last test.
     CC="$CC_SAVED"
     PATH=$PATH_SAVED
@@ -284,7 +285,7 @@ RUNSNAPTEST()
     retcode=0
     skiptest=no
     date
-    PRINT "*** starting $TEST_TYPE tests in $HOSTNAME ***"
+    PRINT "*** starting $TEST_TYPE tests in $HOST_NAME ***"
     PRINT "Uname -a: `uname -a`"
 
     # Parse the test type and set options accordingly.
@@ -402,6 +403,9 @@ RUNSNAPTEST()
     fi
 
     if [ -n "${SRCDIRNAME}" ]; then
+        if [ -n "$BATCHMODE" ]; then
+            SRCDIRNAME="$SRCDIRNAME-$n_test"
+        fi
 	SNAPCMD_OPT="$SNAPCMD_OPT srcdirname ${SRCDIRNAME}"
         echo "SRCDIRNAME is $SRCDIRNAME"
     fi
@@ -411,32 +415,40 @@ RUNSNAPTEST()
     LOGFILE=${LOGBASENAME}/${SRCDIRNAME}_${TODAY}_${THIS_MINUTE}
     PRINT "Running snapshot with output saved in"
     PRINT "   $LOGFILE"
-    (date; PRINT Hostname=$HOSTNAME) >> $LOGFILE
+    (date; PRINT Hostname=$HOST_NAME) >> $LOGFILE
 
     echo "SNAPCMD is $SNAPCMD"
     echo "SNAPCMD_OPT is $SNAPCMD_OPT"
-    (
-    cd $SNAPYARD
-    echo "Running $SNAPSHOT $SNAPCMD $SNAPCMD_OPT"
-    $SNAPSHOT $SNAPCMD $SNAPCMD_OPT
-    #$SNAPSHOT exttest $EXTTEST
-    ) >> $LOGFILE 2>&1
-    retcode=$?
-    [ $retcode -ne 0 ] && errcode=$retcode
-    date >> $LOGFILE
-    if [ $retcode -ne 0 ]; then
-        # Dump the first 10 lines and the last 30 lines of the LOGFILE.
-        ( ntail=30
-	    echo =========================
-	    echo "Dumping logfile of ${HOSTNAME}: $TEST_TYPE"
-	    echo "Last $ntail lines of $LOGFILE"
-	    echo =========================
-	    tail -$ntail $LOGFILE
-            echo =========================
-            echo Dumping done
-            echo =========================
-	    echo ""
-	) >> $FAILEDDETAIL
+    if [ -n "$BATCHMODE" ]; then
+        (
+        cd $SNAPYARD
+        PWD=`pwd`
+        echo "Submitting $SNAPSHOT $SNAPCMD $SNAPCMD_OPT as batch job from ${PWD}"
+        perl bin/batch-$CONFIGNAME-runsnaptest.pl $SNAPSHOTNAME $SRCDIRNAME $LOGFILE $SNAPSHOT $SNAPCMD $SNAPCMD_OPT
+        ) >> $LOGFILE 
+    else
+        (
+        cd $SNAPYARD
+        echo "Running $SNAPSHOT $SNAPCMD $SNAPCMD_OPT"
+        $SNAPSHOT $SNAPCMD $SNAPCMD_OPT
+        ) >> $LOGFILE
+        retcode=$?
+        [ $retcode -ne 0 ] && errcode=$retcode
+        date >> $LOGFILE
+        if [ $retcode -ne 0 ]; then
+            # Dump the first 10 lines and the last 30 lines of the LOGFILE.
+            ( ntail=30
+	        echo =========================
+	        echo "Dumping logfile of ${HOST_NAME}: $TEST_TYPE"
+	        echo "Last $ntail lines of $LOGFILE"
+	        echo =========================
+	        tail -$ntail $LOGFILE
+                echo =========================
+                echo Dumping done
+                echo =========================
+	        echo ""
+	    ) >> $FAILEDDETAIL
+        fi
     fi
 }
 
@@ -822,7 +834,7 @@ if [ -z "$NOCVS" ]; then
     rm -f $CVSLOG_LOCK
     if [ $errcode -ne 0 ]; then
 	# test failed.
-	REPORT_ERR "****FAILED ${HOSTNAME}: CVS checkout****"
+	REPORT_ERR "****FAILED ${HOST_NAME}: CVS checkout****"
 	exit $errcode
     fi
     # ===================
@@ -841,7 +853,7 @@ if [ -z "$NOCVS" ]; then
 	cat $TMPFILE
     else
 	# test failed.
-	REPORT_ERR "****FAILED ${HOSTNAME}: MANIFEST check****"
+	REPORT_ERR "****FAILED ${HOST_NAME}: MANIFEST check****"
         (   echo =========================
 	    echo "MANIFEST checking failed output"
 	    echo =========================
@@ -900,13 +912,13 @@ else
     WAITFOR $CVSLOG 90
     if [ $WAIT_STATUS -ne 0 ]; then
 	errcode=$WAIT_STATUS
-	REPORT_ERR "****FAILED ${HOSTNAME}: Time expired waiting CVS update to start****"
+	REPORT_ERR "****FAILED ${HOST_NAME}: Time expired waiting CVS update to start****"
 	exit $errcode
     fi
     WAITTILL $CVSLOG_LOCK 10
     if [ $WAIT_STATUS -ne 0 ]; then
 	errcode=$WAIT_STATUS
-	REPORT_ERR "****FAILED ${HOSTNAME}: Time expired waiting CVS update to finish****"
+	REPORT_ERR "****FAILED ${HOST_NAME}: Time expired waiting CVS update to finish****"
 	exit $errcode
     fi
 fi
@@ -933,15 +945,15 @@ fi
 PROGNAME="$SNAPYARD/$PROGNAME -nodiff -nocvs"
 
 # Decide to do test for the local host or for remote hosts
-if [ -n "$TESTHOST" -a $HOSTNAME != "$TESTHOST" ]; then
+if [ -n "$TESTHOST" -a $HOST_NAME != "$TESTHOST" ]; then
     date
-    PRINT "*** launching tests from $HOSTNAME ***"
+    PRINT "*** launching tests from $HOST_NAME ***"
     PRINT_BLANK
     PRINT "TESTHOST is $TESTHOST"
     TEST_TYPE="launching"
     cd ${SNAPYARD}/log
     # Fork off timekeeper if concurrent tests will be used.
-    if [ -n "$SRCDIR" ]; then
+    if [ -n "$SRCDIR" -a -z "$BATCHMODE" ]; then
         timelimit=`TIMELIMIT_PARSE < $TIMELIMIT`
 	($SNAPYARD/bin/timekeeper $timelimit > $TIMEKEEPERLOG 2>&1 &)
 	PRINT "    Fork off timekeeper $timelimit"
@@ -1002,7 +1014,6 @@ if [ -n "$TESTHOST" -a $HOSTNAME != "$TESTHOST" ]; then
 	    (REPORT_ERR "****FAILED ${h}: snaptest did not complete****" &&
 		PRINT_BLANK)
         fi
-
 	rm -f $TMP_OUTPUT PID.${h}_${CONFIGNAME}
     done
     exit 0
@@ -1037,8 +1048,12 @@ while [ -n "$TEST" ]; do
     echo "Running $TEST"
     StartTime=`SecOfDay`
     RUNSNAPTEST $TEST 
-    REPORT_RESULT
-    PRINT_TEST_TRAILER
+    if [ -n "$BATCHMODE" ]; then
+        PRINT "SUBMITTED batch job ${HOST_NAME}: $TEST_TYPE":
+    else
+        REPORT_RESULT
+        PRINT_TEST_TRAILER
+    fi
 
     n_test=`expr $n_test + 1`
     TEST="`echo $TEST_TYPES | cut -f$n_test -s -d';'`"
@@ -1046,9 +1061,66 @@ done
 # dec n_test to show the actual number of tests ran.
 n_test=`expr $n_test - 1`
 
+if [ -n "$BATCHMODE" ]; then
+   cd $SNAPYARD
+   perl bin/await_results.pl $SNAPYARD $SNAPSHOTNAME $n_test
+
+   OUTPUTFILES=`ls log/$HOST_NAME-*`
+   for file in $OUTPUTFILES; do
+      retcode=0
+      if (tail -3 $file | grep -s 'Exit bin/snapshot with status=0' > /dev/null 2>&1); then
+         echo ""
+      else
+         retcode=1
+      fi
+      if [ "$retcode" -eq "1" ]; then
+         perl bin/process_results.pl $file
+      else
+         perl bin/process_results.pl $file
+         retcode=`expr $retcode + $?`
+      fi
+      [ $retcode -ne 0 ] && errcode=$retcode
+      if [ $retcode -ne 0 ]; then
+         # Dump the first 10 lines and the last 30 lines of the LOGFILE.
+         ( ntail=30
+            echo =========================
+            echo "Dumping logfile ${file}: $TEST_TYPE"
+            echo "Last $ntail lines of $file"
+            echo =========================
+            tail -$ntail $file
+            echo =========================
+            echo Dumping done
+            echo =========================
+            echo ""
+         ) >> $FAILEDDETAIL
+      fi
+      REPORT_RESULT
+      PRINT_TEST_TRAILER
+   done
+fi
+
 PRINT_TRAILER
 
 # disable trailer summary printing since all trailers have been
 # printed and we are exiting normally.
 trap 0
 exit $errcode
+
+
+
+   if [ $retcode -eq 0 ]; then
+        if [ $skiptest = yes ]; then
+            n_skip=`expr $n_skip + 1`
+            PRINT "SKIPPED ${HOST_NAME}: $TEST_TYPE" | tee -a $SKIPPEDLOG
+        elif [ -n $BATCHMODE ]; then
+            PRINT "SUBMITTED batch job ${HOST_NAME}: $TEST_TYPE":
+        else
+            n_pass=`expr $n_pass + 1`
+            PRINT "PASSED ${HOST_NAME}: $TEST_TYPE" | tee -a $PASSEDLOG
+        fi
+    else
+        # test failed.
+        n_fail=`expr $n_fail + 1`
+        REPORT_ERR "****FAILED ${HOST_NAME}: $TEST_TYPE****"
+    fi
+
