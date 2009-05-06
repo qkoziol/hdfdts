@@ -1068,19 +1068,8 @@ if [ -n "$BATCHMODE" ]; then
    OUTPUTFILES=`ls log/$HOST_NAME-*`
    for file in $OUTPUTFILES; do
       retcode=0
-      if (tail -3 $file | grep -s 'Exit bin/snapshot with status=0' > /dev/null 2>&1); then
-         echo ""
-      else
+      if ! (tail -3 $file | grep -s 'Exit bin/snapshot with status=0' > /dev/null 2>&1) || (grep "FAILED" $file); then
          retcode=1
-      fi
-      if [ "$retcode" -eq "1" ]; then
-         perl bin/process_results.pl $file
-      else
-         perl bin/process_results.pl $file
-         retcode=`expr $retcode + $?`
-      fi
-      [ $retcode -ne 0 ] && errcode=$retcode
-      if [ $retcode -ne 0 ]; then
          # Dump the first 10 lines and the last 30 lines of the LOGFILE.
          ( ntail=30
             echo =========================
@@ -1094,6 +1083,7 @@ if [ -n "$BATCHMODE" ]; then
             echo ""
          ) >> $FAILEDDETAIL
       fi
+      [ $retcode -ne 0 ] && errcode=$retcode
       REPORT_RESULT
       PRINT_TEST_TRAILER
    done
