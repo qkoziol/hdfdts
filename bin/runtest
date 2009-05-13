@@ -379,6 +379,7 @@ RUNSNAPTEST()
                 ;;
 	    *) # unknown test
 		PRINT "$0: unknown type of test ($1)"
+		echo "$0: unknown type of test ($1)" >> $FAILEDDETAIL
 		retcode=1
 		;;
 	esac
@@ -753,6 +754,7 @@ SNAPTESTCFG=${SNAPYARD}/snaptest.cfg
 TIMELIMIT=${SNAPYARD}/timelimit
 TMPFILE="${LOGDIR}/#runtest.${TODAY}.$$"
 
+#echo "Running Tests" >> $FAILEDDETAIL
 # more processing of setup option if requested
 if test x-$CMD = x-setup; then
     CHECK_DIR $LOGDIR
@@ -1005,6 +1007,7 @@ if [ -n "$TESTHOST" -a $HOST_NAME != "$TESTHOST" ]; then
 	cat $TMP_OUTPUT
 	# Verify test script did complete by checking the last lines
 	if (tail -3 $TMP_OUTPUT | grep -s 'Abnormal' > /dev/null 2>&1) ; then
+            echo "Runtest did not exit normally." >> $FAILEDDETAIL
            (REPORT_ERR "****FAILED ${h}: runtest command failed ****" &&
                 PRINT_BLANK)
         else          
@@ -1103,22 +1106,3 @@ PRINT_TRAILER
 # printed and we are exiting normally.
 trap 0
 exit $errcode
-
-
-
-   if [ $retcode -eq 0 ]; then
-        if [ $skiptest = yes ]; then
-            n_skip=`expr $n_skip + 1`
-            PRINT "SKIPPED ${HOST_NAME}: $TEST_TYPE" | tee -a $SKIPPEDLOG
-        elif [ -n $BATCHMODE ]; then
-            PRINT "SUBMITTED batch job ${HOST_NAME}: $TEST_TYPE":
-        else
-            n_pass=`expr $n_pass + 1`
-            PRINT "PASSED ${HOST_NAME}: $TEST_TYPE" | tee -a $PASSEDLOG
-        fi
-    else
-        # test failed.
-        n_fail=`expr $n_fail + 1`
-        REPORT_ERR "****FAILED ${HOST_NAME}: $TEST_TYPE****"
-    fi
-
