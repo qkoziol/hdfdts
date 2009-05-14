@@ -424,13 +424,13 @@ RUNSNAPTEST()
         (
         cd $SNAPYARD
         perl bin/batch-$CONFIGNAME-runsnaptest.pl $SNAPSHOTNAME $SRCDIRNAME $LOGFILE $SNAPSHOT $SNAPCMD $SNAPCMD_OPT
-        ) >> $LOGFILE 
+        ) >> $LOGFILE 2>&1 
     else
         (
         cd $SNAPYARD
         echo "Running $SNAPSHOT $SNAPCMD $SNAPCMD_OPT"
         $SNAPSHOT $SNAPCMD $SNAPCMD_OPT
-        ) >> $LOGFILE
+        ) >> $LOGFILE 2>&1
         retcode=$?
         [ $retcode -ne 0 ] && errcode=$retcode
         date >> $LOGFILE
