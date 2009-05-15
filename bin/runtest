@@ -754,7 +754,6 @@ SNAPTESTCFG=${SNAPYARD}/snaptest.cfg
 TIMELIMIT=${SNAPYARD}/timelimit
 TMPFILE="${LOGDIR}/#runtest.${TODAY}.$$"
 
-#echo "Running Tests" >> $FAILEDDETAIL
 # more processing of setup option if requested
 if test x-$CMD = x-setup; then
     CHECK_DIR $LOGDIR
@@ -1043,22 +1042,46 @@ if [ -n "$FTP" ]; then
 fi 
 n_test=1
 runtest_type="tests"
-echo "TEST_TYPES in runtest:986 is $TEST_TYPES"
+
+if [ -n "$SHOULD_FINISH" ]; then
+    set `echo $SHOULD_FINISH | awk -F: ' {print $1 " " $2 " 00"} '`
+    deadline=`expr $1 \* 3600 + $2 \* 60 `
+else
+    deadline=86400
+fi
+
 TEST="`echo $TEST_TYPES | cut -f$n_test -d';'`"
 while [ -n "$TEST" ]; do
     echo "Running $TEST"
     StartTime=`SecOfDay`
     RUNSNAPTEST $TEST 
     if [ -n "$BATCHMODE" ]; then
-        PRINT "SUBMITTED batch job ${HOST_NAME}: $TEST_TYPE":
+        if [ $skiptest = yes ]; then
+            REPORT_RESULT
+            PRINT_TEST_TRAILER
+        else
+            PRINT "SUBMITTED batch job ${HOST_NAME}: $TEST_TYPE":
+            date
+        fi
     else
         REPORT_RESULT
         PRINT_TEST_TRAILER
+        EndTime=`SecOfDay`
+        duration=`expr $EndTime - $StartTime`
+        projected_finish=`expr $EndTime + $duration`
+        n_test=`expr $n_test + 1`
+        if [ "$projected_finish" -lt "$deadline" ]; then
+            TEST="`echo $TEST_TYPES | cut -f$n_test -s -d';'`"
+        else
+            echo "No more time to run tests:  skipping $TEST_TYPES"
+            while [ -n "$TEST" ]; do
+                n_skip=`expr $n_skip + 1`
+                PRINT "SKIPPED ${HOST_NAME}: $TEST_TYPE" | tee -a $SKIPPEDLOG
+            done
+        fi
     fi
-
-    n_test=`expr $n_test + 1`
-    TEST="`echo $TEST_TYPES | cut -f$n_test -s -d';'`"
 done
+
 # dec n_test to show the actual number of tests ran.
 n_test=`expr $n_test - 1`
 
