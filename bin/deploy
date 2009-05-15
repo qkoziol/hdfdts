@@ -47,6 +47,9 @@ if [ $# != 1 ]; then
 fi
 
 installdir=$1
+# The daily tests deploy to .../hdf5/... or .../hdf4/... except on cobalt where the 
+# deploy directory is in .../HDF5/...  lc will take care of this.  If hdf4 or hdf5
+# either upper or lower case isn't in the path, redeploy won't be run.
 POS4=`perl -e "print index(lc(\"${installdir}\"), 'hdf4')"`
 POS5=`perl -e "print index(lc(\"${installdir}\"), 'hdf5')"`
 if [ "${POS4}" -ge "0" ]; then
