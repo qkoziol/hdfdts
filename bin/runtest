@@ -1066,19 +1066,19 @@ while [ -n "$TEST" ]; do
     else
         REPORT_RESULT
         PRINT_TEST_TRAILER
-        EndTime=`SecOfDay`
-        duration=`expr $EndTime - $StartTime`
-        projected_finish=`expr $EndTime + $duration`
-        n_test=`expr $n_test + 1`
-        if [ "$projected_finish" -lt "$deadline" ]; then
-            TEST="`echo $TEST_TYPES | cut -f$n_test -s -d';'`"
-        else
-            echo "No more time to run tests:  skipping $TEST_TYPES"
-            while [ -n "$TEST" ]; do
-                n_skip=`expr $n_skip + 1`
-                PRINT "SKIPPED ${HOST_NAME}: $TEST_TYPE" | tee -a $SKIPPEDLOG
-            done
-        fi
+    fi
+    n_test=`expr $n_test + 1`
+    EndTime=`SecOfDay`
+    duration=`expr $EndTime - $StartTime`
+    projected_finish=`expr $EndTime + $duration`
+    if [ "$projected_finish" -lt "$deadline" ]; then
+        TEST="`echo $TEST_TYPES | cut -f$n_test -s -d';'`"
+    else
+        echo "No more time to run tests:  skipping $TEST_TYPES"
+        while [ -n "$TEST" ]; do
+            n_skip=`expr $n_skip + 1`
+            PRINT "SKIPPED ${HOST_NAME}: $TEST_TYPE" | tee -a $SKIPPEDLOG
+        done
     fi
 done
 
