@@ -114,7 +114,7 @@ END_OUTPUT_END
 
 my $noderequest = "#PBS -l nodes=1:ppn=2\n";
 if ($PARALLEL ne "") {
-   $noderequest = "#PBS -l nodes=3:ppn=2\n";
+   $noderequest = "#PBS -l nodes=3:ppn=1\n";
 }
 my $OUTPUT = $OUTPUT_BEGIN.$noderequest.$OUTPUT_NEXT1.$JOBLINE.$OUTPUT_NEXT2."cd $CALLING_DIR\n".$OUTPUT_NEXT3.$CMD."\n".$OUTPUT_END;
 
