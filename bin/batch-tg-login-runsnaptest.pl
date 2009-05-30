@@ -43,7 +43,7 @@ my $OUTPUT_BEGIN = <<'END_OUTPUT_BEGIN';
 # _not_  denote that the lines are commented out so do not remove).
 #
 # walltime : maximum wall clock time (hh:mm:ss)
-#PBS -l walltime=01:45:00
+#PBS -l walltime=02:00:00
 #
 END_OUTPUT_BEGIN
 
