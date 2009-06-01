@@ -47,14 +47,17 @@ EXTRACT()
 SVNCHECKOUT()
 {
    SVNROOT=https://svn.hdfgroup.uiuc.edu
+   if [ ! -d $BASEDIR/current ]; then
+      mkdir $BASEDIR/current
+   fi
    cd $BASEDIR/current; svn info
-   if [ "$?" = "0" ];then
+   if [ "$?" = 0 ];then
       echo "Updating $BASEDIR/current from svn."
       ( svn -q update ) || exit 1
    else
       echo "Checking out from $SVNROOT/${SVNVERSION} into $BASEDIR/current"
       # Check out the current version from source repository.
-      (cd $BASEDIR; svn -q co ${SVNROOT}/${SVNVERSION} current ) || exit 1
+      (cd $BASEDIR; svn co ${SVNROOT}/${SVNVERSION} current ) || exit 1
    fi
 }
 
@@ -554,10 +557,10 @@ if [ "$cmd" = "all" -o -n "$cmdtest" -o -n "$cmddiff" ]; then
 	    snapshot=no
 	    exit $errcode
 	fi
-    else
-        if [ $CPSRC ]; then
+    elif [ $CPSRC ]; then
            cp -pr ${CURRENT}/* ${TESTDIR}
-        fi
+    else 
+        cmdclean=""
     fi
 fi # Test the HDF5 library
 
@@ -607,6 +610,7 @@ fi # Deploy
 # Run Release snapshot, update version, and commit to source repository
 #=============================
 if [ "$cmd" = "all" -o -n "$cmdrel" ]; then
+  if [ "$HDFREPOS" != "hdf4" ]; then
     if [ "$snapshot" = "yes" ]; then
 	TIMESTAMP "release"
         DISTCLEAN
@@ -623,6 +627,9 @@ if [ "$cmd" = "all" -o -n "$cmdrel" ]; then
 	)
 	errcode=$?
     fi
+  else 
+    echo "need real release steps.  For now, only move current version to previous"
+  fi
 
     # Replace the previous version with the current version.
     # Should check if the errcode of the release process but there

@@ -6,8 +6,8 @@ CHECKINSTALL()
 }
 
 # uncomment this function after trying this a few days.
-#COMMITSNAPSHOT()
-#{
-#   svn -q commit -m "Snapshot $RELEASE_VERSION"
-#}
+COMMITSNAPSHOT()
+{
+   svn -q commit -m "Snapshot $RELEASE_VERSION"
+}
 
