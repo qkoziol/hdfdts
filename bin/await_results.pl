@@ -19,6 +19,9 @@ if ( $#ARGV < 2) {
 }
 my $nminutes = 1400;
 
+print "Removing all files from $directory/batch_output/ and all test files from $directory.\n";
+`rm $directory/$test_name.e*`;
+`rm $directory/$test_name.o*`;
 `rm $directory/batch_output/*`;
 print "Waiting up to $nminutes minutes for $num_tests $test_name tests to finish.\n";
 

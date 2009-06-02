@@ -31,11 +31,6 @@ my $OUTPUT_BEGIN = <<'END_OUTPUT_BEGIN';
 # The following are embedded QSUB options. The syntax is #PBS (the # does
 # _not_  denote that the lines are commented out so do not remove).
 #
-# walltime : maximum wall clock time (hh:mm:ss)
-#PBS -l walltime=02:00:00
-#
-# Set memory limit to 500 Mbytes
-#PBS -l mem=500mb
 
 END_OUTPUT_BEGIN
 
@@ -103,12 +98,14 @@ my $OUTPUT_END = <<'END_OUTPUT_END';
 #msscmd cd dir1, mput *.output 
 END_OUTPUT_END
 
-
+my $timerequest = "#PBS -l walltime=01:30:00\n";
+my $memrequest = "# Set memory limit to 500 Mbytes\n#PBS -l mem=500mb\n";
 my $noderequest = "#PBS -l ncpus=8\n";
 if ($PARALLEL ne "") {
    $noderequest = "#PBS -l ncpus=12\n";
+   $timerequest = "#PBS -l walltime=02:00:00\n";
 }
-my $OUTPUT = $OUTPUT_BEGIN.$noderequest.$OUTPUT_NEXT1.$JOBLINE.$OUTPUT_NEXT2."cd $CALLING_DIR\n".$OUTPUT_NEXT3.$CMD."\n".$OUTPUT_END;
+my $OUTPUT = $OUTPUT_BEGIN."# walltime : maximum wall clock time (hh:mm:ss)\n".$timerequest."#\n".$memrequest."#\n".$noderequest.$OUTPUT_NEXT1.$JOBLINE.$OUTPUT_NEXT2."cd $CALLING_DIR\n".$OUTPUT_NEXT3.$CMD."\n".$OUTPUT_END;
 
 my $out;
 my $outfile = "batch_scripts/batch-run-".$SRCDIRNAME;
