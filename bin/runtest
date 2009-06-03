@@ -1090,7 +1090,7 @@ n_test=`expr $n_test - 1`
 
 if [ -n "$BATCHMODE" ]; then
    cd $SNAPYARD
-   perl bin/await_results.pl $SNAPYARD $SNAPSHOTNAME $n_test
+   perl bin/await_results.pl $SNAPYARD $SNAPSHOTNAME `expr $n_test - $n_skip`
 
    OUTPUTFILES=`ls log/$HOST_NAME-*`
    for file in $OUTPUTFILES; do
