@@ -54,7 +54,6 @@ my $OUTPUT_BEGIN = <<'END_OUTPUT_BEGIN';
 #
 # walltime : maximum wall clock time (hh:mm:ss)
 
-#PBS -l walltime=01:30:00
 #
 # nodes: number of 8-core nodes
 #   ppn: how many cores per node to use (1 through 8)
@@ -120,12 +119,13 @@ mpdallexit
 #msscmd cd dir1, mput *.output 
 END_OUTPUT_END
 
-
+my $timerequest = "#PBS -l walltime=01:30:00\n";
 my $noderequest = "#PBS -l nodes=1:ppn=8\n";
 if ($PARALLEL ne "") {
    $noderequest = "#PBS -l nodes=3:ppn=8\n";
+   $timerequest = "#PBS -l walltime=02:00:00\n";
 }
-my $OUTPUT = $OUTPUT_BEGIN.$noderequest.$OUTPUT_NEXT1.$JOBLINE.$OUTPUT_NEXT2."cd $CALLING_DIR\n".$OUTPUT_NEXT3.$CMD.$OUTPUT_END;
+my $OUTPUT = $OUTPUT_BEGIN."#\n".$timerequest."#\n".$noderequest.$OUTPUT_NEXT1.$JOBLINE.$OUTPUT_NEXT2."cd $CALLING_DIR\n".$OUTPUT_NEXT3.$CMD.$OUTPUT_END;
 
 my $out;
 my $outfile = "batch_scripts/batch-run-".$SRCDIRNAME;
