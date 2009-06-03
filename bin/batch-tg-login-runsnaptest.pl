@@ -19,15 +19,7 @@ foreach my $arg (@ARGV) {
       $PARALLEL = "yes";
    }
 }
-# tg-login compute nodes can write to logs in /gpfs_scratch1, which is where
-# TestDir is, so write the log there and runtest will have to move it.
-#$CMD = $CMD.">>& TestDir/log/$LOGFILE";
 $CMD = $CMD.">>& $LOGFILE";
-#if ( $#ARGV < 0) {
-#   $MAKE_COMMAND = "make $TARGET\n";
-#} else {
-#   $MAKE_COMMAND = "make $TARGET @ARGV\n";
-#}
 
 my $OUTPUT_BEGIN = <<'END_OUTPUT_BEGIN';
 #!/bin/csh
@@ -42,9 +34,7 @@ my $OUTPUT_BEGIN = <<'END_OUTPUT_BEGIN';
 # The following are embedded QSUB options. The syntax is #PBS (the # does
 # _not_  denote that the lines are commented out so do not remove).
 #
-# walltime : maximum wall clock time (hh:mm:ss)
-#PBS -l walltime=02:00:00
-#
+
 END_OUTPUT_BEGIN
 
 my $OUTPUT_NEXT1 = <<'END_OUTPUT_NEXT1';
@@ -111,12 +101,13 @@ my $OUTPUT_END = <<'END_OUTPUT_END';
 #msscmd cd dir1, mput *.output 
 END_OUTPUT_END
 
-
+my $timerequest = "#PBS -l walltime=01:30:00\n";
 my $noderequest = "#PBS -l nodes=1:ppn=2\n";
 if ($PARALLEL ne "") {
    $noderequest = "#PBS -l nodes=3:ppn=1\n";
+   $timerequest = "#PBS -l walltime=02:30:00\n";
 }
-my $OUTPUT = $OUTPUT_BEGIN.$noderequest.$OUTPUT_NEXT1.$JOBLINE.$OUTPUT_NEXT2."cd $CALLING_DIR\n".$OUTPUT_NEXT3.$CMD."\n".$OUTPUT_END;
+my $OUTPUT = $OUTPUT_BEGIN."# walltime : maximum wall clock time (hh:mm:ss)\n".$timerequest."#\n".$noderequest.$OUTPUT_NEXT1.$JOBLINE.$OUTPUT_NEXT2."cd $CALLING_DIR\n".$OUTPUT_NEXT3.$CMD."\n".$OUTPUT_END;
 
 my $out;
 my $outfile = "batch_scripts/batch-run-".$SRCDIRNAME;
