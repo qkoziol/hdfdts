@@ -123,7 +123,7 @@ my $timerequest = "#PBS -l walltime=01:30:00\n";
 my $noderequest = "#PBS -l nodes=1:ppn=8\n";
 if ($PARALLEL ne "") {
    $noderequest = "#PBS -l nodes=3:ppn=8\n";
-   $timerequest = "#PBS -l walltime=02:00:00\n";
+   $timerequest = "#PBS -l walltime=02:30:00\n";
 }
 my $OUTPUT = $OUTPUT_BEGIN."#\n".$timerequest."#\n".$noderequest.$OUTPUT_NEXT1.$JOBLINE.$OUTPUT_NEXT2."cd $CALLING_DIR\n".$OUTPUT_NEXT3.$CMD.$OUTPUT_END;
 
