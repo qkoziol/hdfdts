@@ -101,11 +101,11 @@ my $OUTPUT_END = <<'END_OUTPUT_END';
 #msscmd cd dir1, mput *.output 
 END_OUTPUT_END
 
-my $timerequest = "#PBS -l walltime=01:30:00\n";
+my $timerequest = "#PBS -l walltime=02:00:00\n";
 my $noderequest = "#PBS -l nodes=1:ppn=2\n";
 if ($PARALLEL ne "") {
    $noderequest = "#PBS -l nodes=3:ppn=1\n";
-   $timerequest = "#PBS -l walltime=02:30:00\n";
+   $timerequest = "#PBS -l walltime=03:00:00\n";
 }
 my $OUTPUT = $OUTPUT_BEGIN."# walltime : maximum wall clock time (hh:mm:ss)\n".$timerequest."#\n".$noderequest.$OUTPUT_NEXT1.$JOBLINE.$OUTPUT_NEXT2."cd $CALLING_DIR\n".$OUTPUT_NEXT3.$CMD."\n".$OUTPUT_END;
 
