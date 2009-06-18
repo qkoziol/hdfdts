@@ -180,7 +180,7 @@ TIMESTAMP MAIN
 uname -a
 
 # setup exit banner message
-trap EXIT_BANNER 0
+trap EXIT_BANNER 0 1 2 9 15
 
 # Dump environment variables before option parsing
 echo ===Dumping environment variables before option parsing ===
