@@ -196,8 +196,14 @@ ReleaseDir_default=release_dir
 ZLIB_default=
 ZLIB=$ZLIB_default
 
-# What compression methods to use? (md5 does checksum).
-METHODS="gzip bzip2 md5 doc"
+# What compression methods to use? (md5 does checksum).  Doc was apparently 
+# added as a compression method to create a weparate tarfile containing the
+# documentation files for v 1.8 and above.
+if [ "${SWVERSION}" = "hdf5_1_6" ]; then
+    METHODS="gzip bzip2 md5"
+else
+    METHODS="gzip bzip2 md5 doc"
+fi
 
 # Use User's MAKE if set.  Else use generic make.
 MAKE=${MAKE:-make}
@@ -406,8 +412,10 @@ CURRENT=${BASEDIR}/current
 PREVIOUS=${BASEDIR}/previous
 ReleaseDir=${ReleaseDir:=${BASEDIR}/${ReleaseDir_default}}
 HOSTNAME=`hostname | cut -f1 -d.`	# no domain part
+DOCVERSION=""
 if [ "${SWVERSION}" != "${HDFREPOS}" ]; then
     SVNVERSION="$HDFREPOS/branches/$SWVERSION"
+    DOCVERSION="${SWVERSION}"
 else
     SVNVERSION="$HDFREPOS/trunk"	# use the default (trunk) version
 fi
@@ -619,10 +627,14 @@ if [ "$cmd" = "all" -o -n "$cmdrel" ]; then
 	    # commit source if errors encounter here.
 	    set -e
 	    cd ${CURRENT}
-	    RELEASE_VERSION="`perl ../bin/h5vers -v`"
+	    RELEASE_VERSION="`perl ../current/bin/h5vers -v`"
 	    echo "Making snapshot release ($RELEASE_VERSION) to ${ReleaseDir}..."
-	    ../bin/release -d $ReleaseDir $METHODS
-	    perl ../bin/h5vers -i
+            if [ "${DOCVERSION}" ]; then
+	        ../bin/release -d $ReleaseDir --docver ${DOCVERSION} $METHODS
+            else
+	        ../bin/release -d $ReleaseDir $METHODS
+            fi
+	    perl ../current/bin/h5vers -i
             COMMITSNAPSHOT
 	)
 	errcode=$?
