@@ -853,7 +853,7 @@ fi
 # Setup to print a trailer summary when exiting not via
 # the normal end of the script.
 #################################
-#trap PRINT_TRAILER 0 1 2 9 15
+trap PRINT_TRAILER 0 1 2 9 15
 
 #
 TotalStartTime=`SecOfDay`
@@ -1186,5 +1186,5 @@ PRINT_TRAILER
 
 # disable trailer summary printing since all trailers have been
 # printed and we are exiting normally.
-#trap 0
+trap 0
 exit $errcode
