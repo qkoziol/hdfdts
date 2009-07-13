@@ -29,7 +29,7 @@ TIMESTAMP()
 
 EXIT_BANNER()
 {
-TIMESTAMP "Exit $PROGNAME with status=$?"
+    TIMESTAMP "Exit $PROGNAME with status=$?"
 }
 
 # Show current total disk usage.
@@ -69,7 +69,7 @@ RUNCONFIGURE()
         cd ${TESTDIR}
         ./${CONFIGURE}
     else 
-        ${CURRENT}/${CONFIGURE}
+        ${CURRENT}/${CONFIGURE} 
     fi
 }
 
@@ -545,23 +545,29 @@ if [ "$cmd" = "all" -o -n "$cmdtest" -o -n "$cmddiff" ]; then
     echo "snapshot is $snapshot"
     # Build, run tests and install procedures
     if [ "$snapshot" = "yes" ] && [ "$NOMAKE" != "yes" ]; then
+        FAIL_SECTION="" 
+        if [ -f ${TESTDIR}/failsection ]; then
+            rm ${TESTDIR}/failsection
+        fi
 	if (cd ${TESTDIR} && \
-	    TIMESTAMP "configure" && \
+	    TIMESTAMP "configure" && echo "configure" > ${TESTDIR}/failsection && \
 	    RUNCONFIGURE && \
             sleep 2 && \
-	    TIMESTAMP "make" && \
+	    TIMESTAMP "make" && echo "make" > ${TESTDIR}/failsection && \
 	    ${MAKE} && DISKUSAGE \
-	    TIMESTAMP ${CHECKVAL} && \
+	    TIMESTAMP ${CHECKVAL} && echo "make check" > ${TESTDIR}/failsection &&  \
 	    ${MAKE} ${CHECKVAL} && DISKUSAGE \
-	    TIMESTAMP "install" && \
+	    TIMESTAMP "install" && echo "make install" > ${TESTDIR}/failsection && \
 	    ${MAKE} install && DISKUSAGE \
-            TIMESTAMP "check-install" && \
+            TIMESTAMP "check-install" && echo "make check-install" > ${TESTDIR}/failsection && \
 	    CHECKINSTALL && DISKUSAGE \
-	    TIMESTAMP "uninstall" && \
+	    TIMESTAMP "uninstall" && echo "make uninstall" > ${TESTDIR}/failsection && \
 	    ${MAKE} uninstall) && DISKUSAGE ; then
 	    :
 	else
 	    errcode=$?
+            FAIL_SECTION=`cat ${TESTDIR}/failsection`
+            echo "Failed running ${FAIL_SECTION}"
 	    snapshot=no
 	    exit $errcode
 	fi
