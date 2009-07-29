@@ -52,8 +52,12 @@ SVNCHECKOUT()
    fi
    cd $BASEDIR/current; svn info
    if [ "$?" = 0 ];then
-      echo "Updating $BASEDIR/current from svn."
-      ( svn -q update ) || exit 1
+      if [ $CPSRC ]; then
+         svn -q update
+      else
+         echo "Updating $BASEDIR/current from svn."
+         ( find . -not -name \*.svn\* | xargs chmod u+w; svn -q update; find . -not -name \*.svn\* | xargs chmod a-w ) || exit 1
+      fi
    else
       echo "Checking out from $SVNROOT/${SVNVERSION} into $BASEDIR/current"
       # Check out the current version from source repository.
