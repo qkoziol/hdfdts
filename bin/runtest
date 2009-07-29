@@ -441,7 +441,7 @@ RUNSNAPTEST()
                  SRCDIRNAME=$HOSTNAME
                  ;;
             -*)
-                 SRCDIRNAME="$HOSTNAME$SRCDIRNAME"
+                 SRCDIRNAME=$1
                  ;;
             esac
         fi
@@ -1084,6 +1084,10 @@ fi
 # Note that n_test must start as 1.
 #
 cd $SNAPYARD
+if [ "${DELAY}" = "${HOST_NAME}" ];then
+   echo "Delay running tests 2 hours for performance tests."
+   sleep 7200
+fi
 PWD=`pwd` 
 #echo "FTP flag is $FTP"
 if [ -n "$FTP" ]; then
