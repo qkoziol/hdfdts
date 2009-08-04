@@ -56,7 +56,9 @@ SVNCHECKOUT()
          svn -q update
       else
          echo "Updating $BASEDIR/current from svn."
-         ( find . -not -name \*.svn\* | xargs chmod u+w; svn -q update; find . -not -name \*.svn\* | xargs chmod a-w ) || exit 1
+         # Leave everything read/write until tests are fixed. LK 20090804
+         ( find . -not -name \*.svn\* | xargs chmod u+w; svn -q update ) || exit 1
+         #( find . -not -name \*.svn\* | xargs chmod u+w; svn -q update; find . -not -name \*.svn\* | xargs chmod a-w ) || exit 1
       fi
    else
       echo "Checking out from $SVNROOT/${SVNVERSION} into $BASEDIR/current"
