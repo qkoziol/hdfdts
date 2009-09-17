@@ -3,21 +3,31 @@ EXTRACT()
    echo "Error: No extraction necessary for h5bfcompat."
 }
 
+RUNCONFIGURE()
+{
+   echo "Nothing to configure for h5bfcompat."
+}
+ 
 # This script downloads files from subdirectories matching this day of the
 # year from one of ~80 subdirectories of TES files and one of ~75 subdirectories
 # of MLS, OMI, HIRDL, and TOMS files chosen by day-of-year modulo number of 
 # subdirectories (from one of 4 NASA ftp servers). 
-DOWNLOAD()
+SVNCHECKOUT()
 {
    echo "Run script to download sample NASA files."
-   rm /mnt/scr1/NASA/selected/*
+   rm -rf /mnt/scr1/NASA/oldselected
    sleep 10
+   mv /mnt/scr1/NASA/selected/ /mnt/scr1/NASA/oldselected
+   sleep 10
+   mkdir /mnt/scr1/NASA/selected/
    perl ./bin/get_todays_nasa_files.pl
+   if ! [ `ls /mnt/scr1/NASA/selected/` ]; then
+      rmdir /mnt/scr1/NASA/selected
+      mv /mnt/scr1/NASA/oldselected /mnt/scr1/NASA/selected/
+   fi
 }
 
 CPSRC=""
 NOMAKE="yes"
-HDFREPOS=h5bfcompat
-SWVERSION=h5bfcompat
 
 
