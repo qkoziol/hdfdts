@@ -33,11 +33,11 @@ my $HDF5_DIR = "/mnt/scr1/pre-release/hdf5/";
 
 my $STR16 = $HDF5_DIR."v16/".$HOST_NAME."-strict";
 my $NSTR16 = $HDF5_DIR."v16/".$HOST_NAME."-nostrict";
-my $STR18 = $HDF5_DIR."v180/".$HOST_NAME."-strict";
-my $NSTR18 = $HDF5_DIR."v180/".$HOST_NAME."-nostrict";
-my $STR19 = $HDF5_DIR."v190/".$HOST_NAME."-strict";
-my $NSTR19 = $HDF5_DIR."v190/".$HOST_NAME."-nostrict";
-#my $H5CHECK =  $HDF5_DIR."v180-compat/".$HOST_NAME."/bin/h5check";
+my $STR18 = $HDF5_DIR."v18/".$HOST_NAME."-strict";
+my $NSTR18 = $HDF5_DIR."v18/".$HOST_NAME."-nostrict";
+my $STR19 = $HDF5_DIR."v19/".$HOST_NAME."-strict";
+my $NSTR19 = $HDF5_DIR."v19/".$HOST_NAME."-nostrict";
+#my $H5CHECK =  $HDF5_DIR."v18/compat/".$HOST_NAME."/bin/h5check";
 my @dirs = ($STR16, $NSTR16, $STR18, $NSTR18, $STR19, $NSTR19);
 my @binaries = ("h5ls", "h5dump", "h5stat", "h5copy");
 my $retval = 0;
@@ -114,7 +114,7 @@ sub check_dir {
    system("echo \$LD_LIBRARY_PATH");
 
    #opendir DH, "." or die "Couldn't open the current directory:  $!";
-   opendir DH, $directory or die "Couldn't open the current directory:  $!";
+   opendir DH, $directory or die "Couldn't open $directory:  $!";
    while ($_ = readdir(DH)) {
       next unless ($_ =~ /.*\.h5$/) || ($_ =~ /.*\.he5$/);
       my $testfile = $_;
@@ -130,6 +130,12 @@ sub check_dir {
                open(STDERR,">h5stat_stderr.txt");
             }
 
+            # v1.8 h5ls returns 0 even if it fails to open the file.
+            if ($program eq "h5ls" && ($dir eq "$NSTR18" || $dir eq "$STR18"
+                                        || $dir eq "$NSTR19" || $dir eq "$STR19")) {
+               open(STDERR,">h5ls_stderr.txt");
+            }
+
             $_ = `$cmd`;
             $result = $? >> 2;
 
@@ -142,6 +148,17 @@ sub check_dir {
                   }
                }
                `rm h5stat_stderr.txt`;      
+            }
+
+            #check result if v1.8 h5ls and result == 0; remove err file.
+            if(-e "h5ls_stderr.txt") { 
+               if ($result == 0) {
+                  $_ = $_.`cat h5ls_stderr.txt`;
+                  if (/unable to open file/) {
+                     $result = 1;
+                  }
+               }
+               `rm h5ls_stderr.txt`;      
             }
 
             #print $output;
@@ -323,8 +340,8 @@ $cmd = `rm $REPACKED18/*`;
 print "Removing files from $REPACKED19\n";
 $cmd = `rm $REPACKED19/*`;
 print "Removing files from $COPYDIR\n";
-$cmd = `rm $COPYDIR/V180/*`;
-$cmd = `rm $COPYDIR/V190/*`;
+$cmd = `rm $COPYDIR/v180/*`;
+$cmd = `rm $COPYDIR/v190/*`;
 
 #print "Check corrupted files with strict checking - should not return 0.\n";
 foreach my $dir (@dirs) {
