@@ -568,7 +568,7 @@ if [ "$cmd" = "all" -o -n "$cmdtest" -o -n "$cmddiff" ]; then
             TIMESTAMP "check-install" && echo "make check-install" > ${TESTDIR}/failsection && \
 	    CHECKINSTALL && DISKUSAGE \
 	    TIMESTAMP "uninstall" && echo "make uninstall" > ${TESTDIR}/failsection && \
-	    ${MAKE} uninstall) && DISKUSAGE ; then
+	    ${MAKE} uninstall && DISKUSAGE); then
 	    :
 	else
 	    errcode=$?
