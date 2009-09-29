@@ -878,8 +878,7 @@ if [ -z "$NOCVS" ]; then
     touch $CVSLOG_LOCK
     ($SNAPSHOT checkout ) >> $CVSLOG 2>&1
     # Save error code and remove the lock
-#    errcode=$?
-    errcode=0
+    errcode=$?
     rm -f $CVSLOG_LOCK
     if [ $errcode -ne 0 ]; then
 	# test failed.
