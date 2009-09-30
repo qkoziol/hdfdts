@@ -866,8 +866,21 @@ PRINT_BLANK
 
 #echo "FTP flag is $FTP"
 if [ -n "$FTP" ]; then
-    $SNAPSHOT ftp $FTPURL
+    PRINT "Running CVS checkout with output saved in"
+    PRINT "   $CVSLOG"
+    # Set CVS lock first
+    touch $CVSLOG_LOCK
+    $SNAPSHOT ftp $FTPURL >> $CVSLOG 2>&1
+    # Save error code and remove the lock
+    errcode=$?
+    rm -f $CVSLOG_LOCK
+    if [ $errcode -ne 0 ]; then
+	# test failed.
+	REPORT_SYS_ERR "****SYSTEM ERROR ${HOST_NAME}: FTP download****"
+	exit $errcode
+    fi
     echo "Ran $SNAPSHOT ftp $FTPURL in line 870"
+    NOCVS=nocvs
 fi
 # Do a checkout if one has not been done today.
 # Then check MANIFEST file and copyrights noitces.
