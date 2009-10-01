@@ -866,11 +866,11 @@ PRINT_BLANK
 
 #echo "FTP flag is $FTP"
 if [ -n "$FTP" ]; then
-    PRINT "Running CVS checkout with output saved in"
+    PRINT "Running FTP download with output saved in"
     PRINT "   $CVSLOG"
     # Set CVS lock first
     touch $CVSLOG_LOCK
-    $SNAPSHOT ftp $FTPURL >> $CVSLOG 2>&1
+    $SNAPSHOT ftp "$FTPURL" >> $CVSLOG 2>&1
     # Save error code and remove the lock
     errcode=$?
     rm -f $CVSLOG_LOCK
