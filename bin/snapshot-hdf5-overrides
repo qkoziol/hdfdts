@@ -5,7 +5,6 @@ CHECKINSTALL()
      ${MAKE} check-install $1
 }
 
-# uncomment this function after trying this a few days.
 COMMITSNAPSHOT()
 {
    svn -q commit -m "Snapshot $RELEASE_VERSION"

@@ -1,0 +1,5 @@
+COMMITSNAPSHOT()
+{
+   svn -q commit -m "Snapshot $RELEASE_VERSION"
+}
+
