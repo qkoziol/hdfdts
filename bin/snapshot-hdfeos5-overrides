@@ -1,3 +1,16 @@
 HDFREPOS=hdfeos5
 SWVERSION=hdfeos5
+CPSRC="yes"
+
+DISTCLEAN()
+{
+#       (cd ${TESTDIR} && ${MAKE} distclean)
+# distclean not working for hdfeos5
+   if [ -n "${SRCDIRNAME}" -a -d ${BASEDIR}/TestDir/${SRCDIRNAME} ]; then
+      echo "Removing contents of $SRCDIRNAME.\n"
+      rm -rf ${BASEDIR}/TestDir/${SRCDIRNAME}/*
+   else
+      echo "${BASEDIR}/TestDir/${SRCDIRNAME} is not a directory.  Its contents cannot be removed."
+   fi
+}
 
