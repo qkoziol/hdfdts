@@ -160,6 +160,7 @@ EOF
 PROGNAME=$0
 SNAPSHOTNAME=
 HDFREPOS=
+DOCVERSION=""
 
 if [ -f bin/snapshot_params ]; then
    . bin/snapshot_params
@@ -418,10 +419,8 @@ CURRENT=${BASEDIR}/current
 PREVIOUS=${BASEDIR}/previous
 ReleaseDir=${ReleaseDir:=${BASEDIR}/${ReleaseDir_default}}
 HOSTNAME=`hostname | cut -f1 -d.`	# no domain part
-DOCVERSION=""
 if [ "${SWVERSION}" != "${HDFREPOS}" ]; then
     SVNVERSION="$HDFREPOS/branches/$SWVERSION"
-    DOCVERSION="${SWVERSION}"
 else
     SVNVERSION="$HDFREPOS/trunk"	# use the default (trunk) version
 fi
