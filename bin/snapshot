@@ -583,9 +583,9 @@ if [ "$cmd" = "all" -o -n "$cmdtest" -o -n "$cmddiff" ]; then
     fi
 fi # Test the HDF5 library
 
+# Run external test if configured
 
 #=============================
-# Run external test if configured
 #=============================
 #echo "CURRENT is $CURRENT"
 #if [ -d "$CURRENT" ]; then
@@ -608,6 +608,20 @@ fi
 # Run deployment if requested.
 #=============================
 if [ -n "$DEPLOYDIRNAME" ]; then
+    # The daily tests deploy to .../hdf5/... or .../hdf4/... except on cobalt where the
+    # deploy directory is in .../HDF5/...  lc will take care of this.  If hdf4 or hdf5
+    # either upper or lower case isn't in the path, RELEASE.txt won't be found unless
+    # it is in $CURRENT. 
+    POS4=`perl -e "print index(lc(\"${deploydir}/${DEPLOYDIRNAME}\"), 'hdf4')"`
+    POS5=`perl -e "print index(lc(\"${deploydir}/${DEPLOYDIRNAME}\"), 'hdf5')"`
+    if [ "${POS4}" -ge "0" ]; then
+        RELEASE_TXT_LOC="release_notes"
+    elif [ "${POS5}" -ge "0" ]; then
+        RELEASE_TXT_LOC="release_docs"
+    else
+        RELEASE_TXT_LOC=""
+    fi
+ 
     if [ "$snapshot" = "yes" ]; then
 	TIMESTAMP "deploy"
         if (cd ${TESTDIR} &&
@@ -616,7 +630,10 @@ if [ -n "$DEPLOYDIRNAME" ]; then
             ${MAKE} clean && \
             TIMESTAMP "check-install prefix=${deploydir}/${DEPLOYDIRNAME}" && \
             CHECKINSTALL prefix=${deploydir}/${DEPLOYDIRNAME}); then
-	    :	#continue
+                cd ${CURRENT}  
+                cp ${RELEASE_TXT_LOC}/RELEASE.txt ${deploydir}/${DEPLOYDIRNAME} 
+                cp COPYING ${deploydir}/${DEPLOYDIRNAME}
+	    #:	#continue
 	else
 	    errcode=$?
 	    exit $errcode
