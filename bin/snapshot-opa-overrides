@@ -11,15 +11,18 @@ SVNCHECKOUT()
       # Check out the current version from source repository.
       (cd $BASEDIR; svn -q co ${SVNROOT}/${SVNVERSION} current ) || exit 1
    fi
-   cd current
-   PACKAGEDIR=/mnt/hdf/packages
-   AUTOMAKEDIR=${PACKAGEDIR}/automake/automake-1.10.1/bin
-   AUTOCONFDIR=${PACKAGEDIR}/autoconf/autoconf-2.63/bin
-   PATH=${AUTOCONFDIR}:${PACKAGEDIR}/m4/m4-1.4.7/bin:${PACKAGEDIR}/m4/m4-1.4.7/share:$PATH
-   ${AUTOMAKEDIR}/aclocal-1.10 --force -I confdb
-   ${AUTOCONFDIR}/autoconf
-   ${AUTOCONFDIR}/autoheader
-   ${AUTOMAKEDIR}/automake-1.10 --add-missing --copy --force-missing
+   HOSTNAME=`hostname | cut -f1 -d.`
+   if [ "${HOSTNAME}" = "jam" ]; then
+      cd current
+      PACKAGEDIR=/mnt/hdf/packages
+      AUTOMAKEDIR=${PACKAGEDIR}/automake/automake-1.10.1/bin
+      AUTOCONFDIR=${PACKAGEDIR}/autoconf/autoconf-2.63/bin
+      PATH=${AUTOCONFDIR}:${PACKAGEDIR}/m4/m4-1.4.7/bin:${PACKAGEDIR}/m4/m4-1.4.7/share:$PATH
+      ${AUTOMAKEDIR}/aclocal-1.10 --force -I confdb
+      ${AUTOCONFDIR}/autoconf
+      ${AUTOCONFDIR}/autoheader
+      ${AUTOMAKEDIR}/automake-1.10 --add-missing --copy --force-missing
+   fi
 }
 
 HDFREPOS=opa
