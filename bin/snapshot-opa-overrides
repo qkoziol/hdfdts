@@ -2,18 +2,17 @@ SVNCHECKOUT()
 {
    SVNROOT=https://svn.mcs.anl.gov/repos/openpa
    SVNVERSION=trunk
-   cd $BASEDIR/current; svn info
-   if [ "$?" = "0" ];then
-      echo "Updating $BASEDIR/current from svn."
-      ( svn -q update ) || exit 1
-   else
-      echo "Checking out from $SVNROOT/${SVNVERSION} into $BASEDIR/current"
-      # Check out the current version from source repository.
-      (cd $BASEDIR; svn -q co ${SVNROOT}/${SVNVERSION} current ) || exit 1
-   fi
    HOSTNAME=`hostname | cut -f1 -d.`
    if [ "${HOSTNAME}" = "jam" ]; then
-      cd current
+      cd $BASEDIR/current; svn info
+      if [ "$?" = "0" ];then
+         echo "Updating $BASEDIR/current from svn."
+         ( svn -q update ) || exit 1
+      else
+         echo "Checking out from $SVNROOT/${SVNVERSION} into $BASEDIR/current"
+         # Check out the current version from source repository.
+         (cd $BASEDIR; svn -q co ${SVNROOT}/${SVNVERSION} current ) || exit 1
+      fi
       PACKAGEDIR=/mnt/hdf/packages
       AUTOMAKEDIR=${PACKAGEDIR}/automake/automake-1.10.1/bin
       AUTOCONFDIR=${PACKAGEDIR}/autoconf/autoconf-2.63/bin
@@ -22,6 +21,8 @@ SVNCHECKOUT()
       ${AUTOCONFDIR}/autoconf
       ${AUTOCONFDIR}/autoheader
       ${AUTOMAKEDIR}/automake-1.10 --add-missing --copy --force-missing
+   else #rsync from jam
+      rsync -avz --delete -e "ssh -i /u/ac/hdftest/.private/honest1-rsync-key" hdftest@jam.hdfgroup.uiuc.edu:/home/hdftest/snapshots-opa/current /u/ac/hdftest/snapshots-opa/current
    fi
 }
 
