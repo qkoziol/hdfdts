@@ -22,7 +22,7 @@ SVNCHECKOUT()
       ${AUTOCONFDIR}/autoheader
       ${AUTOMAKEDIR}/automake-1.10 --add-missing --copy --force-missing
    else #rsync from jam
-      rsync -auvz --delete -e "ssh -i $HOME/.private/honest1-rsync-key" hdftest@jam.hdfgroup.uiuc.edu:/home/hdftest/snapshots-opa/current $HOME/snapshots-opa/current
+      rsync -auvz --delete -e "ssh -i $HOME/.private/honest1-rsync-key" hdftest@jam.hdfgroup.uiuc.edu:/home/hdftest/snapshots-opa/current/ $HOME/snapshots-opa/current/
    fi
 }
 
