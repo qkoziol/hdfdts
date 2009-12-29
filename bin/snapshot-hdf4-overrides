@@ -1,5 +1,11 @@
 COMMITSNAPSHOT()
 {
-   svn -q commit -m "Snapshot $RELEASE_VERSION"
+   svn -q commit -m "Snapshot $RELEASE_VERSION ."
 }
 
+CHECKINSTALL()
+{
+#Put this in override file for tests supporting check-install
+     TIMESTAMP "installcheck $1"
+     ${MAKE} installcheck $1
+}
