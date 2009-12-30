@@ -1,0 +1,32 @@
+EXTRACT()
+{
+   echo "Error: No extraction necessary for h5bfcompat."
+}
+
+RUNCONFIGURE()
+{
+   echo "Nothing to configure for h5bfcompat."
+}
+ 
+# This script downloads files from subdirectories matching this day of the
+# year from one of subdirectories of the NPOESS server.
+SVNCHECKOUT()
+{
+   echo "Run script to download sample NPOESS files."
+   rm -rf /mnt/scr1/NPOESS/oldselected
+   sleep 10
+   mv /mnt/scr1/NPOESS/selected/ /mnt/scr1/NPOESS/oldselected
+   sleep 10
+   mkdir /mnt/scr1/NPOESS/selected/
+   perl ./bin/get_todays_npoess_files.pl
+   filelist=`ls /mnt/scr1/NPOESS/selected`
+   if [ "" = "$filelist" ]; then
+      rmdir /mnt/scr1/NPOESS/selected
+      mv /mnt/scr1/NPOESS/oldselected /mnt/scr1/NPOESS/selected/
+   fi
+}
+
+CPSRC=""
+NOMAKE="yes"
+
+
