@@ -60,6 +60,16 @@ else
    REDEPLOY="" 
 fi
 
+# Remove any previous contents of $installdir
+POS=`perl -e "print index(\"${installdir}\", '/', 1)"`
+echo $POS
+POS2=`perl -e "print index(\"${installdir}\", '/', $POS+1)"`
+POS3=`perl -e "print index(\"${installdir}\", '/', $POS2+1)"`
+if [ -d $installdir ] && [ $POS3 -gt 0 ]; then
+   rm -f $installdir/*/*
+   rm -f $installdir/*
+fi
+
 # create installdir if it does not exist yet.
 if [ -d $installdir ] || mkdir $installdir ; then
     ${MAKE:-gmake} install prefix=$installdir  && \
