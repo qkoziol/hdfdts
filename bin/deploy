@@ -60,16 +60,23 @@ else
    REDEPLOY="" 
 fi
 
-# Remove any previous contents of $installdir
-POS=`perl -e "print index(\"${installdir}\", '/', 1)"`
-echo $POS
-POS2=`perl -e "print index(\"${installdir}\", '/', $POS+1)"`
-POS3=`perl -e "print index(\"${installdir}\", '/', $POS2+1)"`
-if [ -d $installdir ] && [ $POS3 -gt 0 ]; then
-   rm -f $installdir/*/*
-   rm -f $installdir/*
-fi
+PWD=`pwd`
+POS6=`perl -e "print index(lc(\"$PWD\"), 'hdf5')"`
 
+# Currently we only want to remove the files for hdf4 and hdf5.  H5check also deploys
+# to the hdf5 directory, so we especially don't want to remove hdf5 files if the
+# path to the current directory doesn't include hdf5.
+if [ "${POS4}" -gt "0" ] || ( [ "${POS5}" -gt "0" ] && [ "${POS6}" -gt "0" ] ) ; then
+   # Remove any previous contents of $installdir
+   POS=`perl -e "print index(\"${installdir}\", '/', 1)"`
+   echo $POS
+   POS2=`perl -e "print index(\"${installdir}\", '/', $POS+1)"`
+   POS3=`perl -e "print index(\"${installdir}\", '/', $POS2+1)"`
+   if [ -d $installdir ] && [ $POS3 -gt 0 ]; then
+      rm -f $installdir/*/*
+      rm -f $installdir/*
+   fi
+fi
 # create installdir if it does not exist yet.
 if [ -d $installdir ] || mkdir $installdir ; then
     ${MAKE:-gmake} install prefix=$installdir  && \
