@@ -80,7 +80,7 @@ fi
 # create installdir if it does not exist yet.
 if [ -d $installdir ] || mkdir $installdir ; then
     ${MAKE:-gmake} install prefix=$installdir  && \
-        ( cd $installdir/lib;  rm *.la ) && \
+        ( cd $installdir/lib; files=`ls *.la`; if [ "$files" ]; then rm *.la; fi ) && \
 	( if [ -n "${REDEPLOY}" ]; then cd $installdir/bin; ./$REDEPLOY -force; fi )
     exit $?
 else
