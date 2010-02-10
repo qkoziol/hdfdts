@@ -245,7 +245,7 @@ WAITFOR()
 {
     wait_file=$1
     nminutes=$2
-    if [ -z "$wait_file" -o ! "$nminutes" -ge 0 ]
+    if [ -z "$wait_file" -o "$nminutes" -lt 0 ]
     then
 	PRINT "errors in argument of WAITFOR(): wait_file($1) or nminutes($2)"
 	WAIT_STATUS=-1
@@ -278,7 +278,7 @@ WAITTILL()
 {
     wait_file=$1
     nminutes=$2
-    if [ -z "$wait_file" -o ! "$nminutes" -ge 0 ]
+    if [ -z "$wait_file" -o "$nminutes" -lt 0 ]
     then
 	PRINT "errors in argument of WAITTILL(): wait_file($1) or nminutes($2)"
 	WAIT_STATUS=-1
@@ -1112,6 +1112,10 @@ fi
 n_test=1
 runtest_type="tests"
 
+# The test schedule is different on Saturday and Sunday. 
+if [ "${WEEKDAY}" = "Sat" -o "${WEEKDAY}" = "Sun" ]; then
+    SHOULD_FINISH=${SHOULD_FINISH_WKND}
+fi
 if [ -n "$SHOULD_FINISH" ]; then
     set `echo $SHOULD_FINISH | awk -F: ' {print $1 " " $2 " 00"} '`
     deadline=`expr $1 \* 3600 + $2 \* 60 `
@@ -1120,10 +1124,30 @@ else
 fi
 
 TEST="`echo $TEST_TYPES | cut -f$n_test -d';'`"
+StartTime=`SecOfDay`
+# Run tests while:
+#    Current time is before $SHOULD_FINISH
+#    It's still the same day as it was when this script started running.
+#    Current time + the duration of the last test < $SHOULD_FINISH. 
 while [ -n "$TEST" ]; do
     echo "Running $TEST"
     sys_err=0
-    StartTime=`SecOfDay`
+        EndTime=`SecOfDay`
+        duration=`expr $EndTime - $StartTime`
+        projected_finish=`expr $EndTime + $duration`
+        StartTime=$EndTime
+        DOW=`date +%a`
+        if [ "$deadline" -gt 0 -a "$deadline" -lt "$projected_finish" ] \
+		 || [ "${WEEKDAY}" != "${DOW}" ]; then
+            echo "No more time to run tests:  skipping remaining tests:"
+            while [ -n "$TEST" ]; do
+                PRINT "SKIPPED ${HOST_NAME}: $TEST" | tee -a $SKIPPEDLOG
+                n_skip=`expr $n_skip + 1`
+                n_test=`expr $n_test + 1`
+                TEST="`echo $TEST_TYPES | cut -f$n_test -s -d';'`"
+            done
+        fi
+        
     RUNSNAPTEST $TEST 
     if [ -n "$BATCHMODE" ]; then
         if [ $skiptest = yes ]; then
@@ -1140,20 +1164,8 @@ while [ -n "$TEST" ]; do
             REPORT_RESULT
         fi
         PRINT_TEST_TRAILER
-        EndTime=`SecOfDay`
-        duration=`expr $EndTime - $StartTime`
-        projected_finish=`expr $EndTime + $duration`
         n_test=`expr $n_test + 1`
         TEST="`echo $TEST_TYPES | cut -f$n_test -s -d';'`"
-        if [ -n "$TEST" -a "$deadline" -gt 0 -a "$deadline" -lt "$projected_finish" ]; then
-            echo "No more time to run tests:  skipping remaining tests:"
-            while [ -n "$TEST" ]; do
-                PRINT "SKIPPED ${HOST_NAME}: $TEST" | tee -a $SKIPPEDLOG
-                n_skip=`expr $n_skip + 1`
-                n_test=`expr $n_test + 1`
-                TEST="`echo $TEST_TYPES | cut -f$n_test -s -d';'`"
-            done
-        fi
     fi
 done
 
