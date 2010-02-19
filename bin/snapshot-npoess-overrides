@@ -1,11 +1,15 @@
 EXTRACT()
 {
-   echo "Error: No extraction necessary for h5bfcompat."
+   echo "Error: No extraction necessary for npoess."
 }
 
 RUNCONFIGURE()
 {
-   echo "Nothing to configure for h5bfcompat."
+   echo "Nothing to configure for npoess."
+   echo "rsyncing source files to ${TESTDIR}."
+   #cp -pr ${CURRENT}/* ${TESTDIR}
+   rsync -r ${CURRENT}/* ${TESTDIR} 
+   #svn export https://svn.hdfgroup.uiuc.edu/HL_NPOESS/trunk ${TESTDIR} 
 }
  
 # This script downloads files from subdirectories matching this day of the
@@ -26,7 +30,7 @@ SVNCHECKOUT()
    fi
 }
 
-CPSRC=""
+CPSRC="yes"
 NOMAKE="yes"
 
 

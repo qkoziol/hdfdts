@@ -10,14 +10,14 @@ mkpath(['copies/v18', 'copies/v19', 'repacked18', 'repacked19'], 1, 0755);
 #my $SELECTED = shift;
 my $ENV_LD_LIBRARY_PATH = $ENV{LD_LIBRARY_PATH};
 my $OP_CONFIGURE = "";
-$OP_CONFIGURE = shift;
+#$OP_CONFIGURE = shift;
 my $HOST_NAME = `hostname | cut -f1 -d.`;  # no domain part`
 #my $HOST_NAME = substr $HOST_NAME_STR, 0, index ".", $HOST_NAME_STR;
 chomp($HOST_NAME);
 
-if ("$OP_CONFIGURE" ne "") {
-   $HOST_NAME = $HOST_NAME.$OP_CONFIGURE;
-}
+#if ("$OP_CONFIGURE" ne "") {
+#   $HOST_NAME = $HOST_NAME.$OP_CONFIGURE;
+#}
 #my $PREFIX = "TestDir/$HOST_NAME";
 my $PREFIX = "";
 my $SELECTED = "/mnt/scr1/NPOESS/selected";
@@ -102,7 +102,7 @@ my $check_commands = {  h5ls => sub { my $dir = shift;
                                           sleep(10);
                                       }
                                       print "Running h5copy on $directory/$testfile\n";
-                                      my $cmd = "$dir/bin/h5copy -i $directory/$testfile -o $COPIES/$testfile -s \"/\" -d \"/COPY\" ";}
+                                      my $cmd = "$dir/bin/h5copy -f ref -i $directory/$testfile -o $COPIES/$testfile -s \"/\" -d \"/COPY\" ";}
                      };
 
 #for future reference:  check_commands above is a hash of anonymous subroutines
@@ -147,7 +147,7 @@ sub check_dir {
                open(STDERR,">h5ls_stderr.txt");
             }
 
-            $_ = `$cmd`;
+            $_ = `$cmd > /dev/null`;
             $result = $? >> 2;
 
             #check result if v1.8 h5stat and result == 0; remove err file.
@@ -291,16 +291,14 @@ sub dump_copies {
          $cmd = "$dir/bin/h5dump -R $COPIES/$testfile";
       }
       open(STDERR,">stderr.txt");
-      $_ = `$cmd`;
+      `$cmd`;
       $result = $?;
       my $output;
       if(-e "stderr.txt") {
-         $output = $_.`cat stderr.txt`;
-      } else {
-         $output = `$cmd`;
-      }
+         $output = `cat stderr.txt`;
+      } 
       print "Return value was $result\n";
-      #print $output;
+      print $output;
       if ($result != 0) {
          print "Copied file $testfile cannot be dumped by $dir/bin/h5dump.\n";
          $OOPS = $testfile;
@@ -432,6 +430,25 @@ if ($OOPS ne "") {
    $retval += 1;
    $OOPS = "";
 }
+
+print "\nBuild and test HL_NPOESS library.\n\n";
+
+$cmd = "make prefix=/scr/hdftest/snapshots-npoess/TestDir/jam/install";
+my $output = `$cmd`;
+print $output;
+#$cmd = "make install";
+#$output = `$cmd`;
+#print $output;
+$cmd = "make tests";
+$output = `$cmd`;
+print $output;
+#$cmd = "make uninstall";
+#$output = `$cmd`;
+#print $output;
+$cmd = "make clean";
+$output = `$cmd`;
+print $output;
+
 
 if ($retval == 0) {
    print "checkfiles.pl works properly and no problem files found in $SELECTED.\n";
