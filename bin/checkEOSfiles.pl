@@ -137,7 +137,7 @@ sub check_dir {
             }
 
             $_ = `$cmd`;
-            $result = $? >> 2;
+            $result = $? >> 8;
 
             #check result if v1.8 h5stat and result == 0; remove err file.
             if(-e "h5stat_stderr.txt") { 
@@ -285,16 +285,13 @@ sub dump_copies {
       my $testfile = $_;
       my $cmd = "$dir/bin/h5dump -H $COPIES/$testfile";
       open(STDERR,">stderr.txt");
-      $_ = `$cmd`;
+      my $output = `$cmd`;
       $result = $?;
-      my $output;
-      if(-e "stderr.txt") {
-         $output = $_.`cat stderr.txt`;
-      } else {
-         $output = `$cmd`;
-      }
-      print "Return value was $result\n";
       #print $output;
+      if(-e "stderr.txt") {
+         `cat stderr.txt`;
+      } 
+      print "Return value was $result\n";
       if ($result != 0) {
          print "Copied file $testfile cannot be dumped by $dir/bin/h5dump.\n";
          $OOPS = $testfile;

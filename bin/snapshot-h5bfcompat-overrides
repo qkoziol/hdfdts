@@ -20,8 +20,8 @@ SVNCHECKOUT()
    mv /mnt/scr1/NASA/selected/ /mnt/scr1/NASA/oldselected
    sleep 10
    mkdir /mnt/scr1/NASA/selected/
-   perl ./bin/get_todays_nasa_files.pl
-   filelist=`ls /mnt/scr1/NASA/selected` 
+#   perl ./bin/get_todays_nasa_files.pl
+   filelist=`ls /mnt/scr1/NASA/selected`
    if [ "" = "$filelist" ]; then
       rmdir /mnt/scr1/NASA/selected
       mv /mnt/scr1/NASA/oldselected /mnt/scr1/NASA/selected/

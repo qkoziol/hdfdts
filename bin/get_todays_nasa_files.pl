@@ -2,6 +2,7 @@
 use strict;
 
 use Net::FTP;
+my $day_offset = shift;
 my @ls;
 my $this;
 my $sname;
@@ -12,7 +13,7 @@ my $tsize;
 my $count;
 my $success;
 my @time = localtime();
-my $day = $time[7] + 1;
+my $day = $time[7] + 1 + $day_offset;
 my $dom = $time[3];
 my $mon = $time[4] + 1;
 my $mddate = "";
@@ -202,6 +203,7 @@ while ($servers < 2) {
    
    $Net::FTP::ftpobj = Net::FTP -> new ($sname,Timeout=>20) or
            die "Cannot access $sname via FTP\n";
+
    print "Connecting to $sname for FTP.\n";
    # Ensure that password is not echoed!
    
