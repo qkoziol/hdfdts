@@ -438,12 +438,9 @@ done
 #=============================
 if [ "$cmd" = "all" -o -n "$cmdcheckout" ]; then
     TIMESTAMP "checkout"
-    # Update ${BASEDIR}/bin from svn if it exists.  For now we will continue
-    # whether this update succeeds or fails;  in the future we may want to exit
-    # if it fails.
-    if [ -d ${BASEDIR}/bin ];then 
-        ( cd ${BASEDIR}/bin; svn -q update )
-    fi
+    # ${BASEDIR}/bin is now updated from svn by EveningMaint or DailyMaint
+    # to avoid updating the scripts in ${BASEDIR}/bin while they are running.
+
     # If there is a Makefile in ${CURRENT}, the last test done in it
     # has not been distclean'ed.  They would interfere with other
     # --srcdir build since make considers the files in ${CURRENT}

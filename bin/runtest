@@ -905,7 +905,7 @@ if [ -z "$NOCVS" ]; then
     errcode=0
     POS4=`perl -e "print index(\"$HDFREPOS}\", 'hdf4')"`
     POS5=`perl -e "print index(\"${HDFREPOS}\", 'hdf4')"`
-    if [ "${HDFREPOS}" ==  "hdf4" ] || [ "${HDFREPOS}" == "hdf5" ]; then
+    if [ "${HDFREPOS}" =  "hdf4" ] || [ "${HDFREPOS}" = "hdf5" ]; then
         (cd $SNAPYARD/current; ./bin/chkmanifest) > $TMPFILE 2>&1
         errcode=$?
     fi
