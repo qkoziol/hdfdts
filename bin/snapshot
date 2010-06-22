@@ -403,6 +403,11 @@ fi
 # provide ZLIB is non-empty.
 ZLIB=${ZLIB:+"--with-zlib="$ZLIB}
 #CONFIGURE="configure $ZLIB $OP_CONFIGURE"
+# Adding --prefix as a configure option will put the path to the deploy 
+# directory in the initial libhdf5*.la files
+if [ -n "$DEPLOYDIRNAME" ]; then
+   OP_CONFIGURE="$OP_CONFIGURE --prefix=${deploydir}/${DEPLOYDIRNAME}"
+fi
 CONFIGURE="configure $OP_CONFIGURE"
 echo "Configure command is $CONFIGURE"
 
