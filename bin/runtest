@@ -14,21 +14,15 @@
 # access to either file, you may request a copy from help@hdfgroup.org.
 #
 
-# run the netcdf4/bin/snapshot
+# run the bin snapshot test scripts
 # Usage:
 #	runtest		run the test for the local host
 #	runtest <hostname>	run the test for <hostname>
 #	runtest -all		run the test for all predefined hosts
 #
 # Assumptions in knowing where to find the right scripts to execute.
-# 1. assume we are at the top level of the netcdf4 source.  So, bin/* are
-#    where the script files are.
-# 2. after the cvs update is completed, we can go to the snapshot area
-#    netcdf4 source tree and use the bin/* there.
-# 3. Cannot use the snapshot area scripts from the beginning because
-#    for one, the current directory is renamed as previous right after
-#    a snapshot release; and for another, some scripts may be changed
-#    by the cvs update while it is being used.
+# 1. assume we are at the top level of the snapshot directory.  So, bin/*
+#    is where the script files are.
 
 # local setup
 DEBUGMODE=""
@@ -49,8 +43,8 @@ HDFREPOS=
 if [ -f bin/snapshot_params ]; then
    . bin/snapshot_params
 fi
-SWVER=			# default to current CVS version
-SWVERSION=		# default to current CVS version
+SWVER=			# default to current source repo version
+SWVERSION=		# default to current source repo version
 n_test=0		# Number of tests ran
 n_pass=0		# Number of tests passed
 n_fail=0		# Number of tests failed
@@ -481,7 +475,7 @@ RUNSNAPTEST()
         date >> $LOGFILE
         if [ $retcode -ne 0 ]; then
             # Dump the first 10 lines and the last 30 lines of the LOGFILE.
-            ( ntail=30
+            ( ntail=50
 	        echo =========================
 	        echo "Dumping logfile of ${HOST_NAME}: $TEST_TYPE"
 	        echo "Last $ntail lines of $LOGFILE"
@@ -613,7 +607,7 @@ SNAPTEST_CONFIG()
 USAGE()
 {
 cat <<EOF
-Usage: runtest [-h] [-debug] [-r<version>] [-all] [-nocvs] [-nodiff] [<host> ...]
+Usage: runtest [-h] [-debug] [-r<version>] [-all] [-norepo] [-nodiff] [<host> ...]
     -h
 	print this help page
     -debug
@@ -622,8 +616,8 @@ Usage: runtest [-h] [-debug] [-r<version>] [-all] [-nocvs] [-nodiff] [<host> ...
 	do runtest for <version>
     -all
 	launch tests for all pre-defined testing hosts
-    -nocvs
-	do not do cvs commands
+    -norepo
+	do not do source checkout or update commands
     -nodiff
 	do not do diff commands
     -setup
@@ -681,6 +675,10 @@ while [ $# -gt 0 ]; do
 	    # set debug mode
 	    DEBUGMODE="$1"
 	    SNAPSHOT="echo bin/snapshot"
+            # We should be able to run in debug mode no matter what time 
+            # of day it is
+            SHOULD_FINISH="23:59"
+            SHOULD_FINISH_WKND="23:59"
 	    PROGNAME="$PROGNAME $DEBUGMODE"
 	    PRINT "******** DEBUGMODE is $DEBUGMODE ************"
 	    ;;
@@ -693,9 +691,9 @@ while [ $# -gt 0 ]; do
 	    # Test all hosts.
 	    TESTHOST=-all
 	    ;;
-	-nocvs)
-	    # do not do cvs commands.
-	    NOCVS=nocvs
+	-norepo)
+	    # do not do source update commands.
+	    NOREPO=norepo
 	    ;;
 	-nodiff)
 	    # do not do diff commands.
@@ -794,8 +792,8 @@ NODIFFLOG=${LOGDIR}/NODIFF_LOG_${TODAY}
 TIMELOG=${LOGDIR}/TIME_LOG_${TODAY}
 TIMEKEEPERLOG=${LOGDIR}/TIMEKEEPER_LOG_${TODAY}
 REPORTED=${LOGDIR}/REPORTED_${TODAY}
-CVSLOG=${LOGDIR}/CVS_LOG_${TODAY}
-CVSLOG_LOCK=${LOGDIR}/CVS_LOG_LOCK_${TODAY}
+REPOLOG=${LOGDIR}/REPO_LOG_${TODAY}
+REPOLOG_LOCK=${LOGDIR}/REPO_LOG_LOCK_${TODAY}
 DIFFLOG=${LOGDIR}/DIFF_LOG_${TODAY}
 COPYRIGHT_ERR=${LOGDIR}/COPYRIGHT_ERR_${TODAY}
 # Snap Test hosts and Configuration files
@@ -867,35 +865,35 @@ PRINT_BLANK
 #echo "FTP flag is $FTP"
 if [ -n "$FTP" ]; then
     PRINT "Running FTP download with output saved in"
-    PRINT "   $CVSLOG"
-    # Set CVS lock first
-    touch $CVSLOG_LOCK
-    $SNAPSHOT ftp "$FTPURL" >> $CVSLOG 2>&1
+    PRINT "   $REPOLOG"
+    # Set REPO lock first
+    touch $REPOLOG_LOCK
+    $SNAPSHOT ftp "$FTPURL" >> $REPOLOG 2>&1
     # Save error code and remove the lock
     errcode=$?
-    rm -f $CVSLOG_LOCK
+    rm -f $REPOLOG_LOCK
     if [ $errcode -ne 0 ]; then
 	# test failed.
 	REPORT_SYS_ERR "****SYSTEM ERROR ${HOST_NAME}: FTP download****"
 	exit $errcode
     fi
     echo "Ran $SNAPSHOT ftp $FTPURL in line 870"
-    NOCVS=nocvs
+    NOREPO=nrepo
 fi
 # Do a checkout if one has not been done today.
 # Then check MANIFEST file and copyrights noitces.
-if [ -z "$NOCVS" ]; then
-    PRINT "Running CVS checkout with output saved in"
-    PRINT "   $CVSLOG"
-    # Set CVS lock first
-    touch $CVSLOG_LOCK
-    ($SNAPSHOT checkout ) >> $CVSLOG 2>&1
+if [ -z "$NOREPO" ]; then
+    PRINT "Running source repository checkout with output saved in"
+    PRINT "   $REPOLOG"
+    # Set REPO lock first
+    touch $REPOLOG_LOCK
+    ($SNAPSHOT checkout ) >> $REPOLOG 2>&1
     # Save error code and remove the lock
     errcode=$?
-    rm -f $CVSLOG_LOCK
+    rm -f $REPOLOG_LOCK
     if [ $errcode -ne 0 ]; then
 	# test failed.
-	REPORT_SYS_ERR "****SYSTEM ERROR ${HOST_NAME}: CVS checkout****"
+	REPORT_SYS_ERR "****SYSTEM ERROR ${HOST_NAME}: Source repository checkout****"
 	exit $errcode
     fi
     # ===================
@@ -965,21 +963,21 @@ if [ -z "$NOCVS" ]; then
     PRINT_BLANK
     fi
 else
-    # make sure the cvs update, if done by another host, has completed.
-    # First wait for the presence of $CVSLOG which signals some host
-    # has started the cvs update.  Then wait for the absense of $CVSLOG_LOCK
-    # which signals the host has completed the cvs update.
+    # make sure the source code update, if done by another host, has completed.
+    # First wait for the presence of $REPOLOG which signals some host has
+    # started the source update.  Then wait for the absense of $REPOLOG_LOCK
+    # which signals the host has completed the source code update.
 
-    WAITFOR $CVSLOG 90
+    WAITFOR $REPOLOG 90
     if [ $WAIT_STATUS -ne 0 ]; then
 	errcode=$WAIT_STATUS
-	REPORT_SYS_ERR "****SYSTEM ERROR ${HOST_NAME}: Time expired waiting CVS update to start****"
+	REPORT_SYS_ERR "****SYSTEM ERROR ${HOST_NAME}: Time expired waiting for source update to start****"
 	exit $errcode
     fi
-    WAITTILL $CVSLOG_LOCK 10
+    WAITTILL $REPOLOG_LOCK 10
     if [ $WAIT_STATUS -ne 0 ]; then
 	errcode=$WAIT_STATUS
-	REPORT_SYS_ERR "****SYSTEM ERROR ${HOST_NAME}: Time expired waiting CVS update to finish****"
+	REPORT_SYS_ERR "****SYSTEM ERROR ${HOST_NAME}: Time expired waiting for source update to finish****"
 	exit $errcode
     fi
 fi
@@ -1002,8 +1000,8 @@ if [ -z "$NODIFF" ]; then
 fi
 
 # we can use the version of script in SNAPYARD now.
-# Don't do the diff or cvs update any more.
-PROGNAME="$SNAPYARD/$PROGNAME -nodiff -nocvs"
+# Don't do the diff or source code update any more.
+PROGNAME="$SNAPYARD/$PROGNAME -nodiff -norepo"
 
 # Decide to do test for the local host or for remote hosts
 if [ -n "$TESTHOST" -a $HOST_NAME != "$TESTHOST" ]; then

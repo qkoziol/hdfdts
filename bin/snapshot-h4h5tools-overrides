@@ -24,7 +24,7 @@ Usage: $PROGNAME [all] [checkout] [diff] [test] [srcdir] [release] [help]
           [op-configure <option>] [--<option>]
     all:      Run all commands (checkout, test & release)
               [Default is all]
-    checkout: Run cvs checkout
+    checkout: Run source code repository checkout
     diff:     Run diff on current and previous versions.  Exit 0 if
               no significant differences are found.  Otherwise, non-zero.
     deploy:   deploy binary to directory <dir>
