@@ -441,7 +441,7 @@ RUNSNAPTEST()
         fi
         TESTDIR=${BASEDIR}/TestDir/${SRCDIRNAME}
         test -d ${TESTDIR} || mkdir ${TESTDIR}
-        if ! [ -d ${TESTDIR} ]; then
+        if [ ! -d ${TESTDIR} ]; then
             REPORT_SYS_ERR "****SYSTEM ERROR ${HOST_NAME}: Could not create ${TESTDIR}"
             sys_err=1
             return
@@ -1144,6 +1144,7 @@ while [ -n "$TEST" ]; do
                 n_test=`expr $n_test + 1`
                 TEST="`echo $TEST_TYPES | cut -f$n_test -s -d';'`"
             done
+            exit 0
         fi
         
     RUNSNAPTEST $TEST 
