@@ -81,7 +81,7 @@ RUNCONFIGURE()
 
 DISTCLEAN()
 {
-    if [ "${srcdir}" == "yes" -a -n "${SRCDIRNAME}" -a -d ${BASEDIR}/TestDir/${SRCDIRNAME} ]; then
+    if [ "${srcdir}" = "yes" -a -n "${SRCDIRNAME}" -a -d ${BASEDIR}/TestDir/${SRCDIRNAME} ]; then
         echo "Remove contents of $SRCDIRNAME.\n"
         rm -rf ${BASEDIR}/TestDir/${SRCDIRNAME}/*
     else
