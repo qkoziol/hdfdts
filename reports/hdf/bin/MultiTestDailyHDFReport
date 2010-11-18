@@ -1,0 +1,477 @@
+#! /bin/sh
+# (Use -e to abort at any unexpected error.)
+# Submit daily tests of HDF5 base software
+# Usauge: DailyHDFTests [-r<version>]
+# Example: DailyHDFTests	# test the CVS current version
+#	   DailyHDFTests -r1.2	# test version 1.2
+#	   DailyHDFTests -r1.4	# test version 1.4
+
+# general setup
+DEBUGMODE=""		# change to -debug for debug mode
+
+# This is from DailyHDF5Tests.  We may need multiple SWs for combined report.
+# Setup
+HOSTNAME=`hostname | cut -f1 -d.`       # no domain part
+
+# NO options as yet for the Report script. 
+# Parse command options
+#while [ $# -gt 0 ]; do
+#    case "$1" in
+#	-r*)
+#	    SWVER="$1"
+#	    SWVERSTR=_`echo $SWVER | sed -e s/-r// -e s/\\\./_/g`
+#	    ;;
+#	-debug*)
+#	    DEBUGMODE="$1"
+#	    ;;
+#	*)
+#	    echo "Unknown option ($1)"
+#	    exit 1
+
+#    esac
+#    shift
+#done
+
+# Mail addresses for reports
+# TOWHOM_PASSED--normal report
+# TOWHOM_FAILED--Failure Report
+# If in debug mode, email output to myself; else to the "group".
+# Host cobalt (co-login1) has a private list of addresses.
+if [ -n "$DEBUGMODE" ]; then
+    echo "******** DEBUGMODE is $DEBUGMODE ************"
+#    TOWHOM_PASSED=hdftest
+#    TOWHOM_FAILED=hdftest
+    TOWHOM_PASSED=lrknox
+    TOWHOM_FAILED=lrknox
+else
+	TOWHOM_PASSED="hdf5repo@hdfgroup.org repo-all@hdfgroup.org"
+	TOWHOM_FAILED=hdf5lib@hdfgroup.org
+#    TOWHOM_PASSED=lrknox
+#    TOWHOM_FAILED=lrknox
+fi
+
+
+# Setup Mailing command and Report title
+MAIL=mail
+#LOGDIRLOCK=${LOGDIR}/.lock-${HOSTNAME}
+
+# set up auto-cleanup
+#trap "rm -f $LOGDIRLOCK" 0
+#trap "rm -f $LOGDIRLOCK" 1 2 3 4 5 6 7 8 9 10 12 13 14 15
+
+
+# set up the lock file
+# if one already exists, just show it and continues
+#if [ -f $LOGDIRLOCK ]; then
+#    echo "LOGDIRLOCK($LOGDIRLOCK) exists. Content is:"
+#    cat $LOGDIRLOCK
+#fi
+#date > $LOGDIRLOCK
+#echo PID@HOSTNAME=$$@$HOSTNAME >> $LOGDIRLOCK
+
+#
+#if [ -n "$DEBUGMODE" ]; then
+#    echo "launching runsnap ..."
+#fi
+
+#DailyHDF<ver>Tests will still be doing this:
+#(cd $HOME/${SW}/${SWSRC_VER}/${sw}; $CMD -all) > $LOGFILE 2>&1
+
+# Verify test script did complete by checking the last lines
+#(tail -4 $LOGFILE | grep -s "^*** finished .* in $HOSTNAME ***" > /dev/null 2>&1) ||
+#    (echo "****snaptest launcher FAILED to complete in $HOSTNAME****" >> $FAILEDLOG)
+
+#This needs to be an argument or a list from a configuration file.  It doesn't match the name anymore.
+#PROGRAMNAME=`basename $0`
+COMBINED_REPORT_TESTS_FILE=../combined_report_tests
+TEST_MACHINE_FILE=../test_machines
+REPTMPDIR=../tmp
+FAILEDLOGSUMMARY=${REPTMPDIR}/FAILED_LOG_SUMMARY
+INCOMPLETELOGSUMMARY=${REPTMPDIR}/INCOMPLETE_LOG_SUMMARY
+SYSERRLOGSUMMARY=${REPTMPDIR}/SYSERR_LOG_SUMMARY
+SKIPPEDLOGSUMMARY=${REPTMPDIR}/SKIPPED_LOG_SUMMARY
+PASSEDLOGSUMMARY=${REPTMPDIR}/PASSED_LOG_SUMMARY
+TIMELOGSUMMARY=${REPTMPDIR}/TIME_LOG_SUMMARY
+TIMEKEEPERLOGSUMMARY=${REPTMPDIR}/TIMEKEEPER_LOG_SUMMARY
+FAILEDDETAILSUMMARY=${REPTMPDIR}/FAILED_DETAIL_SUMMARY
+FAILEDLOGFILESUMMARY=${REPTMPDIR}/FAILED_LOGFILE_SUMMARY
+PASSEDLOGFILESUMMARY=${REPTMPDIR}/PASSED_LOGFILE_SUMMARY
+NEWWATCHERFILE=${REPTMPDIR}/watchers
+TEST_REPORTS=`sed -e '/^#/d;/^ *$/d' $COMBINED_REPORT_TESTS_FILE`
+SW_LIST=""
+THIS_DAY=`date +%m%d%a`
+TODAY=$THIS_DAY
+YESTERDAY=`perl -e '@weekDays = qw(Sun Mon Tue Wed Thu Fri Sat Sun); @then=localtime ( time -24 * 3600 ) ; printf("%02.d", $then[4]+1); printf("%02.d", $then[3]); print $weekDays[$then[6]];'`
+rm $REPTMPDIR/*
+# For Testing
+#TODAY="0706Mon"
+TEST_TITLE="HDF_Combined_Daily_Tests_${TODAY}"
+    
+echo "TEST_REPORTS:  $TEST_REPORTS"
+LAST_SW=""
+for t in $TEST_REPORTS; do
+   PROGRAMNAME=`echo $t | cut -f1 -d ";"`
+   SW=`echo $t | cut -f2 -d ";"`			# Name of Software.
+   sw=`echo $t | cut -f3 -d ";"`		# Name of Software in lower case.
+   REPORT_MODE=`echo $t | cut -f4 -d ";"`
+   if [ "$LAST_SW" = "$SW" ]; then
+      :
+   else
+      SW_LIST="$SW_LIST $SW"
+      FAILED_HEADER=""
+      SYSERR_HEADER=""
+      INCOMPLETE_HEADER=""
+      SKIPPED_HEADER=""
+      PASSED_HEADER=""
+      TIME_HEADER=""
+      TIMEKEEPER_HEADER=""
+      FAILEDDETAIL_HEADER=""
+      FAILEDLOGFILE_HEADER=""
+   fi
+   LAST_SW=$SW
+   # Setup test directories
+   #LOGDIR=$HOME/snapshots-${sw}${SWVERSTR}/log
+    
+   if [ "${REPORT_MODE}" = "local" ]; then
+      HOSTLIST=${HOSTNAME}
+      LOGDIR=../../../snapshots-${sw}${SWVERSTR}/log
+      echo "LOGDIR is $LOGDIR"
+   else
+      # Machine names at NCSA and elsewhere are somewhat variable, so rather than
+      # try to configure them, we can get them from the logfile names.  The sed 
+      # script below removes Daily{SW}Tests- from the front and the date string 
+      # from the end, leaving the machine name. 
+      #HOSTLIST=`grep from_remote $TEST_MACHINE_FILE | cut -f1 -d ";"`
+      HOSTLIST=""
+      LOGDIR=../../remote/snapshots-${sw}${SWVERSTR}/log
+      echo "LOGDIR is $LOGDIR"
+      FILES=`ls $LOGDIR | grep Daily`
+      for filename in $FILES; do
+         remote_host=`echo $filename | sed -e s/^.*Tests-// | sed -e s/_.*$//`
+         echo "remote_host is $remote_host"
+         HOSTLIST="$HOSTLIST $remote_host"
+      done
+   fi
+
+   #echo "HOSTLIST is $HOSTLIST"
+   #echo "REPORT_MODE is $REPORT_MODE"
+   #echo "SW is $SW"
+
+   for h in $HOSTLIST; do 
+   TODAY=$THIS_DAY
+      if [ "${REPORT_MODE}" = "local" ]; then
+      # Temporary path for testing
+      #LOGDIR=/scr/hdftest/reportTest/snapshots-${sw}${SWVERSTR}/log
+         LOGFILE=${LOGDIR}/${PROGRAMNAME}-${h}_${TODAY}
+         if ! [ -f $LOGFILE ]; then
+            echo "$LOGFILE not found for $TODAY, will use files for $YESTERDAY" 
+            TODAY=${YESTERDAY}
+         fi
+         LOGFILE=${LOGDIR}/${PROGRAMNAME}-${h}_${TODAY}
+         FAILEDLOG=${LOGDIR}/FAILED_LOG_${TODAY}
+         FAILEDDETAIL=${LOGDIR}/FAILED_DETAIL_${TODAY}
+         INCOMPLETELOG=${LOGDIR}/INCOMPLETE_LOG_${TODAY}
+         PASSEDLOG=${LOGDIR}/PASSED_LOG_${TODAY}
+         SKIPPEDLOG=${LOGDIR}/SKIPPED_LOG_${TODAY}
+         SYSERRLOG=${LOGDIR}/SYSERR_LOG_${TODAY}
+         NODIFFLOG=${LOGDIR}/NODIFF_LOG_${TODAY}
+         TIMELOG=${LOGDIR}/TIME_LOG_${TODAY}
+         TIMEKEEPERLOG=${LOGDIR}/TIMEKEEPER_LOG_${TODAY}
+         WATCHERFILE=${LOGDIR}/../watchers		# List of platform watchers
+      else
+         LOGFILE=${LOGDIR}/${PROGRAMNAME}-${h}_${TODAY}
+         if ! [ -f $LOGFILE ]; then
+            echo "$LOGFILE not found for $TODAY, will use files for $YESTERDAY" 
+            TODAY=${YESTERDAY}
+         fi
+         LOGFILE=${LOGDIR}/${PROGRAMNAME}-${h}_${TODAY}
+         FAILEDLOG=${LOGDIR}/${h}_FAILED_LOG_${TODAY}
+         FAILEDDETAIL=${LOGDIR}/${h}_FAILED_DETAIL_${TODAY}
+         INCOMPLETELOG=${LOGDIR}/${h}_INCOMPLETE_LOG_${TODAY}
+         PASSEDLOG=${LOGDIR}/${h}_PASSED_LOG_${TODAY}
+         SKIPPEDLOG=${LOGDIR}/${h}_SKIPPED_LOG_${TODAY}
+         SYSERRLOG=${LOGDIR}/${h}_SYSERR_LOG_${TODAY}
+         NODIFFLOG=${LOGDIR}/${h}_NODIFF_LOG_${TODAY}
+         TIMELOG=${LOGDIR}/${h}_TIME_LOG_${TODAY}
+         TIMEKEEPERLOG=${LOGDIR}/${h}_TIMEKEEPER_LOG_${TODAY}
+         #WATCHERFILE=${LOGDIR}/watchers		# List of platform watchers
+         # use the local watcher file
+         WATCHERFILE=../../../snapshots-${sw}${SWVERSTR}/watchers
+
+      fi
+      errcode=0		# error code so far
+      if [ -f $FAILEDLOG ]; then
+         if [ "${FAILED_HEADER}" = "" ]; then
+            echo "**************" >> $FAILEDLOGSUMMARY
+            echo "  ${SW}  " >> $FAILEDLOGSUMMARY
+            echo "**************" >> $FAILEDLOGSUMMARY
+            FAILED_HEADER="yes"
+         fi
+         sort $FAILEDLOG | tee -a $FAILEDLOGSUMMARY
+         echo "" >> $FAILEDLOGSUMMARY
+         #rm $FAILEDLOG
+      fi
+      if [ -f $SYSERRLOG ]; then
+         if [ "${SYSERR_HEADER}" = "" ]; then
+            echo "**************" >> $SYSERRLOGSUMMARY
+            echo "  ${SW}  " >> $SYSERRLOGSUMMARY
+            echo "**************" >> $SYSERRLOGSUMMARY
+            SYSERR_HEADER="yes"
+         fi
+         sort $SYSERRLOG | tee -a $SYSERRLOGSUMMARY
+         echo "" >> $SYSERRLOGSUMMARY
+         #rm $SYSERRLOG
+      fi
+      if [ -f $INCOMPLETELOG ]; then
+         if [ "${INCOMPLETE_HEADER}" = "" ]; then
+            echo "**************" >> $INCOMPLETELOGSUMMARY
+            echo "  ${SW}  " >> $INCOMPLETELOGSUMMARY
+            echo "**************" >> $INCOMPLETELOGSUMMARY
+            INCOMPLETE_HEADER="yes"
+         fi
+         sort $INCOMPLETELOG | tee -a $INCOMPLETELOGSUMMARY
+         echo "" >> $INCOMPLETELOGSUMMARY
+         #rm $INCOMPLETELOG
+      fi
+      if [ -f $SKIPPEDLOG ]; then
+         if [ "${SKIPPED_HEADER}" = "" ]; then
+            echo "**************" >> $SKIPPEDLOGSUMMARY
+            echo "  ${SW}  " >> $SKIPPEDLOGSUMMARY
+            echo "**************" >> $SKIPPEDLOGSUMMARY
+            SKIPPED_HEADER="yes"
+         fi
+         sort $SKIPPEDLOG | tee -a $SKIPPEDLOGSUMMARY
+         echo "" >> $SKIPPEDLOGSUMMARY
+         #rm $SKIPPEDLOG
+      fi
+      if [ -f $PASSEDLOG ]; then
+         if [ "${PASSED_HEADER}" = "" ]; then
+            echo "**************" >> $PASSEDLOGSUMMARY
+            echo "  ${SW}  " >> $PASSEDLOGSUMMARY
+            echo "**************" >> $PASSEDLOGSUMMARY
+            PASSED_HEADER="yes"
+         fi
+         sort $PASSEDLOG | tee -a $PASSEDLOGSUMMARY
+         echo "" >> $PASSEDLOGSUMMARY
+         #rm $PASSEDLOG 
+      fi
+      if [ -f $TIMELOG ]; then
+         if [ "${TIME_HEADER}" = "" ]; then
+            echo "**************" >> $TIMELOGSUMMARY
+            echo "  ${SW}  " >> $TIMELOGSUMMARY
+            echo "**************" >> $TIMELOGSUMMARY
+            TIME_HEADER="yes"
+         fi
+         cat $TIMELOG | tee -a $TIMELOGSUMMARY
+         echo "" >> $TIMELOGSUMMARY
+         #rm $TIMELOG
+      fi
+      if [ -f $TIMEKEEPERLOG ]; then
+         if [ "${TIMEKEEPER_HEADER}" = "" ]; then
+            echo "**************" >> $TIMEKEEPERLOGSUMMARY
+            echo "  ${SW}  " >> $TIMEKEEPERLOGSUMMARY
+            echo "**************" >> $TIMEKEEPERLOGSUMMARY
+            TIMEKEEPER_HEADER="yes"
+         fi
+         cat $TIMEKEEPERLOG | tee -a $TIMEKEEPERLOGSUMMARY
+         echo "" >> $TIMEKEEPERLOGSUMMARY
+         #rm $TIMEKEEPERLOG
+      fi
+      if [ -f $FAILEDDETAIL ]; then
+         if [ "${FAILEDDETAIL_HEADER}" = "" ]; then
+            echo "**************" >> $FAILEDDETAILSUMMARY
+            echo "  ${SW}  " >> $FAILEDDETAILSUMMARY
+            echo "**************" >> $FAILEDDETAILSUMMARY
+            FAILEDDETAIL_HEADER="yes"
+         fi
+         cat $FAILEDDETAIL | tee -a $FAILEDDETAILSUMMARY
+         echo "" >> $FAILEDDETAILSUMMARY
+         #rm $FAILEDDETAIL
+      fi
+      if [ -f $FAILEDLOG ] || [ -f $INCOMPLETELOG ] || [ -f $SYSERRLOG ]; then
+         if [ -f $WATCHERFILE ]; then
+             HEADER=`head -n 1 $WATCHERFILE`
+             REPEATED=`grep "${HEADER}" watchers`
+             if [ "$REPEATED" = "" ]; then 
+                 cat $WATCHERFILE >> $NEWWATCHERFILE
+             fi  
+         fi
+         if [ "${FAILEDLOGFILE_HEADER}" = "" ]; then
+            echo "**************" >> $FAILEDLOGFILESUMMARY
+            echo "  ${SW}  " >> $FAILEDLOGFILESUMMARY
+            echo "**************" >> $FAILEDLOGFILESUMMARY
+            FAILEDLOGFILE_HEADER="yes"
+         fi
+         cat $LOGFILE | tee -a $FAILEDLOGFILESUMMARY
+         echo "" >> $FAILEDLOGFILESUMMARY
+      else
+         if [ "${REPORT_MODE}" = "local" ]; then
+            echo "See $LOGFILE" >> $PASSEDLOGFILESUMMARY
+         else
+            cat $LOGFILE | tee -a $PASSEDLOGFILESUMMARY
+         fi
+         if [ "$errcode" = "1" ] && [ -f $WATCHERFILE ]; then
+             HEADER=`head -n 1 $WATCHERFILE`
+             REPEATED=`grep "${HEADER}" watchers`
+             if [ "$REPEATED" = "" ]; then
+                 cat $WATCHERFILE >> $NEWWATCHERFILE  
+             fi
+         fi 
+      fi
+   done
+done
+
+# Check result
+if [ -f $FAILEDLOGSUMMARY ] || [ -f $INCOMPLETELOGSUMMARY ] || [ -f $SYSERRLOGSUMMARY ]; then
+    errcode=1
+    REPORT_TITLE="${TEST_TITLE}_FAILED!!!"
+    TOWHOM=$TOWHOM_FAILED
+else
+    REPORT_TITLE="${TEST_TITLE}"
+    TOWHOM=$TOWHOM_PASSED
+fi
+
+# STRING1s are 
+TITLE="Combined Status Summary for ${SW_LIST} Tests on $THIS_DAY"
+RESULTS_STRING="(1)  Results Table"
+TEST_FAILURE_SUMMARY_STRING="(2)  Test Failures and Warnings"
+TEST_PASSED_SUMMARY_STRING="(3)  Summary of Passed Tests"
+TIME_SUMMARY_STRING="(4)  Test Time Summary"
+TIMEKEEPER_SUMMARY_STRING="(5)  Timekeeper log"
+TEST_FAILURES_STRING="   (2A)  Test Failures"
+WATCHERS_LIST_STRING="   (2B)  Watchers List"
+TEST_DETAILS_STRING1="(6)  Test Details"
+TEST_DETAILS_STRING2="(7)  Test Details"
+(
+ echo "*** $TITLE ***"
+ echo ""
+ echo "Contents:"
+ echo ""
+ echo $RESULTS_STRING
+ echo $TEST_FAILURE_SUMMARY_STRING
+ if [ -f $FAILEDDETAILSUMMARY ]; then
+    echo $TEST_FAILURES_STRING
+    echo $WATCHERS_LIST_STRING
+ fi
+ echo $TEST_PASSED_SUMMARY_STRING
+ echo $TIME_SUMMARY_STRING
+ echo $TIMEKEEPER_SUMMARY_STRING
+ echo $TEST_DETAILS_STRING1
+  echo ""
+ echo "============================="
+ echo $RESULTS_STRING
+ echo "============================="
+ echo ""
+ perl ./machines_vs_test_report.pl
+ echo ""
+ echo "============================="
+ echo $TEST_FAILURE_SUMMARY_STRING
+ echo "============================="
+ if [ -f $FAILEDLOGSUMMARY ]; then
+    echo "FAILED TESTS"
+ fi
+ if [ -f $SYSERRLOGSUMMARY ]; then
+    echo "SYSTEM ERRORS"
+ fi
+ if [ -f $INCOMPLETELOGSUMMARY ]; then
+    echo "INCOMPLETE TESTS"
+ fi
+ if [ -f $SKIPPEDLOGSUMMARY ]; then
+    echo "SKIPPED TESTS"
+ fi
+ cat $FAILEDLOGSUMMARY
+ cat $SYSERRLOGSUMMARY
+ cat $INCOMPLETELOGSUMMARY
+ cat $SKIPPEDLOGSUMMARY
+ if [ -f $FAILEDDETAILSUMMARY ]; then
+    echo ""
+    echo "============================="
+    echo $TEST_FAILURES_STRING
+    echo "============================="
+    cat $FAILEDDETAILSUMMARY
+    echo ""
+    if [ -f $NEWWATCHERFILE ]; then
+        echo "============================="
+        echo $WATCHERS_LIST_STRING
+        echo "============================="
+        cat $NEWWATCHERFILE
+        echo ""
+    fi
+ fi
+ if [ -f $PASSEDLOGSUMMARY ]; then
+        echo "============================="
+        echo $TEST_PASSED_SUMMARY_STRING
+        echo "============================="
+ fi
+ cat $PASSEDLOGSUMMARY
+ echo ""
+ echo "============================="
+ echo $TIME_SUMMARY_STRING
+ echo "============================="
+ cat $TIMELOGSUMMARY
+ echo ""
+ echo ""
+ echo "============================="
+ echo $TIMEKEEPER_SUMMARY_STRING
+ echo "============================="
+ cat $TIMEKEEPERLOGSUMMARY
+ echo ""
+ # If failures detected, show failed details, watchers list and test details.
+ # Else just show test details file name.
+ if [ -f $FAILEDDETAILSUMMARY ]; then
+    echo ""
+ #   echo ""
+ #   echo "============================="
+ #   echo $TEST_FAILURES_STRING
+ #   echo "============================="
+ #   cat $FAILEDDETAILSUMMARY  
+ #   echo ""
+ #   if [ -f $NEWWATCHERFILE ]; then
+ #       echo "============================="
+ #       echo $WATCHERS_LIST_STRING
+ #       echo "============================="
+ #       cat $NEWWATCHERFILE
+ #       echo ""
+ #   fi
+ #   echo "============================="
+ #   echo $TEST_DETAILS_STRING2
+ #   echo "============================="
+ #   if [ -f $PASSEDLOGFILESUMMARY ]; then
+ #       cat $PASSEDLOGFILESUMMARY
+ #   fi
+ #   if [ -f $FAILEDLOGFILESUMMARY ]; then
+ #       cat $FAILEDLOGFILESUMMARY 
+ #       #echo "Would print the failed log file summary, but maybe it's too big"
+ #   fi
+ else
+    if [ -f $NEWWATCHERFILE ]; then
+        echo "============================="
+        echo $WATCHERS_LIST_STRING
+        echo "============================="
+        cat $NEWWATCHERFILE
+        echo ""
+    fi
+ fi
+ echo "============================="
+ echo $TEST_DETAILS_STRING1
+ echo "============================="
+ if [ -f $PASSEDLOGFILESUMMARY ]; then
+     cat $PASSEDLOGFILESUMMARY
+ fi
+ if [ -f $FAILEDLOGFILESUMMARY ]; then
+     cat $FAILEDLOGFILESUMMARY 
+     #echo "Would print the failed log file summary, but maybe it's too big"
+ fi
+) | $MAIL -s "$REPORT_TITLE" $TOWHOM
+#) >& ./report.out
+
+# remove lock
+rm -f $LOGDIRLOCK
+
+rm -rf ../../oldremote
+mv ../../remote ../../oldremote
+cp -pr ../../remote_template ../../remote
+
+# final exit
+exit $errcode
+
