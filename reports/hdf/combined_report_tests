@@ -1,0 +1,12 @@
+# The order here will determine the printing order in the table
+# and probably in the email also.
+# If this list is ordered by software type, the report headers
+# won't be displayed multiple times.
+DailyHDF4Tests;HDF4;hdf4;local
+DailyHDF4Tests;HDF4;hdf4;from_remote
+DailyHDF5Tests;HDF5_1_8_6;hdf5_1_8_6;local
+DailyHDF5Tests;HDF5_1_8_6;hdf5_1_8_6;from_remote
+DailyHDF5Tests;HDF5_1_8;hdf5_1_8;local
+DailyHDF5Tests;HDF5_1_8;hdf5_1_8;from_remote
+DailyHDF5Tests;HDF5;hdf5;local
+DailyHDF5Tests;HDF5;hdf5;from_remote
