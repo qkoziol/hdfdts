@@ -10,6 +10,7 @@ my @SW;
 my @test_types;
 my $LOGDIR="";
 my @EXPECTED_TESTS; # = ("honest;HDF4", "honest;HDF5_1_6", "honest;HDF5_1_8", "honest;HDF5", "co-login;HDF4", "co-login;HDF5_1_6", "co-login;HDF5_1_8", "co-login;HDF5", "tg-login;HDF4", "tg-login;HDF5_1_6", "tg-login;HDF5_1_8");
+my @UNEXPECTED_TESTS;
 
 my @configured_machines;
 my @discovered_machines;
@@ -23,8 +24,8 @@ while (<MACHINEFILE>) {
    }
 }
 
-open(EXFILE, "<../remote_expected")or die "Couldn't open remote_expected:  $!\n";
-while (<EXFILE>) {
+open(EXPFILE, "<../remote_expected")or die "Couldn't open remote_expected:  $!\n";
+while (<EXPFILE>) {
     #chomp can't be inside the push line - only 1s get pushed.
     chomp;
     push @EXPECTED_TESTS, $_;
@@ -55,6 +56,13 @@ while (<CONFIGFILE>) {
     $LAST_SW = $SW;
     push @test_types, [$SW_TYPE, $SW, $sw, $REPORT_MODE];
     #print "Pushed ", $SW_TYPE, " ", $SW, " ", $sw, " ", $REPORT_MODE, " onto test_types array.\n";
+}
+
+open(EXCFILE, "<../local_exceptions")or die "Couldn't open local_exceptions:  $!\n";
+while (<EXCFILE>) {
+    #chomp can't be inside the push line - only 1s get pushed.
+    chomp;
+    push @UNEXPECTED_TESTS, $_;
 }
 
     #my $TODAY = "0708Wed";
@@ -129,35 +137,39 @@ undef %saw;
 #print "Discovered machines:  ", @discovered_machines, "\n";
 #Remove any machines from the remote_expected file that have a match in the log files. 
 #print "\n", %EXPECTATIONS, "\n\n";
-foreach my $test (@test_types) {
-    foreach  my $machine (@discovered_machines) {
-        $_ = $machine;
-        s/\d*$//;
-        my $element = $_.";".$test->[1];
-        #print "Check '%EXPECTATIONS' for $element.\n";
-        if (exists $EXPECTATIONS{$element}) {
-            my $deleted_machine = delete $EXPECTATIONS{$element};
-            #print "Deleted $deleted_machine.\n";
-        }
-    }
-}
+#foreach my $test (@test_types) {
+#    foreach  my $machine (@discovered_machines) {
+#        $_ = $machine;
+#        s/\d*$//;
+#        my $element = $_.";".$test->[1];
+#        print "Check '%EXPECTATIONS' for $element.\n";
+#        if (exists $EXPECTATIONS{$element}) {
+#            my $deleted_machine = delete $EXPECTATIONS{$element};
+#            #print "Deleted $deleted_machine.\n";
+#        }
+#    }
+#}
 #print %EXPECTATIONS, "\n";
 
 #split EXPECTATIONS on /;/ and push the first part onto discovered_machines
 # so that it is reported missing if there are no reports at all.
-my @missing_machines = sort keys %EXPECTATIONS;
-foreach (@missing_machines) {
-    my ($machine, $SW) = split /;/,$_;
-    #print "machine is $machine\n";
-    # Add machine to discovered_machines if it isn't already there.  "honest" is
-    # in the list to match honest{1,2,3, or 4}, but isn't a real machine, so 
-    # don't push it on the list of discovered machines.
-    if ( !grep { $_ eq $machine } @discovered_machines && ($machine ne "honest") ) { 
-        push @discovered_machines, $machine;
-    }
- }
+#my @missing_machines = sort keys %EXPECTATIONS;
+#print "Missing machines:  ", @missing_machines, "\n";
+#foreach (@missing_machines) {
+#    my ($machine, $SW) = split /;/,$_;
+#    print "machine is $machine\n";
+#    # Add machine to discovered_machines if it isn't already there.  "honest" is
+#    # in the list to match honest{1,2,3, or 4}, but isn't a real machine, so 
+#    # don't push it on the list of discovered machines.
+#    #if ( !grep { $_ eq $machine } @discovered_machines && ($machine ne "honest") ) { 
+#    my @results = grep /$machine/, @discovered_machines;
+#    print "Results: ", @results, "\n";
+#    if ( !@results ) { 
+#        push @discovered_machines, $machine;
+#    }
+# }
 
-    #print @discovered_machines, "\n";
+    #print "Discovered machines:  ", @discovered_machines, "\n";
     #print @out;
     #list files in each snapshot directory
 
@@ -263,8 +275,13 @@ foreach my $test (@test_types) {
                 }
             }
             if ( $configured_status{$SW, $machine->[0]} eq '' ) {  
+               my @results = grep /$machine->[0];$SW/, @UNEXPECTED_TESTS;
+               if ( !@results ) {
                     $configured_status{$SW, $machine->[0]} = 'M';
-            }
+               } else {
+                    $configured_status{$SW, $machine->[0]} = '-';
+               }
+            } 
             if ( $configured_status{$SW, $machine->[0]} =~ /[EFI]/) {
                my $tmp = '*'.$configured_status{$SW, $machine->[0]}.'*';
                $configured_status{$SW, $machine->[0]} = $tmp;
