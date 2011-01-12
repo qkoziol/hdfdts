@@ -100,7 +100,7 @@ CHECKINSTALL()
 
 COMMITSNAPSHOT()
 {
-    echo "original hdf5 script checked code back into svn at this point."
+    echo "original hdf5 script checked code back into svn."
 }
 
 DISPLAYUSAGE()
@@ -415,7 +415,7 @@ if [ -n "$DEPLOYDIRNAME" ]; then
    OP_CONFIGURE="$OP_CONFIGURE --prefix=${deploydir}/${DEPLOYDIRNAME}"
 fi
 CONFIGURE="configure $OP_CONFIGURE"
-echo "Configure command is $CONFIGURE"
+# echo "Configure command is $CONFIGURE"
 
 # Execute the requests
 snapshot=yes
@@ -435,7 +435,7 @@ if [ "${SWVERSION}" != "${HDFREPOS}" ]; then
 else
     SVNVERSION="$HDFREPOS/trunk"	# use the default (trunk) version
 fi
-echo "CURRENT is $CURRENT"
+# echo "CURRENT is $CURRENT"
 
 # Try finding a version of diff that supports the -I option too.
 DIFF=diff
@@ -461,7 +461,7 @@ if [ "$cmd" = "all" -o -n "$cmdcheckout" ]; then
     # spot to do the distclean.  We will also continue the checkout process
     # regardless of the return code of distclean.
     ( cd ${CURRENT}; test -f Makefile && ${MAKE} distclean)
-    echo "cmdftp is $cmdftp;  ftp_url is $ftp_url"
+    # echo "cmdftp is $cmdftp;  ftp_url is $ftp_url"
     if [ -n "$cmdftp" ]; then
         echo "Get the NetCDF4 source from their ftp server."
         echo "Command executed is: 2>&1 wget -N $ftp_url" 
@@ -477,7 +477,7 @@ if [ "$cmd" = "all" -o -n "$cmdcheckout" ]; then
             exit 1
         fi
 
-        echo "Wget output was $WGET_OUTPUT"
+        # echo "Wget output was $WGET_OUTPUT"
 
         if echo "$WGET_OUTPUT" | fgrep 'not retrieving' &> /dev/null
         then
@@ -499,7 +499,7 @@ if [ "$cmd" = "all" -o -n "$cmdtest" -o -n "$cmddiff" ]; then
     TIMESTAMP "Run Tests"
     # setup if srcdir is used.
     if [ -z "$srcdir" ]; then
-        echo "Setting TESTDIR to ${CURRENT} in snapshot line 409"
+        # echo "Setting TESTDIR to ${CURRENT} in snapshot line 409"
 	TESTDIR=${CURRENT}
     else
 	#create TESTDIR if not exist yet
@@ -514,7 +514,7 @@ if [ "$cmd" = "all" -o -n "$cmdtest" -o -n "$cmddiff" ]; then
 	TESTDIR=${BASEDIR}/TestDir/${SRCDIRNAME}
 	test -d ${TESTDIR} || mkdir ${TESTDIR}
     fi
-    echo "Check to see if TESTDIR $TESTDIR exists"
+    # echo "Check to see if TESTDIR $TESTDIR exists"
     # Make sure current version exists and is clean
     if [ -d ${TESTDIR} ]; then
         DISTCLEAN    
@@ -553,9 +553,9 @@ if [ "$cmd" = "all" -o -n "$cmdtest" -o -n "$cmddiff" ]; then
 	fi
     fi
 
-    echo "CURRENT is $CURRENT"
-    echo "TESTDIR is $TESTDIR"
-    echo "snapshot is $snapshot"
+    # echo "CURRENT is $CURRENT"
+    # echo "TESTDIR is $TESTDIR"
+    # echo "snapshot is $snapshot"
     # Build, run tests and install procedures
     if [ "$snapshot" = "yes" ] && [ "$NOMAKE" != "yes" ]; then
         FAIL_SECTION="" 

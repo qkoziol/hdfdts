@@ -447,7 +447,7 @@ RUNSNAPTEST()
             return
         fi
 	SNAPCMD_OPT="$SNAPCMD_OPT srcdirname ${SRCDIRNAME}"
-        echo "SRCDIRNAME is $SRCDIRNAME"
+        # echo "SRCDIRNAME is $SRCDIRNAME"
     fi
 
     # Setup log file name to save test output
@@ -457,8 +457,8 @@ RUNSNAPTEST()
     PRINT "   $LOGFILE"
     (date; PRINT Hostname=$HOST_NAME) >> $LOGFILE
 
-    echo "SNAPCMD is $SNAPCMD"
-    echo "SNAPCMD_OPT is $SNAPCMD_OPT"
+    # echo "SNAPCMD is $SNAPCMD"
+    # echo "SNAPCMD_OPT is $SNAPCMD_OPT"
     if [ -n "$BATCHMODE" ]; then
         (
         cd $SNAPYARD
@@ -467,7 +467,7 @@ RUNSNAPTEST()
     else
         (
         cd $SNAPYARD
-        echo "Running $SNAPSHOT $SNAPCMD $SNAPCMD_OPT"
+        # echo "Running $SNAPSHOT $SNAPCMD $SNAPCMD_OPT"
         $SNAPSHOT $SNAPCMD $SNAPCMD_OPT
         ) >> $LOGFILE 2>&1
         retcode=$?
@@ -687,7 +687,7 @@ while [ $# -gt 0 ]; do
 	    SWVER="$1"
 	    ;;
 	-all)
-            echo "Testing all hosts."
+            # echo "Testing all hosts."
 	    # Test all hosts.
 	    TESTHOST=-all
 	    ;;
@@ -700,7 +700,7 @@ while [ $# -gt 0 ]; do
 	    NODIFF=nodiff
 	    ;;
 	-configname)
-            echo "Using configname option for $1"
+            # echo "Using configname option for $1"
 	    # use <name> as hostname in the parsing of the snaptest configure file.
 	    shift
 	    CONFIGNAME=$1
@@ -719,7 +719,7 @@ while [ $# -gt 0 ]; do
             fi
             FTP="ftp"
             FTPURL="$1"
-            echo "FTP flag and FTPURL are now $FTP and $FTPURL"
+            echo "Set FTP flag and FTPURL to $FTP and $FTPURL"
             ;;
         -exttest)
             echo "Exttest option configured for $1"
@@ -753,8 +753,8 @@ then
     . bin/snapshot_version
 fi
 
-echo $SWVER
-echo $SWVERSION
+# echo $SWVER
+# echo $SWVERSION
 
 if [ -n "$SWVER" ]
 then
@@ -862,7 +862,7 @@ PRINT STANDARD_OPT=$STANDARD_OPT
 PRINT TEST_TYPES=$TEST_TYPES
 PRINT_BLANK
 
-#echo "FTP flag is $FTP"
+# echo "FTP flag is $FTP"
 if [ -n "$FTP" ]; then
     PRINT "Running FTP download with output saved in"
     PRINT "   $REPOLOG"
@@ -1102,7 +1102,7 @@ PWD=`pwd`
 #echo "FTP flag is $FTP"
 if [ -n "$FTP" ]; then
     $SNAPSHOT ftp $FTPURL
-    echo "Ran $SNAPSHOT ftp $FTPURL in line 1087"
+    # echo "Ran $SNAPSHOT ftp $FTPURL in line 1087"
 #else
 #    $SNAPSHOT checkout
 #    echo "Ran $SNAPSHOT checkout"
@@ -1128,7 +1128,7 @@ StartTime=`SecOfDay`
 #    It's still the same day as it was when this script started running.
 #    Current time + the duration of the last test < $SHOULD_FINISH. 
 while [ -n "$TEST" ]; do
-    echo "Running $TEST"
+    # echo "Running $TEST"
     sys_err=0
         EndTime=`SecOfDay`
         duration=`expr $EndTime - $StartTime`
