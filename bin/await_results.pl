@@ -1,8 +1,9 @@
 #!/bin/perl
 # Wait for a file for at most $nminutes number of minutes
-# The batch jobs may take a while, but the daily test stuff should probably
-# be cleaned up before starting a new cycle, so it is set to 40 minutes less
-# than 24 hours.  The batch jobs could be deleted with qdel if that seems 
+# The batch jobs may take a while, but the results are collected when the hdf5 
+# trunk tests finish.  900 minutes is long enough to wait.  The hdf5 trunk tests
+# use timelimit so the results are collected before the combined report is generated.
+# The batch jobs could be deleted with qdel if that seems 
 # necessary, but it isn't done currently.
 
 use strict;
@@ -17,7 +18,7 @@ if ( $#ARGV < 2) {
    $test_name = shift;
    $num_tests = shift;
 }
-my $nminutes = 1400;
+my $nminutes = 900;
 
 print "Removing all files from $directory/batch_output/ and all test files from $directory.\n";
 `rm $directory/$test_name.e*`;

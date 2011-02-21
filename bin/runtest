@@ -1012,7 +1012,7 @@ if [ -n "$TESTHOST" -a $HOST_NAME != "$TESTHOST" ]; then
     TEST_TYPE="launching"
     cd ${SNAPYARD}/log
     # Fork off timekeeper if concurrent tests will be used.
-    if [ -n "$SRCDIR" -a -z "$BATCHMODE" ]; then
+    if [ -n "$SRCDIR" ]; then
         timelimit=`TIMELIMIT_PARSE < $TIMELIMIT`
 	($SNAPYARD/bin/timekeeper $timelimit > $TIMEKEEPERLOG 2>&1 &)
 	PRINT "    Fork off timekeeper $timelimit"
