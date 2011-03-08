@@ -39,11 +39,16 @@ DISKUSAGE()
     ( read x y; echo "Disk Usage=$x KB" )
 }
 
+# function provided for testing software downloaded as tar files.  A version of
+# this function that properly extracts the downloaded files can be provided in 
+# the snapshots-${sw}-overrides file.
 EXTRACT()
 {
    echo "Error:  ${SWVERSION} is in svn repository - does not need extraction."
 }
 
+# Standard procedure for checking out or updating source code from an hdfgroup
+# svn repository.  Override the function for other repositories or procedures.
 SVNCHECKOUT()
 {
    SVNROOT=https://svn.hdfgroup.uiuc.edu
@@ -51,15 +56,15 @@ SVNCHECKOUT()
       mkdir $BASEDIR/current
    fi
    cd $BASEDIR/current; svn info
+   # "svn info" returns 0 if $BASEDIR/current was previously checked out from an
+   # svn repository - i.e. it contains .svn directories and files.  If so it can 
+   # be updated to the current version.  If not it can be checked out from the 
+   # repository.  
    if [ "$?" = 0 ];then
-      if [ $CPSRC ]; then
-         svn -q update
-      else
-         echo "Updating $BASEDIR/current from svn."
-         # Leave everything read/write until tests are fixed. LK 20090804
-         ( find . -not -name \*.svn\* | xargs chmod u+w; svn -q update ) || exit 1
-         #( find . -not -name \*.svn\* | xargs chmod u+w; svn -q update; find . -not -name \*.svn\* | xargs chmod a-w ) || exit 1
-      fi
+      # $BASEDIR/current was checked out from an svn repository, so update
+      #  to the current version.
+      svn -q update
+      echo "Updating $BASEDIR/current from svn."
    else
       echo "Checking out from $SVNROOT/${SVNVERSION} into $BASEDIR/current"
       # Check out the current version from source repository.
@@ -67,6 +72,8 @@ SVNCHECKOUT()
    fi
 }
 
+# Standard procedure for running the configure command in a build (test)
+# directory
 RUNCONFIGURE()
 {
     if [ "${CURRENT}" != "${TESTDIR}" ] && [ $CPSRC ]; then
@@ -79,6 +86,10 @@ RUNCONFIGURE()
     fi
 }
 
+# Sometimes "make distclean" doesn't adequately remove files from the previous
+# build.  If a build (test) directory was used, its contents can be entirely 
+# deleted to provide a clean start.  If the test is building in the source 
+# directory, the contents can't be deleted, so run "make distclean".
 DISTCLEAN()
 {
     if [ "${srcdir}" = "yes" -a -n "${SRCDIRNAME}" -a -d ${BASEDIR}/TestDir/${SRCDIRNAME} ]; then
@@ -90,14 +101,18 @@ DISTCLEAN()
     fi
 }
 
-CHECKINSTALL()
-{
-#Put this in override file for tests supporting check-install
+# Several of the software packages tested do not support make check-install.
+# Those that support it should have a version of this function in their 
+# override with the following lines:
 #     TIMESTAMP "check-install $1" 
 #     ${MAKE} check-install $1
+CHECKINSTALL()
+{
     echo "check-install is not supported for ${SWVERSION}"
 }
 
+# Function for hdf4 and hdf5 to override to check in changes after snapshot.
+# Safety measure to avoid unintended checkins to other repositories.
 COMMITSNAPSHOT()
 {
     echo "original hdf5 script checked code back into svn."
@@ -177,10 +192,6 @@ then
    . bin/snapshot_version
    echo "Added snapshot_version."
 fi
-#sw=`pwd | awk -F/ '{print $NF}' | sed -e 's/snapshots-//' -e 's/_[0-9]*//g'`
-#if [ -f bin/snapshot-${sw}-overrides ]; then
-#    . bin/snapshot-${sw}-overrides
-#fi
 if [ -n ${HDFREPOS} -a -f  bin/snapshot-${HDFREPOS}-overrides ]; then
    . bin/snapshot-${HDFREPOS}-overrides
    echo "Added snapshot-${HDFREPOS}-overrides."
@@ -408,7 +419,6 @@ fi
 # Setup the proper configure option (--with-zlib) to use zlib library
 # provide ZLIB is non-empty.
 ZLIB=${ZLIB:+"--with-zlib="$ZLIB}
-#CONFIGURE="configure $ZLIB $OP_CONFIGURE"
 # Adding --prefix as a configure option will put the path to the deploy 
 # directory in the initial libhdf5*.la files
 if [ -n "$DEPLOYDIRNAME" ]; then
@@ -435,7 +445,6 @@ if [ "${SWVERSION}" != "${HDFREPOS}" ]; then
 else
     SVNVERSION="$HDFREPOS/trunk"	# use the default (trunk) version
 fi
-# echo "CURRENT is $CURRENT"
 
 # Try finding a version of diff that supports the -I option too.
 DIFF=diff
@@ -499,7 +508,6 @@ if [ "$cmd" = "all" -o -n "$cmdtest" -o -n "$cmddiff" ]; then
     TIMESTAMP "Run Tests"
     # setup if srcdir is used.
     if [ -z "$srcdir" ]; then
-        # echo "Setting TESTDIR to ${CURRENT} in snapshot line 409"
 	TESTDIR=${CURRENT}
     else
 	#create TESTDIR if not exist yet
@@ -514,7 +522,6 @@ if [ "$cmd" = "all" -o -n "$cmdtest" -o -n "$cmddiff" ]; then
 	TESTDIR=${BASEDIR}/TestDir/${SRCDIRNAME}
 	test -d ${TESTDIR} || mkdir ${TESTDIR}
     fi
-    # echo "Check to see if TESTDIR $TESTDIR exists"
     # Make sure current version exists and is clean
     if [ -d ${TESTDIR} ]; then
         DISTCLEAN    
@@ -553,9 +560,6 @@ if [ "$cmd" = "all" -o -n "$cmdtest" -o -n "$cmddiff" ]; then
 	fi
     fi
 
-    # echo "CURRENT is $CURRENT"
-    # echo "TESTDIR is $TESTDIR"
-    # echo "snapshot is $snapshot"
     # Build, run tests and install procedures
     if [ "$snapshot" = "yes" ] && [ "$NOMAKE" != "yes" ]; then
         FAIL_SECTION="" 
@@ -595,7 +599,6 @@ fi # Test the HDF5 library
 
 #=============================
 #=============================
-#echo "CURRENT is $CURRENT"
 #if [ -d "$CURRENT" ]; then
 if [ "$EXTTEST" != "" ]; then
     TIMESTAMP ${EXTTEST}
@@ -603,7 +606,6 @@ if [ "$EXTTEST" != "" ]; then
     test -d ${TESTDIR} || mkdir ${TESTDIR}
     cp ${BASEDIR}/bin/${EXTTEST} ${TESTDIR}
     cd ${TESTDIR}
-    #echo "Should now be in $TESTDIR"
     sleep 1
     TIMESTAMP $pwd
     ls
