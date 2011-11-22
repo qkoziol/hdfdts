@@ -14,13 +14,16 @@ SVNCHECKOUT()
          (cd $BASEDIR; svn -q co ${SVNROOT}/${SVNVERSION} current ) || exit 1
       fi
       PACKAGEDIR=/mnt/hdf/packages
-      AUTOMAKEDIR=${PACKAGEDIR}/automake/automake-1.10.1/bin
-      AUTOCONFDIR=${PACKAGEDIR}/autoconf/autoconf-2.63/bin
-      PATH=${AUTOCONFDIR}:${PACKAGEDIR}/m4/m4-1.4.7/bin:${PACKAGEDIR}/m4/m4-1.4.7/share:$PATH
-      ${AUTOMAKEDIR}/aclocal-1.10 --force -I confdb
+      AUTOMAKEDIR=${PACKAGEDIR}/automake/automake-1.11.1/bin
+      AUTOCONFDIR=${PACKAGEDIR}/autoconf/autoconf-2.68/bin
+      LIBTOOLDIR=${PACKAGEDIR}/libtool/libtool-2.4/bin
+      PATH=${AUTOCONFDIR}:${AUTOMAKEDIR}:${PACKAGEDIR}/m4/m4-1.4.15/bin:${PACKAGEDIR}/m4/m4-1.4.15/share:${LIBTOOLDIR}:$PATH
+      ${LIBTOOLDIR}/libtoolize
+      ${AUTOMAKEDIR}/aclocal-1.11 --force -I confdb
       ${AUTOCONFDIR}/autoconf
       ${AUTOCONFDIR}/autoheader
-      ${AUTOMAKEDIR}/automake-1.10 --add-missing --copy --force-missing
+      ${AUTOMAKEDIR}/automake-1.11 --add-missing --copy --force-missing
+      ${AUTOCONFDIR}/autoreconf -vif
    else #rsync from jam
       rsync -auvz --delete -e "ssh -i $HOME/.private/honest1-rsync-key" hdftest@jam.hdfgroup.uiuc.edu:/home/hdftest/snapshots-opa/current/ $HOME/snapshots-opa/current/
    fi
