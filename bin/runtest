@@ -214,7 +214,9 @@ CHECK_RSH()
     # Try remote command with host if it responds to ping.
     # Still try it if we don't know how to do ping.
     if [ no_ping = "$PING" ] || $PING $host $PINGCOUNT >/dev/null 2>&1; then
-	if ssh $host -n hostname >/dev/null 2>&1; then
+        # Add ConnectTimeout=60 to avoid ssh hanging to one machine preventing 
+        # the daily test script from continuing on to other tests. LRK20131002
+	if ssh -o ConnectTimeout=60 $host -n hostname >/dev/null 2>&1; then
 	    RSH=ssh
 	elif rsh $host -n hostname >/dev/null 2>&1; then
 	    RSH=rsh
