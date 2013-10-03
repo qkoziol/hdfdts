@@ -1033,7 +1033,7 @@ if [ -n "$TESTHOST" -a $HOST_NAME != "$TESTHOST" ]; then
 	CHECK_RSH $h
 	# run the remote shell command with output to $TMP_OUTPUT
 	case "$RSH" in
-	    rsh|ssh)
+	    "ssh -o ConnectTimeout=$SSH_TIMEOUT")
 		CMD="$RSH $h -n cd $BASEDIR;$PROGNAME -configname $CONFIGNAME"
 		PRINT $CMD
 
