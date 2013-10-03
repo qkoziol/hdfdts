@@ -30,6 +30,7 @@ test -n "$DEBUGMODE" && echo "******** DEBUGMODE is $DEBUGMODE ************"
 WHEREAMI='pwd'
 CMD=
 BATCHMODE=""
+SSH_TIMEOUT=60         # seconds to wait for response to ssh command
 
 # the name of this program
 PROGNAME="bin/runtest $DEBUGMODE"
@@ -214,12 +215,10 @@ CHECK_RSH()
     # Try remote command with host if it responds to ping.
     # Still try it if we don't know how to do ping.
     if [ no_ping = "$PING" ] || $PING $host $PINGCOUNT >/dev/null 2>&1; then
-        # Add ConnectTimeout=60 to avoid ssh hanging to one machine preventing 
+        # Add ConnectTimeout=$SSH_TIMEOUT to avoid ssh hanging to one machine preventing 
         # the daily test script from continuing on to other tests. LRK20131002
-	if ssh -o ConnectTimeout=60 $host -n hostname >/dev/null 2>&1; then
-	    RSH=ssh
-	elif rsh $host -n hostname >/dev/null 2>&1; then
-	    RSH=rsh
+	if ssh -o ConnectTimeout=$SSH_TIMEOUT $host -n hostname >/dev/null 2>&1; then
+	    RSH="ssh -o ConnectTimeout=$SSH_TIMEOUT"
 	else
 	    PRINT cannot remote command with $host
 	    RSH="NoRemoteCommand"
