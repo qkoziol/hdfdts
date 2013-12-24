@@ -1,0 +1,67 @@
+RUNCONFIGURE()
+{
+    if [ "${CURRENT}" != "${TESTDIR}" ] && [ $CPSRC ]; then
+        cp -pr ${CURRENT}/* ${TESTDIR}
+        cd ${TESTDIR}
+        INSTALLDIR=${TESTDIR}/installdir
+        ./${CONFIGURE} --prefix=$INSTALLDIR
+    else
+        ${srcdir:+${CURRENT}/}${CONFIGURE} --prefix=$INSTALLDIR
+    fi
+}
+
+DISKUSAGE()
+{
+   echo ""
+} 
+
+DISPLAYUSAGE()
+{
+    set -
+    cat <<EOF
+Usage: $PROGNAME [all] [checkout] [diff] [test] [srcdir] [release] [help]
+          [hdf4 <hdf4lib_path>] [hdf4 <hdf4lib_path>] [archive <arch_path>] [dir <dir>]
+          [op-configure <option>] [--<option>]
+    all:      Run all commands (checkout, test & release)
+              [Default is all]
+    checkout: Run source code repository checkout
+    diff:     Run diff on current and previous versions.  Exit 0 if
+              no significant differences are found.  Otherwise, non-zero.
+    deploy:   deploy binary to directory <dir>
+    deploydir: use <dir> as the default directory for deployment
+    test:     Run test
+    release:  Run release
+    clean:    Run make clean
+    distclean:Run make distclean
+    srcdir:   Use srcdir option (does not imply other commands)
+              "snapshot srcdir" is equivalent to "snapshot srcdir all"
+              "snapshot srcdir checkout" is equivalent to "snapshot checkout"
+    srcdirname <dir>:
+              Use <dir> as the srcdir testing directory if srcdir is choosen.
+              If <dir> starts with '-', it is append to the default name
+              E.g., "snapshot srcdir srcdirname -xx" uses hostname-xx
+              [Default is hostname]
+    help:     Print this message
+    hdf4 <hdf4lib_path>:
+              Use <hdf4lib_path> as the HDF4LIB locations
+              [Default is $HDF4LIB_default]
+    hdf5 <hdf5lib_path>:
+              Use <hdf5lib_path> as the HDF5LIB locations
+              [Default is $HDF5LIB_default]
+    archive <arch_path>:
+              Use <arch_path> as the release ARCHIVE area
+              [Default is $ARCHIVES_default]
+    op-configure <option>:
+              Pass <option> to the configure command
+              E.g., "snapshot op-configure --enable-parallel"
+                  configures for parallel mode
+    --<option>:
+              Pass --<option> to the configure command
+              E.g., "snapshot --enable-parallel"
+                  configures for parallel mode
+EOF
+    exit $errcode
+}
+
+
+
