@@ -215,14 +215,19 @@ CHECK_RSH()
     # Try remote command with host if it responds to ping.
     # Still try it if we don't know how to do ping.
     if [ no_ping = "$PING" ] || $PING $host $PINGCOUNT >/dev/null 2>&1; then
-        # Add ConnectTimeout=$SSH_TIMEOUT to avoid ssh hanging to one machine preventing 
+        # Add ConnectTimeout=$SSH_TIMEOUT to avoid ssh hanging on one machine preventing 
         # the daily test script from continuing on to other tests. LRK20131002
 	if ssh -o ConnectTimeout=$SSH_TIMEOUT $host -n hostname >/dev/null 2>&1; then
 	    RSH="ssh -o ConnectTimeout=$SSH_TIMEOUT"
-	else
-	    PRINT cannot remote command with $host
-	    RSH="NoRemoteCommand"
-	fi
+        #Macs sometimes need more than one connection attempt
+        else
+            if ssh -o ConnectTimeout=$SSH_TIMEOUT $host -n hostname >/dev/null 2>&1; then
+                RSH="ssh -o ConnectTimeout=$SSH_TIMEOUT"
+	    else
+	        PRINT cannot remote command with $host
+	        RSH="NoRemoteCommand"
+	    fi
+        fi
     else
 	RSH="NotReachable"
     fi
