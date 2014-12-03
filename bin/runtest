@@ -1156,7 +1156,7 @@ while [ -n "$TEST" ]; do
                 n_test=`expr $n_test + 1`
                 TEST="`echo $TEST_TYPES | cut -f$n_test -s -d';'`"
             done
-            exit 0
+            break
         fi
         
     RUNSNAPTEST $TEST 
