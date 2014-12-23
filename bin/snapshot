@@ -54,21 +54,23 @@ SVNCHECKOUT()
    SVNROOT=https://svn.hdfgroup.uiuc.edu
    if [ ! -d $BASEDIR/current ]; then
       mkdir $BASEDIR/current
-   fi
-   cd $BASEDIR/current; svn info
-   # "svn info" returns 0 if $BASEDIR/current was previously checked out from an
-   # svn repository - i.e. it contains .svn directories and files.  If so it can 
-   # be updated to the current version.  If not it can be checked out from the 
-   # repository.  
-   if [ "$?" = 0 ];then
-      # $BASEDIR/current was checked out from an svn repository, so update
-      #  to the current version.
-      svn -q update
-      echo "Updating $BASEDIR/current from svn."
-   else
       echo "Checking out from $SVNROOT/${SVNVERSION} into $BASEDIR/current"
       # Check out the current version from source repository.
       (cd $BASEDIR; svn co ${SVNROOT}/${SVNVERSION} current ) || exit 1
+   else
+      cd $BASEDIR/current; svn info
+      # "svn info" returns 0 if $BASEDIR/current was previously checked out from an
+      # svn repository - i.e. it contains .svn directories and files.  If so it can
+      # be updated to the current version.  If not it can be checked out from the
+      # repository.
+      if [ "$?" = 0 ];then
+         # $BASEDIR/current was checked out from an svn repository, so update
+         #  to the current version.
+         svn -q update
+         echo "Updating $BASEDIR/current from svn."
+      else
+         echo "Warning!  Source directory ("current") is not checked out from svn."
+      fi
    fi
 }
 
@@ -76,7 +78,7 @@ SVNCHECKOUT()
 # directory
 RUNCONFIGURE()
 {
-    if [ "${CURRENT}" != "${TESTDIR}" ] && [ $CPSRC ]; then
+    if [ "${CURRENT}" != "${TESTDIR}" -a "$CPSRC" = "yes" ]; then
         echo "Copying source files to ${TESTDIR}."
         cp -pr ${CURRENT}/* ${TESTDIR}
         cd ${TESTDIR}
@@ -609,12 +611,11 @@ if [ "$EXTTEST" != "" ]; then
     TIMESTAMP ${EXTTEST}
     TESTDIR=${BASEDIR}/TestDir/${SRCDIRNAME}
     test -d ${TESTDIR} || mkdir ${TESTDIR}
-    cp ${BASEDIR}/bin/${EXTTEST} ${TESTDIR}
     cd ${TESTDIR}
     sleep 1
     TIMESTAMP $pwd
     ls
-    ./$EXTTEST $OP_CONFIGURE
+    ${BASEDIR}/${EXTTEST} $OP_CONFIGURE
     errcode=$?
     exit $errcode
 fi
