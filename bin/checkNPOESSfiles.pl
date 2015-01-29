@@ -11,7 +11,10 @@ mkpath(['copies/v18', 'copies/v19', 'repacked18', 'repacked19'], 1, 0755);
 my $ENV_LD_LIBRARY_PATH = $ENV{LD_LIBRARY_PATH};
 my $OP_CONFIGURE = "";
 #$OP_CONFIGURE = shift;
-my $HOST_NAME = `hostname | cut -f1 -d.`;  # no domain part`
+#my $HOST_NAME = `hostname | cut -f1 -d.`;  # no domain part`
+my $TEST_HOST = `hostname | cut -f1 -d.`;  # no domain part`
+chomp($TEST_HOST);
+my $HOST_NAME = "jam";
 #my $HOST_NAME = substr $HOST_NAME_STR, 0, index ".", $HOST_NAME_STR;
 chomp($HOST_NAME);
 
@@ -20,7 +23,9 @@ chomp($HOST_NAME);
 #}
 #my $PREFIX = "TestDir/$HOST_NAME";
 my $PREFIX = "";
-my $SELECTED = "/mnt/scr1/NPOESS/selected";
+#my $SELECTED = "/mnt/scr1/NPOESS/selected";
+my $SELECTED = "/mnt/scr1/SnapTest/snapshots-continual-npoess/TestDir/$TEST_HOST/selected";
+#my $SELECTED = "/var/tmp/hdftest/snapshots-continual-npoess/selected";
 my $CORRUPTED = "";
 #my $CORREPACKED18 = "$PREFIX/corrupted-repacked18/MLS";
 #my $CORREPACKED19 = "$PREFIX/corrupted-repacked19/MLS";
@@ -101,7 +106,7 @@ my $check_commands = {  h5ls => sub { my $dir = shift;
                                           my $output = `$command`;
                                           sleep(10);
                                       }
-                                      print "Running h5copy on $directory/$testfile\n";
+                                      print "Running h5copy with -f ref on $directory/$testfile\n";
                                       my $cmd = "$dir/bin/h5copy -f ref -i $directory/$testfile -o $COPIES/$testfile -s \"/\" -d \"/COPY\" ";}
                      };
 
@@ -121,8 +126,11 @@ sub check_dir {
 
    #system("setenv LD_LIBRARY_PATH $dir/lib");
    #Add the current library to the previous LD_LIBRARY_PATH
-   $ENV{LD_LIBRARY_PATH} = "$ENV_LD_LIBRARY_PATH:$dir/lib";
-   system("echo \$LD_LIBRARY_PATH");
+#   if ($ENV_LD_LIBRARY_PATH eq "")
+#      $ENV{LD_LIBRARY_PATH} = "$dir/lib";
+#   else 
+#      $ENV{LD_LIBRARY_PATH} = "$ENV_LD_LIBRARY_PATH:$dir/lib";
+#   system("echo \$LD_LIBRARY_PATH");
 
    #opendir DH, "." or die "Couldn't open the current directory:  $!";
    opendir DH, $directory or die "Couldn't open $directory:  $!";
@@ -147,8 +155,12 @@ sub check_dir {
                open(STDERR,">h5ls_stderr.txt");
             }
 
+            print "     Run $cmd\n";
+
             $_ = `$cmd > /dev/null`;
             $result = $? >> 2;
+
+            print "     Finished $cmd\n";
 
             #check result if v1.8 h5stat and result == 0; remove err file.
             if(-e "h5stat_stderr.txt") { 
@@ -207,9 +219,14 @@ sub repack_file {
    print "Entered repack_file with params $dir, $inputdir, $outputdir, $RET\n";
    #print "Count files.\n";
    my $filecount = countfiles($inputdir);
+   my $filenum = 0;
    my $dayofmonth = `date +%e`;
-   my $filenum = $dayofmonth % $filecount;
-   $filecount = 0;
+   if ($filecount > 0) {
+     $filenum = $dayofmonth % $filecount;
+     $filecount = 0;
+   } else {
+     $filenum = $dayofmonth;
+   }
    #Add the current library to the previous LD_LIBRARY_PATH
    $ENV{LD_LIBRARY_PATH} = "$ENV_LD_LIBRARY_PATH:$dir/lib";
    system("echo \$LD_LIBRARY_PATH");
@@ -285,7 +302,7 @@ sub dump_copies {
       my $cmd = "";
       next unless ($_ =~ /.*\.h5$/) || ($_ =~ /.*\.he5$/);
       my $testfile = $_;
-      if ($dir eq "$NSTR16" || $dir eq "$STR16" ) {
+      if ($dir eq "$NSTR16" || $dir eq "$STR16" || $_ =~ /AVAFO.*\.h5$/) {
          $cmd = "$dir/bin/h5dump -H $COPIES/$testfile";
       } else {
          $cmd = "$dir/bin/h5dump -R $COPIES/$testfile";
@@ -317,15 +334,20 @@ sub run_h5check {
    #$ENV{LD_LIBRARY_PATH} = "$ENV_LD_LIBRARY_PATH:$dir/lib";
    #system("echo \$LD_LIBRARY_PATH");
 
+
    #opendir DH, "." or die "Couldn't open the current directory:  $!";
    opendir DH, $directory or die "Couldn't open the current directory:  $!";
    while ($_ = readdir(DH)) {
       next unless ($_ =~ /.*\.h5$/) || ($_ =~ /.*\.he5$/);
       my $testfile = $_;
-      print "checking $testfile\n";
+
+      my $checkdir = $dir;
+      $checkdir =~ s/hdf5/h5check/;
+      $checkdir =~ s/$HOST_NAME-.*/$HOST_NAME/;
+      print "checking $testfile with $checkdir/bin/h5check.\n";
 
       #my $cmd = "$H5CHECK $directory/$testfile";
-      my $cmd = "$dir/bin/h5check $directory/$testfile";
+      my $cmd = "$checkdir/bin/h5check $directory/$testfile";
       my $output = `$cmd`;
       #$result = $?;
 
@@ -343,27 +365,29 @@ print "Removing files from $COPYDIR\n";
 $cmd = `rm $COPYDIR/v18/*`;
 $cmd = `rm $COPYDIR/v19/*`;
 
-print "Repack the selected files with strict checking - should return 0.\n";
-foreach my $dir (@dirs) {
-   $_ = $dir;
-   print "Consider $dir.\n";
-   next if (/nostrict/);
-   if ($dir eq "$STR18") {
-      print "Repack with $dir?\n";
-      repack_file ($dir, $SELECTED, $REPACKED18, 0);
-   }
+push @ERR_MESSAGES, "repack_file is disabled in line 373 until the h5repack bug that doesn't correctly repaack references is fixed.\n";   
 
-   if ($dir eq "$STR19") {
-      print "Repack with $dir?\n";
-      repack_file ($dir, $SELECTED, $REPACKED19, 0);
-   }
-}
-if ($OOPS ne "") {
-   print "Selected files were not all correctly repacked:\n";
-   push @ERR_MESSAGES, "Selected files were not all correctly repacked:\n";
-   print $OOPS;
-   $retval += 1;
-}
+#print "Repack the selected files with strict checking - should return 0.\n";
+#foreach my $dir (@dirs) {
+#   $_ = $dir;
+#   print "Consider $dir.\n";
+#   next if (/nostrict/);
+#   if ($dir eq "$STR18") {
+#      print "Repack with $dir?\n";
+#      repack_file ($dir, $SELECTED, $REPACKED18, 0);
+#   }
+
+#   if ($dir eq "$STR19") {
+#      print "Repack with $dir?\n";
+#      repack_file ($dir, $SELECTED, $REPACKED19, 0);
+#   }
+#}
+#if ($OOPS ne "") {
+#   print "Selected files were not all correctly repacked:\n";
+#   push @ERR_MESSAGES, "Selected files were not all correctly repacked:\n";
+#   print $OOPS;
+#   $retval += 1;
+#}
 
 
 
@@ -371,12 +395,12 @@ print "Check selected and repacked files with strict and non-strict checking - s
 foreach my $dir (@dirs) {
    check_dir ($dir, $SELECTED, 0);
 }
-foreach my $dir (@dirs) {
-   check_dir ($dir, $REPACKED18, 0);
-}
-foreach my $dir (@dirs) {
-   check_dir ($dir, $REPACKED19, 0);
-}
+#foreach my $dir (@dirs) {
+#   check_dir ($dir, $REPACKED18, 0);
+#}
+#foreach my $dir (@dirs) {
+#   check_dir ($dir, $REPACKED19, 0);
+#}
 
 if ($OOPS ne "") {
    print "Corrupt file found:\n";
@@ -390,8 +414,8 @@ foreach my $dir (@dirs) {
    print "Check all files with $dir/bin/h5check.\n";
 
    run_h5check($dir, $SELECTED, 0);
-   run_h5check($dir, $REPACKED18, 0);
-   run_h5check($dir, $REPACKED19, 0);
+#   run_h5check($dir, $REPACKED18, 0);
+#   run_h5check($dir, $REPACKED19, 0);
    if ($OOPS ne "") {
       print "h5check found file with unexpected errors.\n";
       push @ERR_MESSAGES, "h5check found file with unexpected errors.\n";
@@ -406,9 +430,9 @@ foreach my $dir (@dirs) {
 # check_diffs runs h5diff on repacked files
 #disable while h5repack is not working.
 push @ERR_MESSAGES, "check_diffs is disabled in line 408 until the h5repack bug that skips attributes for datasets with references is fixed.\n";   
-foreach my $dir (@dirs) {
+#foreach my $dir (@dirs) {
    #check_diffs ($dir)
-}
+#}
 if ($OOPS ne "") {
    print "h5diff can't open file or repacked file does no match original file.\n";
    push @ERR_MESSAGES, "h5diff can't open file or repacked file does no match original file.\n";
