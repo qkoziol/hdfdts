@@ -81,7 +81,7 @@ my $check_commands = {  h5ls => sub { my $dir = shift;
                                       my $directory = shift;
                                       my $testfile = shift;
                                       my $cmd = "";  
-                                      if ($dir eq "$NSTR16" || $dir eq "$STR16" ) {
+                                      if ($dir eq "$NSTR16" || $dir eq "$STR16" || $_ =~ /AVAFO.*\.h5$/) {
                                          $cmd = "$dir/bin/h5dump -H $directory/$testfile";
                                       } else {
                                          $cmd = "$dir/bin/h5dump -R $directory/$testfile";
