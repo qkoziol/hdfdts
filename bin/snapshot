@@ -228,7 +228,7 @@ ZLIB=$ZLIB_default
 if [ "${SWVERSION}" = "hdf5_1_6" ]; then
     METHODS="gzip bzip2 md5"
 else
-    METHODS="gzip bzip2 md5 doc"
+    METHODS="gzip bzip2 doc"
 fi
 
 # Use User's MAKE if set.  Else use generic make.
