@@ -382,13 +382,6 @@ while [ $# -gt 0 ] ; do
 	    fi
 	    cmd=""
             EXTTEST="$1"
-            shift
-            while [ $# -gt 2 ] ; do
-                EXTTEST_ARGS="$EXTTEST_ARGS $1"
-                if [ $# -gt 2 ]; then
-                    shift
-                fi
-            done
             ;;
 	check-vfd)
 	    CHECKVAL=check-vfd
@@ -622,7 +615,7 @@ if [ "$EXTTEST" != "" ]; then
     sleep 1
     TIMESTAMP $pwd
     ls
-    ${BASEDIR}/${EXTTEST} $EXTTEST_ARGS
+    ${BASEDIR}/${EXTTEST} $OP_CONFIGURE
     errcode=$?
     exit $errcode
 fi

@@ -916,13 +916,7 @@ if [ -z "$NOREPO" ]; then
     POS4=`perl -e "print index(\"$HDFREPOS}\", 'hdf4')"`
     POS5=`perl -e "print index(\"${HDFREPOS}\", 'hdf4')"`
     if [ "${HDFREPOS}" =  "hdf4" ] || [ "${HDFREPOS}" = "hdf5" ]; then
-        (cd $SNAPYARD/current; svn info
-        errcode=$?
-        if [ $errcode -eq 0 ]; then
-            ./bin/chkmanifest
-        else
-            echo "Testing source from a tarfile. Cannot check MANIFEST without svn."
-        fi) > $TMPFILE 2>&1
+        (cd $SNAPYARD/current; ./bin/chkmanifest) > $TMPFILE 2>&1
         errcode=$?
     fi
     if [ $errcode -eq 0 ]; then
