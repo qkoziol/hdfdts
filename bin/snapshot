@@ -51,7 +51,7 @@ EXTRACT()
 # svn repository.  Override the function for other repositories or procedures.
 SVNCHECKOUT()
 {
-   SVNROOT=https://svn.hdfgroup.uiuc.edu
+   SVNROOT=https://svn.hdfgroup.org
    if [ ! -d $BASEDIR/current ]; then
       mkdir $BASEDIR/current
       echo "Checking out from $SVNROOT/${SVNVERSION} into $BASEDIR/current"
