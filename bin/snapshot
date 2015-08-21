@@ -66,7 +66,7 @@ SVNCHECKOUT()
       if [ "$?" = 0 ];then
          # $BASEDIR/current was checked out from an svn repository, so update
          #  to the current version.
-         svn -q update
+         svn -q update || exit 1
          echo "Updating $BASEDIR/current from svn."
       else
          echo "Warning!  Source directory ("current") is not checked out from svn."
@@ -615,7 +615,7 @@ if [ "$EXTTEST" != "" ]; then
     sleep 1
     TIMESTAMP $pwd
     ls
-    ${BASEDIR}/${EXTTEST} $OP_CONFIGURE
+    ${BASEDIR}/${EXTTEST} 
     errcode=$?
     exit $errcode
 fi
