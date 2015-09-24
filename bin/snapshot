@@ -242,6 +242,8 @@ CHECKVAL=check
 cmd="all"
 test_opt=""
 errcode=0
+EXTTEST=""
+EXEC_CMD_ARG=""
 while [ $# -gt 0 ] ; do
     case "$1" in
 	all)	
@@ -382,6 +384,19 @@ while [ $# -gt 0 ] ; do
 	    fi
 	    cmd=""
             EXTTEST="$1"
+            ;;
+        exec)
+            shift
+	    if [ $# -lt 1 ]; then
+		echo "excc command name missing"
+		errcode=1
+		cmd="help"
+		break
+	    fi
+	    cmd=""
+            EXEC_CMD_ARG="exec $@"
+	    # exit the parsing while loop since all arguments have been consummed.
+	    break
             ;;
 	check-vfd)
 	    CHECKVAL=check-vfd
@@ -567,6 +582,26 @@ if [ "$cmd" = "all" -o -n "$cmdtest" -o -n "$cmddiff" ]; then
 	fi
     fi
 
+    #=============================
+    # Execute command if defined
+    #=============================
+    #echo BEFORE EXEC command
+    #echo EXEC_CMD_ARG=${EXEC_CMD_ARG}
+    
+    if [ -n "$EXEC_CMD_ARG" ]; then
+        TIMESTAMP ${EXEC_CMD_ARG}
+        TESTDIR=${BASEDIR}/TestDir/${SRCDIRNAME}
+        test -d ${TESTDIR} || mkdir ${TESTDIR}
+        cd ${TESTDIR}
+        # clean up the directory before executing the command
+        # Do we need to clean first?
+        # rm -rf *
+        ${BASEDIR}/${EXEC_CMD_ARG}
+        errcode=$?
+	# exit snapshot since nothing else to do, for now.
+        exit $errcode
+    fi
+
     # Build, run tests and install procedures
     if [ "$snapshot" = "yes" ] && [ "$NOMAKE" != "yes" ]; then
         FAIL_SECTION="" 
@@ -615,7 +650,7 @@ if [ "$EXTTEST" != "" ]; then
     sleep 1
     TIMESTAMP $pwd
     ls
-    ${BASEDIR}/${EXTTEST} 
+    ${BASEDIR}/${EXTTEST}
     errcode=$?
     exit $errcode
 fi

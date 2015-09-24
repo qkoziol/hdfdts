@@ -309,6 +309,7 @@ WAITTILL()
 # $*--Types of test being run
 RUNSNAPTEST()
 {
+    EXEC_CMD_ARG=""
     SNAPCMD_OPT="$STANDARD_OPT"		# snapshot test option
     SRCDIRNAME=${HOST_NAME}
     # restore CC, PATH in case they were changed in the last test.
@@ -411,6 +412,19 @@ RUNSNAPTEST()
                 #EXTTEST="$1"
                 SNAPCMD_OPT="$SNAPCMD_OPT exttest $1"
                 ;;
+            exec)
+                shift
+                if [ $# -lt 1 ]; then
+                    echo "exec command name missing"
+                    errcode=1
+                    cmd="help"
+                    break
+                fi
+                cmd=""
+		EXEC_CMD_ARG="exec $*"
+		# exit the parser while loop since all arguments have been consummed.
+		break
+                ;;
 	    *) # unknown test
 		PRINT "$0: unknown type of test ($1)"
 		echo "****SYSTEM ERROR $HOST_NAME: unknown type of test ($1)" >> $SYSERRLOG
@@ -420,6 +434,7 @@ RUNSNAPTEST()
 	esac
 	shift
     done
+    # echo "After Parser: SNAPCMD_OPT=$SNAPCMD_OPT EXEC_CMD_ARG=$EXEC_CMD_ARG"
 
     if [ $retcode -ne 0 -o $skiptest = yes ]; then
 	errcode=$retcode 
@@ -474,13 +489,13 @@ RUNSNAPTEST()
     if [ -n "$BATCHMODE" ]; then
         (
         cd $SNAPYARD
-        perl bin/batch-$CONFIGNAME-runsnaptest.pl $SNAPSHOTNAME $SRCDIRNAME $LOGFILE $SNAPSHOT $SNAPCMD $SNAPCMD_OPT
+        perl bin/batch-$CONFIGNAME-runsnaptest.pl $SNAPSHOTNAME $SRCDIRNAME $LOGFILE $SNAPSHOT $SNAPCMD $SNAPCMD_OPT $EXEC_CMD_ARG
         ) >> $LOGFILE 2>&1 
     else
         (
         cd $SNAPYARD
         # echo "Running $SNAPSHOT $SNAPCMD $SNAPCMD_OPT"
-        $SNAPSHOT $SNAPCMD $SNAPCMD_OPT
+        $SNAPSHOT $SNAPCMD $SNAPCMD_OPT $EXEC_CMD_ARG
         ) >> $LOGFILE 2>&1
         retcode=$?
         [ $retcode -ne 0 ] && errcode=$retcode
