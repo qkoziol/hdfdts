@@ -394,7 +394,7 @@ while [ $# -gt 0 ] ; do
 		break
 	    fi
 	    cmd=""
-            EXEC_CMD_ARG="exec $@"
+            EXEC_CMD_ARG="$@"
 	    # exit the parsing while loop since all arguments have been consummed.
 	    break
             ;;
@@ -592,12 +592,26 @@ if [ "$cmd" = "all" -o -n "$cmdtest" -o -n "$cmddiff" ]; then
         TIMESTAMP ${EXEC_CMD_ARG}
         TESTDIR=${BASEDIR}/TestDir/${SRCDIRNAME}
         test -d ${TESTDIR} || mkdir ${TESTDIR}
-        cd ${TESTDIR}
-        # clean up the directory before executing the command
-        # Do we need to clean first?
-        # rm -rf *
-        ${BASEDIR}/${EXEC_CMD_ARG}
-        errcode=$?
+	if cd ${TESTDIR}; then
+	    # clean up the directory before executing the command
+	    # Do we need to clean first?
+	    # rm -rf *
+	    #
+	    # If EXEC_CMD_ARG starts with a '/', it has an absolute path, else it is
+	    # relative to the BASEDIR.
+	    case "$EXEC_CMD_ARG" in
+	    /*)
+                ${EXEC_CMD_ARG}
+		;;
+	    *)
+                ${BASEDIR}/${EXEC_CMD_ARG}
+		;;
+	    esac
+	    errcode=$?
+	else
+	    echo "${TESTDIR} not accessible"
+	    errcode=1
+	fi
 	# exit snapshot since nothing else to do, for now.
         exit $errcode
     fi
