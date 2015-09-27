@@ -52,7 +52,17 @@ EXTRACT()
 SVNCHECKOUT()
 {
    SVNROOT=https://svn.hdfgroup.org
-   if [ ! -d $BASEDIR/current ]; then
+   if [ -n "$AUTOGEN" ]; then
+      if [ ! -d $BASEDIR/current_src ]; then
+         mkdir -p $BASEDIR/current_src
+         echo "Checking out from $SVNROOT/${SVNVERSION} into $BASEDIR/current_src"
+         (cd $BASEDIR; svn co ${SVNROOT}/${SVNVERSION} ./current_src ) || exit 1
+      else
+         cd $BASEDIR/current_src;
+         svn -q update
+         echo "Updating $BASEDIR/current_src from svn."
+      fi 
+   elif [ ! -d $BASEDIR/current ]; then
       mkdir $BASEDIR/current
       echo "Checking out from $SVNROOT/${SVNVERSION} into $BASEDIR/current"
       # Check out the current version from source repository.
@@ -66,7 +76,7 @@ SVNCHECKOUT()
       if [ "$?" = 0 ];then
          # $BASEDIR/current was checked out from an svn repository, so update
          #  to the current version.
-         svn -q update || exit 1
+         svn -q update
          echo "Updating $BASEDIR/current from svn."
       else
          echo "Warning!  Source directory ("current") is not checked out from svn."
@@ -223,7 +233,7 @@ ZLIB_default=
 ZLIB=$ZLIB_default
 
 # What compression methods to use? (md5 does checksum).  Doc was apparently 
-# added as a compression method to create a weparate tarfile containing the
+# added as a compression method to create a separate tarfile containing the
 # documentation files for v 1.8 and above.
 if [ "${SWVERSION}" = "hdf5_1_6" ]; then
     METHODS="gzip bzip2 md5"
@@ -242,6 +252,7 @@ CHECKVAL=check
 cmd="all"
 test_opt=""
 errcode=0
+AUTOGEN=""
 EXTTEST=""
 EXEC_CMD_ARG=""
 while [ $# -gt 0 ] ; do
@@ -249,6 +260,11 @@ while [ $# -gt 0 ] ; do
 	all)	
 	    cmd="all"
 	    ;;
+        checkout-autogen)
+            cmdcheckout="checkout"
+            AUTOGEN="autogen"
+            cmd=""
+            ;;
 	checkout)
 	    cmdcheckout="checkout"
 	    cmd=""
@@ -388,7 +404,7 @@ while [ $# -gt 0 ] ; do
         exec)
             shift
 	    if [ $# -lt 1 ]; then
-		echo "excc command name missing"
+		echo "exec command name missing"
 		errcode=1
 		cmd="help"
 		break
@@ -458,7 +474,7 @@ PREVIOUS=${BASEDIR}/previous
 ReleaseDir=${ReleaseDir:=${BASEDIR}/${ReleaseDir_default}}
 HOSTNAME=`hostname | cut -f1 -d.`	# no domain part
 if [ "${SWVERSION}" != "${HDFREPOS}" ]; then
-    SVNVERSION="$HDFREPOS/branches/$SWVERSION"
+    SVNVERSION="$HDFREPOS/$SWVERSION"
 else
     SVNVERSION="$HDFREPOS/trunk"	# use the default (trunk) version
 fi
@@ -478,15 +494,19 @@ if [ "$cmd" = "all" -o -n "$cmdcheckout" ]; then
     # ${BASEDIR}/bin is now updated from svn by EveningMaint or DailyMaint
     # to avoid updating the scripts in ${BASEDIR}/bin while they are running.
 
-    # If there is a Makefile in ${CURRENT}, the last test done in it
-    # has not been distclean'ed.  They would interfere with other
-    # --srcdir build since make considers the files in ${CURRENT}
-    # take precedence over files in its own build-directory.  Run
-    # a "make distclean" to clean them all out.  This is not really
-    # part of the "checkout" functions but this is the most convenient
-    # spot to do the distclean.  We will also continue the checkout process
-    # regardless of the return code of distclean.
-    ( cd ${CURRENT}; test -f Makefile && ${MAKE} distclean)
+    echo "AUTOGEN:  $AUTOGEN."
+
+    if [ -z "$AUTOGEN" ]; then
+        # If there is a Makefile in ${CURRENT}, the last test done in it
+        # has not been distclean'ed.  They would interfere with other
+        # --srcdir build since make considers the files in ${CURRENT}
+        # take precedence over files in its own build-directory.  Run
+        # a "make distclean" to clean them all out.  This is not really
+        # part of the "checkout" functions but this is the most convenient
+        # spot to do the distclean.  We will also continue the checkout process
+        # regardless of the return code of distclean.
+        ( cd ${CURRENT}; test -f Makefile && ${MAKE} distclean)
+    fi
     # echo "cmdftp is $cmdftp;  ftp_url is $ftp_url"
     if [ -n "$cmdftp" ]; then
         echo "Get the NetCDF4 source from their ftp server."
@@ -556,12 +576,17 @@ if [ "$cmd" = "all" -o -n "$cmdtest" -o -n "$cmddiff" ]; then
     # Compare it with the previous version.  Compare only files listed in
     # the MANIFEST plus the MANIFEST itself.
     if [ -d ${PREVIOUS} ]; then
-	if (${DIFF} -c ${PREVIOUS}/MANIFEST ${CURRENT}/MANIFEST); then
+        if [ -z "${AUTOGEN}" ]; then
+            CURRENTSRC=${CURRENT}
+        else
+            CURRENTSRC=${BASEDIR}/current_src
+        fi
+	if (${DIFF} -c ${PREVIOUS}/MANIFEST ${CURRENTSRC}/MANIFEST); then
 	    snapshot=no
-	    for src in `grep '^\.' ${CURRENT}/MANIFEST|expand|cut -f1 -d' '`; do
+	    for src in `grep '^\.' ${CURRENTSRC}/MANIFEST|expand|cut -f1 -d' '`; do
 		if ${DIFF} -I H5_VERS_RELEASE -I " released on " \
 		    -I " currently under development" \
-		    ${PREVIOUS}/$src ${CURRENT}/$src
+		    ${PREVIOUS}/$src ${CURRENTSRC}/$src
 		then
 		    :	#continue
 		else

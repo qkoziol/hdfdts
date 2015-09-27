@@ -41,6 +41,7 @@ TODAY=`date +%m%d%a`
 WEEKDAY=`date +%a`
 SNAPSHOTNAME=
 HDFREPOS=
+AUTOGEN=
 if [ -f bin/snapshot_params ]; then
    . bin/snapshot_params
 fi
@@ -675,7 +676,6 @@ CHECK_DIR()
    fi
 }
 
-
 #################################
 # Main
 #################################
@@ -748,6 +748,10 @@ while [ $# -gt 0 ]; do
             FTPURL="$1"
             echo "Set FTP flag and FTPURL to $FTP and $FTPURL"
             ;;
+        -autogen)
+            echo "Running autogen mode"
+            AUTOGEN="autogen"
+            ;;
         -exttest)
             echo "Exttest option configured for $1"
             shift
@@ -795,6 +799,7 @@ fi
 # Setup snapshot test directories
 #################################
 BASEDIR=${HOME}/snapshots-${SNAPSHOTNAME}
+LOCAL_SOURCE=/scr/hdftest/snapshots-${SNAPSHOTNAME}/current
 # initial processing of setup option if requested
 if test x-$CMD = x-setup; then
     CHECK_DIR $BASEDIR
@@ -914,7 +919,11 @@ if [ -z "$NOREPO" ]; then
     PRINT "   $REPOLOG"
     # Set REPO lock first
     touch $REPOLOG_LOCK
-    ($SNAPSHOT checkout ) >> $REPOLOG 2>&1
+    if [ -n "$AUTOGEN" ]; then
+        ($SNAPSHOT checkout-autogen ) >> $REPOLOG 2>&1
+    else
+        ($SNAPSHOT checkout ) >> $REPOLOG 2>&1
+    fi
     # Save error code and remove the lock
     errcode=$?
     rm -f $REPOLOG_LOCK
@@ -931,13 +940,11 @@ if [ -z "$NOREPO" ]; then
     POS4=`perl -e "print index(\"$HDFREPOS}\", 'hdf4')"`
     POS5=`perl -e "print index(\"${HDFREPOS}\", 'hdf4')"`
     if [ "${HDFREPOS}" =  "hdf4" ] || [ "${HDFREPOS}" = "hdf5" ]; then
-        (cd $SNAPYARD/current; svn info
-        errcode=$?
-        if [ $errcode -eq 0 ]; then
-            ./bin/chkmanifest
+        if [ -z "$AUTOGEN" ]; then
+            (cd $SNAPYARD/current; ./bin/chkmanifest) > $TMPFILE 2>&1
         else
-            echo "Testing source from a tarfile. Cannot check MANIFEST without svn."
-        fi) > $TMPFILE 2>&1
+            (cd $SNAPYARD/current_src; ./bin/chkmanifest) > $TMPFILE 2>&1
+        fi
         errcode=$?
     fi
     if [ $errcode -eq 0 ]; then
@@ -995,6 +1002,10 @@ if [ -z "$NOREPO" ]; then
     rm $TMPFILE
     PRINT_BLANK
     fi
+    if [ -n "$AUTOGEN" ]; then
+        PRINT "Create source tar file for autogen tests."
+        (cd $SNAPYARD/current_src; tar --exclude='*.svn*' -cf ../current.tar *)
+    fi
 else
     # make sure the source code update, if done by another host, has completed.
     # First wait for the presence of $REPOLOG which signals some host has
@@ -1034,7 +1045,12 @@ fi
 
 # we can use the version of script in SNAPYARD now.
 # Don't do the diff or source code update any more.
-PROGNAME="$SNAPYARD/$PROGNAME -nodiff -norepo"
+# If running -autogen, include the argument for the test host commands
+if [ -n "$AUTOGEN" ]; then 
+    PROGNAME="$SNAPYARD/$PROGNAME -nodiff -norepo -autogen"
+else
+    PROGNAME="$SNAPYARD/$PROGNAME -nodiff -norepo"
+fi
 
 # Decide to do test for the local host or for remote hosts
 if [ -n "$TESTHOST" -a $HOST_NAME != "$TESTHOST" ]; then
@@ -1139,6 +1155,30 @@ if [ -n "$FTP" ]; then
 #else
 #    $SNAPSHOT checkout
 #    echo "Ran $SNAPSHOT checkout"
+fi 
+PRINT "Extract source and run autogen if $AUTOGEN."
+if [ -n "$AUTOGEN" ]; then
+    # This prevents the problem of extracting the source tarball 3 times into the 
+    #"current " directory on emu where we are running tests for emu, emu32, and emu64.
+    if [ "${HOST_NAME}" = "${CONFIGNAME}" ]; then
+        PRINT "Remove contents of \"current\" directory and extract source tar file into it." 
+        rm -rf current/*
+        # Allow some time for rm to finish.  Otherwise some of the new files 
+        # extracted from the source tar file may also be deleted.
+        sleep 10
+        test -d ${LOCAL_SOURCE} || mkdir -p ${LOCAL_SOURCE}
+        cd $LOCAL_SOURCE 
+        tar xf $SNAPYARD/current.tar
+        cd  $SNAPYARD
+        PRINT "Run autogen.sh in \"current\" directory."
+        cd current
+        sh autogen.sh
+        cd $SNAPYARD
+    else
+        # wait 5 minutes for the test where $HOST_NAME = $CONFIGNAME to
+        # extract the source and run autogen.sh
+        sleep 300
+    fi
 fi 
 n_test=1
 runtest_type="tests"
