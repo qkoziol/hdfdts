@@ -14,12 +14,22 @@ AUTOGEN=""
 # Setup
 HOSTNAME=`hostname | cut -f1 -d.`       # no domain part
 TODAY=`date +%m%d%a`
-SW=HDF5			# Name of Software.
-sw=hdf5		 	# Name of Software in lower cases.
+SW=HDF5-BRANCHTEST1			# Name of Software.
+sw=hdf5-branchtest1		# Name of Software in lower cases.
 SWVER=			# Software version, default to current CVS version.
 SWVERSTR=		# Software version string.
 TITLE="${SW} Tests on $TODAY"
 errcode=0		# error code so far
+
+TOWHOM_PASSED="lrknox@hdfgroup.org koziol@hdfgroup.org"
+TOWHOM_FAILED="lrknox@hdfgroup.org koziol@hdfgroup.org koziol@hdfgroup.org"
+
+DEFAULTBRANCHNAME=""
+# get default branch name for testing with tarball.
+if [ -f bin/snapshot_params ]; then
+    . bin/snapshot_params
+fi
+
 
 # Parse command options
 while [ $# -gt 0 ]; do
@@ -31,8 +41,21 @@ while [ $# -gt 0 ]; do
 	-debug*)
 	    DEBUGMODE="$1"
 	    ;;
+        -SW)
+            shift
+            SW="$1"
+            ;;
+        -sw)
+            shift
+            sw="$1"
+            ;;
         -autogen)
             AUTOGEN="-autogen"
+            ;;
+        -twh)
+            shift
+            TOWHOM_PASSED="$1"
+            TOWHOM_FAILED="$1"
             ;;
 	*)
 	    echo "Unknown option ($1)"
@@ -53,11 +76,13 @@ if [ -n "$DEBUGMODE" ]; then
 #    TOWHOM_FAILED=hdftest
     TOWHOM_PASSED=lrknox
     TOWHOM_FAILED=lrknox
-else
+#else
 #	TOWHOM_PASSED="hdf5repo@lists.hdfgroup.org repo-all@lists.hdfgroup.org"
 #	TOWHOM_FAILED=hdf5lib@lists.hdfgroup.org
-    TOWHOM_PASSED=hdftest
-    TOWHOM_FAILED=hdftest
+#    TOWHOM_PASSED="lrknox@hdfgroup.org epourmal@hdfgroup.org byrn@hdfgroup.org koziol@hdfgroup.org mamcgree@hdfgroup.org acheng@hdfgroup.org"
+#    TOWHOM_FAILED="lrknox@hdfgroup.org epourmal@hdfgroup.org byrn@hdfgroup.org koziol@hdfgroup.org mamcgree@hdfgroup.org acheng@hdfgroup.org"
+ #   TOWHOM_PASSED="lrknox@hdfgroup.org koziol@hdfgroup.org"
+ #   TOWHOM_FAILED="lrknox@hdfgroup.org koziol@hdfgroup.org"
 #    TOWHOM_PASSED=lrknox
 #    TOWHOM_FAILED=lrknox
 fi
@@ -68,7 +93,6 @@ LOGDIRLOCK=${LOGDIR}/.lock-${HOSTNAME}
 LOGFILE=${LOGDIR}/${PROGRAMNAME}-${HOSTNAME}_${TODAY}
 FAILEDLOG=${LOGDIR}/FAILED_LOG_${TODAY}
 FAILEDDETAIL=${LOGDIR}/FAILED_DETAIL_${TODAY}
-INCOMPLETELOG=${LOGDIR}/INCOMPLETE_LOG_${TODAY}
 PASSEDLOG=${LOGDIR}/PASSED_LOG_${TODAY}
 SKIPPEDLOG=${LOGDIR}/SKIPPED_LOG_${TODAY}
 TIMELOG=${LOGDIR}/TIME_LOG_${TODAY}
@@ -147,12 +171,6 @@ else
     SWSRC_VER=v$SWVERSTR
 fi
 
-# Make sure daily test has an mpich2 daemon running in each of the
-# following hosts.
-#for h in amani.hdfgroup.uiuc.edu; do
-#    ssh $h -n /usr/hdf/bin/mpich2/mpd  --daemon
-#done
-
 (cd $HOME/snapshots-${sw}${SWVERSTR}; $CMD -all $AUTOGEN) > $LOGFILE 2>&1
 
 # Verify test script did complete by checking the last lines
@@ -166,110 +184,111 @@ else
     cd $HOME/snapshots-${sw}${SWVERSTR}/current
 fi
 
-pwd
 SVN_URL=`svn info | grep URL`
-BRANCHNAME=`echo $SVN_URL | sed -e 's/URL:.*\///' | sed -e 'y/abcdefghijklmnopqrstuvwxyz/ABCDEFGHIJKLMNOPQRSTUVWXYZ/'`
-REVISION=`svn info | grep Revision`
-# Remove the Last Changed entries from the email.  It was found to be somewha
-t confusing.  20150921 LK
-#LAST_INFO=`svn info | grep "Last Changed"`
-TEST_TITLE="$HOSTNAME ${BRANCHNAME}${SWVERSTR}_Daily_Tests_${TODAY}"
+if [ -n "${SVN_URL}" ]; then
+    BRANCHNAME=`echo $SVN_URL | sed -e 's/URL:.*\///' | sed -e 'y/abcdefghijklmnopqrstuvwxyz/ABCDEFGHIJKLMNOPQRSTUVWXYZ/'`
+    REVISION=`svn info | grep Revision`
+    LAST_INFO=`svn info | grep "Last Changed"`
+else
+    BRANCHNAME=`git branch | grep "64bit_hid_t" | sed -e 's/\* //' | sed -e 'y/abcdefghijklmnopqrstuvwxyz/ABCDEFGHIJKLMNOPQRSTUVWXYZ/'`
+    REVISION=`git show | egrep 'commit '`
+    LAST_INFO=`git show | egrep 'Author|Date'`
+fi
+if [ -z "${BRANCHNAME}" ]; then
+    BRANCHNAME=${DEFAULTBRANCHNAME}
+fi
+
+TEST_TITLE="$HOSTNAME ${SW}_${BRANCHNAME}${SWVERSTR}_Daily_Tests_${TODAY}"
 TITLE="${BRANCHNAME} Tests on $TODAY"
 cd $CURRENT_DIR
 
 # Check result
 if [ -f $FAILEDLOG ]; then
     errcode=1
-elif [ -f $INCOMPLETELOG ]; then
-    errcode=1
-    echo "Incomplete tests!"
+    REPORT_TITLE="${TEST_TITLE}_FAILED!!!"
+    TOWHOM=$TOWHOM_FAILED
+else
+    REPORT_TITLE="${TEST_TITLE}"
+    TOWHOM=$TOWHOM_PASSED
 fi
-
-
-
-#     REPORT_TITLE="${TEST_TITLE}_FAILED!!!"
-#     TOWHOM=$TOWHOM_FAILED
-# else
-#     REPORT_TITLE="${TEST_TITLE}"
-#     TOWHOM=$TOWHOM_PASSED
-# fi
-#     
-# # report result
-# # save FAILED or SUCCEESS in REPORTED and remove them
-# (
-#  echo "*** $TITLE ***"
-#  echo ""
-#  echo "$SVN_URL"
-#  echo "$REVISION"
-#  echo "$LAST_INFO"
-#  echo ""
-#  echo "============================="
-#  echo "   Tests Summary"
-#  echo "============================="
-#  if [ -f $FAILEDLOG ]; then
-#     sort $FAILEDLOG | tee -a $REPORTED
-#     echo ""
-#    # rm $FAILEDLOG
-#  fi
-#  if [ -f $SKIPPEDLOG ]; then
-#     sort $SKIPPEDLOG | tee -a $REPORTED
-#     echo ""
-#    # rm $SKIPPEDLOG
-#  fi
-#  if [ -f $PASSEDLOG ]; then
-#     sort $PASSEDLOG | tee -a $REPORTED
-#    # rm $PASSEDLOG
-#  fi
-#  echo ""
-#  echo "============================="
-#  echo "   Tests Time Summary"
-#  echo "============================="
-#  if [ -f $TIMELOG ]; then
-#     cat $TIMELOG | tee -a $REPORTED
-#    #  rm $TIMELOG
-#  fi
-#  echo ""
-#  echo ""
-#  echo "============================="
-#  echo "   Timekeeper log"
-#  echo "============================="
-#  if [ -f $TIMEKEEPERLOG ]; then
-#     cat $TIMEKEEPERLOG | tee -a $REPORTED
-#     # rm $TIMEKEEPERLOG
-#  fi
-#  # If failures detected, show failed details, watchers list and test details.
-#  # Else just show test details file name.
-#  if [ -f $FAILEDDETAIL ]; then
-#     echo ""
-#     echo "============================="
-#     echo "   Tests Failures"
-#     echo "============================="
-#     cat $FAILEDDETAIL | tee -a $REPORTED
-#    # rm $FAILEDDETAIL
-#     echo ""
-#     echo "============================="
-#     echo "   Watchers List"
-#     echo "============================="
-#     cat $WATCHERFILE
-#     echo ""
-#     echo "============================="
-#     echo "   Tests Details"
-#     echo "============================="
-#     cat $LOGFILE
-#  else
-#     if [ "$errcode" == "1" ]; then
-#        echo "============================="
-#        echo "   Watchers List"
-#        echo "============================="
-#        cat $WATCHERFILE
-#        echo ""
-#     fi
-#     echo "============================="
-#     echo "   Tests Details"
-#     echo "============================="
-#     echo "See $LOGFILE"
-#  fi
-# ) | $MAIL -s "$REPORT_TITLE" $TOWHOM
+    
+# report result
+# save FAILED or SUCCEESS in REPORTED and remove them
+(
+ echo "*** $TITLE ***"
+ echo ""
+ echo "$SVN_URL"
+ echo "$REVISION"
+# Remove the Last Changed entries from the email.  It was found to be somewhat confusing.  20150921 LK
+#echo "$LAST_INFO"
+ echo ""
+ echo "============================="
+ echo "   Tests Summary"
+ echo "============================="
+ if [ -f $FAILEDLOG ]; then
+    sort $FAILEDLOG | tee -a $REPORTED
+    echo ""
+#    rm $FAILEDLOG
+ fi
+ if [ -f $SKIPPEDLOG ]; then
+    sort $SKIPPEDLOG | tee -a $REPORTED
+    echo ""
+#    rm $SKIPPEDLOG
+ fi
+ if [ -f $PASSEDLOG ]; then
+    sort $PASSEDLOG | tee -a $REPORTED
+#    rm $PASSEDLOG
+ fi
+ echo ""
+ echo "============================="
+ echo "   Tests Time Summary"
+ echo "============================="
+ if [ -f $TIMELOG ]; then
+    cat $TIMELOG | tee -a $REPORTED
+#    rm $TIMELOG
+ fi
+ echo ""
+ echo ""
+ echo "============================="
+ echo "   Timekeeper log"
+ echo "============================="
+ if [ -f $TIMEKEEPERLOG ]; then
+    cat $TIMEKEEPERLOG | tee -a $REPORTED
+#    rm $TIMEKEEPERLOG
+ fi
+ # If failures detected, show failed details, watchers list and test details.
+ # Else just show test details file name.
+ if [ -f $FAILEDDETAIL ]; then
+    echo ""
+    echo "============================="
+    echo "   Tests Failures"
+    echo "============================="
+    cat $FAILEDDETAIL | tee -a $REPORTED
+    rm $FAILEDDETAIL
+    echo ""
+    echo "============================="
+    echo "   Watchers List"
+    echo "============================="
+    cat $WATCHERFILE
+    echo ""
+    echo "============================="
+    echo "   Tests Details"
+    echo "============================="
+    cat $LOGFILE
+ else
+    if [ "$errcode" == "1" ]; then
+       echo "============================="
+       echo "   Watchers List"
+       echo "============================="
+       cat $WATCHERFILE
+       echo ""
+    fi
+    echo "============================="
+    echo "   Tests Details"
+    echo "============================="
+    echo "See $LOGFILE"
+ fi
+) | $MAIL -s "$REPORT_TITLE" $TOWHOM
 
 # remove lock
 rm -f $LOGDIRLOCK
@@ -285,8 +304,7 @@ if [ $errcode -eq 0 -a \
     ! -f $RELEASE_NOT -a \
     \( `date +%a` = Sun -o -f $RELEASE_ASAP -o -f $RELEASE_ALWAYS \) ]; then
     # do a snapshot.
-    #SWDIR=$HOME/snapshots-${SWVERSTR:-dev}/${sw}
-    SWDIR=$HOME/snapshots-${sw}${SWVERSTR}
+    SWDIR=$HOME/snapshots-${sw}${SWVERSTR:-dev}/${sw}
     if [ -f $RELEASE_ASAP ]; then
 	RELEASE_MESG="Special snapshot release launched for ${SW}${SWVERSTR}."
     elif [ -f $RELEASE_ALWAYS ]; then
