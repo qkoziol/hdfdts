@@ -1,28 +1,27 @@
+#using git now, but the function is still SVNCHECKOUT
 SVNCHECKOUT()
 {
-   SVNROOT=https://svn.mcs.anl.gov/repos/openpa
-   SVNVERSION=trunk
    HOSTNAME=`hostname | cut -f1 -d.`
    if [ "${HOSTNAME}" = "jam" ]; then
-      cd $BASEDIR/current; svn info
+      cd $BASEDIR/current; git status
       if [ "$?" = "0" ];then
-         echo "Updating $BASEDIR/current from svn."
-         ( svn -q update ) || exit 1
+         echo "Updating $BASEDIR/current with git."
+         ( git reset --hard HEAD;git clean -d -x -q -f;git pull --ff-only ) || exit 1
       else
-         echo "Checking out from $SVNROOT/${SVNVERSION} into $BASEDIR/current"
+         echo "Creating fresh clone of git://git.mcs.anl.gov/radix/openpa.git in $BASEDIR/current"
          # Check out the current version from source repository.
-         (cd $BASEDIR; svn -q co ${SVNROOT}/${SVNVERSION} current ) || exit 1
+         (cd $BASEDIR; git clone git://git.mcs.anl.gov/radix/openpa.git; mv openga current ) || exit 1
       fi
       PACKAGEDIR=/mnt/hdf/packages
-      AUTOMAKEDIR=${PACKAGEDIR}/automake/automake-1.11.1/bin
-      AUTOCONFDIR=${PACKAGEDIR}/autoconf/autoconf-2.68/bin
-      LIBTOOLDIR=${PACKAGEDIR}/libtool/libtool-2.4/bin
-      PATH=${AUTOCONFDIR}:${AUTOMAKEDIR}:${PACKAGEDIR}/m4/m4-1.4.15/bin:${PACKAGEDIR}/m4/m4-1.4.15/share:${LIBTOOLDIR}:$PATH
+      AUTOMAKEDIR=${PACKAGEDIR}/automake/automake-1.12.3/bin
+      AUTOCONFDIR=${PACKAGEDIR}/autoconf/autoconf-2.69/bin
+      LIBTOOLDIR=${PACKAGEDIR}/libtool/libtool-2.4.2/bin
+      PATH=${AUTOCONFDIR}:${AUTOMAKEDIR}:${PACKAGEDIR}/m4/m4-1.4.16/bin:${PACKAGEDIR}/m4/m4-1.4.16/share:${LIBTOOLDIR}:$PATH
       ${LIBTOOLDIR}/libtoolize
-      ${AUTOMAKEDIR}/aclocal-1.11 --force -I confdb
+      ${AUTOMAKEDIR}/aclocal-1.12 --force -I confdb
       ${AUTOCONFDIR}/autoconf
       ${AUTOCONFDIR}/autoheader
-      ${AUTOMAKEDIR}/automake-1.11 --add-missing --copy --force-missing
+      ${AUTOMAKEDIR}/automake-1.12 --add-missing --copy --force-missing
       ${AUTOCONFDIR}/autoreconf -vif
    else #rsync from jam
       rsync -auvz --delete -e "ssh -i $HOME/.private/honest1-rsync-key" hdftest@jam.hdfgroup.uiuc.edu:/home/hdftest/snapshots-opa/current/ $HOME/snapshots-opa/current/
@@ -31,3 +30,5 @@ SVNCHECKOUT()
 
 HDFREPOS=opa
 SWVERSION=opa
+
+
