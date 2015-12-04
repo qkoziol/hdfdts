@@ -142,6 +142,7 @@ for x in 1; do
     else 
       break
     fi
+
 ###########################################
 #   _   _   _   _   _   _
 #  / \ / \ / \ / \ / \ / \ 
@@ -149,6 +150,7 @@ for x in 1; do
 #  \_/ \_/ \_/ \_/ \_/ \_/
 #
 ###########################################
+
   elif [[ $UNAME == "moohan.ad.hdfgroup.org" ]]; then
 #jam gnu , serial
     if [[ $x == 1 ]]; then
@@ -302,6 +304,13 @@ for x in 1; do
   --disable-x
   $make_bin
   $make_bin test &> ../../../results.$x.txt
+  status=$?
+  if [[ $status != 0 ]]; then
+      echo "CGNS TEST #FAILED"
+      exit $status
+  fi
+   
+
   cd ../../../
   #rm -fr test.$x
 
@@ -368,10 +377,16 @@ for x in 1; do
     $CGNS 
     make
     make test
-
+    status=$?
+    if [[ $status != 0 ]]; then
+	echo "CGNS TEST #FAILED"
+	exit $status
+    fi
   fi
 
 done
+
+exit $status
 
 #     -D MPIEXEC:STRING=$MPI/mpiexec \
 #     -D MPI_C_COMPILER:STRING=$MPI/mpicc \
