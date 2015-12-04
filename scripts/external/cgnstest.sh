@@ -338,7 +338,7 @@ if [ -d "test.$TEST_NO" ]; then
 	CC="/usr/hdf/bin/gcc52/gcc"
 	FC="/usr/hdf/bin/gcc52/gfortran"
 	HDF_DIR="$PWD/trunk/hdf5"
-	CGNS="$PWD/CGNS"
+	#CGNS="$PWD/CGNS"
 	TEST_SZIP=`grep -iq "szip" $HDF_DIR/bin/h5cc;echo $?`
 	if [[ $TEST_SZIP == 0 ]]; then
 	    SZIP=`cat $HDF_DIR/bin/h5cc | grep "H5BLD_LDFLAGS=" | sed -e 's/.*H5BLD_LDFLAGS=" -L\(.*\) ".*/\1/'`
@@ -348,7 +348,7 @@ if [ -d "test.$TEST_NO" ]; then
 	CC="gcc"
 	FC="gfortran"
 	HDF_DIR="/mnt/scr1/pre-release/hdf5/vdev/platypus"
-	CGNS="$PWD/CGNS"
+	#CGNS="$PWD/CGNS"
 	TEST_SZIP=`grep -iq "szip" $HDF_DIR/bin/h5cc;echo $?`
 	if [[ $TEST_SZIP == 0 ]]; then
 	    SZIP=`cat $HDF_DIR/bin/h5cc | grep "H5BLD_LDFLAGS=" | sed -e 's/.*H5BLD_LDFLAGS=" -L\(.*\) ".*/\1/'`
@@ -359,6 +359,9 @@ if [ -d "test.$TEST_NO" ]; then
     fi
     
     if [[ $do_test != 0 ]]; then
+
+	git clone -b develop https://github.com/CGNS/CGNS.git CGNS_SRC
+	CGNS="$PWD/CGNS_SRC"
 
 	mkdir CGNS_build
 	cd CGNS_build
