@@ -309,6 +309,11 @@ if [[ $do_test != 0 ]]; then
 	--with-zlib \
 	--disable-cgnstools \
 	--disable-x
+    status=$?
+    if [[ $status != 0 ]]; then
+	echo "CGNS CONFIGURE #FAILED"
+	exit $status
+    fi
     $make_bin
     status=$?
     if [[ $status != 0 ]]; then
@@ -390,6 +395,11 @@ if [ -d "test.$TEST_NO" ]; then
 	    -D CGNS_ENABLE_PARALLEL:BOOL=OFF \
 	    -D CMAKE_INSTALL_PREFIX:PATH="./" \
 	    $CGNS 
+        status=$?
+        if [[ $status != 0 ]]; then
+	   echo "CGNS CONFIGURE #FAILED"
+	   exit $status
+        fi
 	make
 	status=$?
 	if [[ $status != 0 ]]; then
