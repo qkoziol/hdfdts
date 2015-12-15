@@ -1167,10 +1167,10 @@ if [ -n "$AUTOGEN" ]; then
         # extracted from the source tar file may also be deleted.
         sleep 10
         test -d ${LOCAL_SOURCE} || mkdir -p ${LOCAL_SOURCE}
-        cd $LOCAL_SOURCE 
+        cd ${LOCAL_SOURCE} 
+        echo "Now in directory $PWD"
         tar xf $SNAPYARD/current.tar
-        cd  $SNAPYARD
-        PRINT "Run autogen.sh in \"current\" directory."
+        PRINT "Run autogen.sh in $PWD."
         cd current
         sh autogen.sh
         cd $SNAPYARD

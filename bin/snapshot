@@ -93,6 +93,8 @@ RUNCONFIGURE()
         cp -pr ${CURRENT}/* ${TESTDIR}
         cd ${TESTDIR}
         ./${CONFIGURE}
+    elif [ -n "${AUTOGEN}" ]; then
+        ${CURRENTSRC}/${CONFIGURE}
     else 
         ${CURRENT}/${CONFIGURE} 
     fi
@@ -358,6 +360,10 @@ while [ $# -gt 0 ] ; do
 	    cmdrel="release"
 	    cmd=""
 	    ;;
+        autogen-release)
+            cmdrel="autogen-release"
+            cmd=""
+            ;;
 	clean | distclean)
 	    cmdclean="$1"
 	    cmd=""
@@ -493,8 +499,6 @@ if [ "$cmd" = "all" -o -n "$cmdcheckout" ]; then
     TIMESTAMP "checkout"
     # ${BASEDIR}/bin is now updated from svn by EveningMaint or DailyMaint
     # to avoid updating the scripts in ${BASEDIR}/bin while they are running.
-
-    echo "AUTOGEN:  $AUTOGEN."
 
     if [ -z "$AUTOGEN" ]; then
         # If there is a Makefile in ${CURRENT}, the last test done in it
@@ -743,7 +747,11 @@ if [ "$cmd" = "all" -o -n "$cmdrel" ]; then
 	    # Turn on exit on error in the sub-shell so that it does not
 	    # commit source if errors encounter here.
 	    set -e
-	    cd ${CURRENT}
+            if [ "$cmdrel" = "autogen-release" ]; then
+                cd ${BASEDIR}/current_src
+            else
+	        cd ${CURRENT}
+            fi
             if [ "$HDFREPOS" = "hdf4" ]; then
 	        RELEASE_VERSION="`perl bin/h4vers -v`"
 	        echo "Making snapshot release ($RELEASE_VERSION) to ${ReleaseDir}..."
