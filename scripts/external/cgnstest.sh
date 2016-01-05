@@ -258,10 +258,10 @@ if [[ $do_test != 0 ]]; then
 #	/home/brtnfld/hdf5/trunk/configure $ENABLE_PARALLEL --disable-fortran --disable-hl; $make_bin -j 8 > result.txt 2>&1; $make_bin install
 #	cd ..
 #    fi
-    git clone /mnt/scr1/CGNS
+    git clone -b develop /mnt/scr1/SnapTest/snapshots-cgns/current/CGNS
     if [[ $? != 0 ]]; then
 	echo " *** TESTING SCRIPT ERROR ***"
-	echo "   - FAILED COMMAND: git clone /mnt/scr1/CGNS"
+	echo "   - FAILED COMMAND: git clone -b develop /mnt/scr1/SnapTest/snapshots-cgns/current/CGNS"
 	exit 1
     fi
 
@@ -296,14 +296,18 @@ fi
 #rm -fr test.$TEST_NO
 
 #tail -n 100 results.*
-do_test=0
+do_test=1
 CGNS_ENABLE_LFS="-D CGNS_ENABLE_LFS:BOOL=OFF"
 if [ -d "test.$TEST_NO" ]; then
     cd test.$TEST_NO
     
     if [[ $do_test != 0 ]]; then
-
-	git clone -b develop https://github.com/CGNS/CGNS.git CGNS_SRC
+	git clone -b develop /mnt/scr1/SnapTest/snapshots-cgns/current/CGNS
+	if [[ $? != 0 ]]; then
+	    echo " *** TESTING SCRIPT ERROR ***"
+	    echo "   - FAILED COMMAND: git clone -b develop /mnt/scr1/SnapTest/snapshots-cgns/current/CGNS"
+	    exit 1
+	fi
 	CGNS="$PWD/CGNS_SRC"
 
 	mkdir CGNS_build
