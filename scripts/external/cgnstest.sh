@@ -59,8 +59,6 @@ if [[ $TEST_COMPILER == "" ]]; then # System default compiler, exclude dash in t
 	make_bin="gmake"
 	export CC="cc"
 	export FC="f90"
-	export FCFLAGS="-m64"
-	export CFLAGS="-m64"
 	export FLIBS="-lm"
 	export LIBS="-lm"
 	CMAKE_EXE_LINKER_FLAGS=""
@@ -124,8 +122,6 @@ elif [[ $TEST_COMPILER == "emu64" ]]; then
     export FLIBS="-lm"
     export LIBS="-lm"
     CMAKE_EXE_LINKER_FLAGS=""
-    TEST_COMPILER=""
-    DASH=""
 else
     echo " *** TESTING SCRIPT ERROR ***"
     echo "   - Unknown compiler specified: $TEST_COMPILER"
