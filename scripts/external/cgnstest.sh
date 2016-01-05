@@ -33,6 +33,8 @@ if [[ $UNAME == "moohan.ad.hdfgroup.org" ]]; then
     UNAME="moohan"
 fi
 
+BASEDIR=/mnt/scr1/SnapTest/snapshots-cgns
+
 # READ COMMAND LINE FOR THE TEST TO RUN
 NARGS=$#
 
@@ -258,10 +260,10 @@ if [[ $do_test != 0 ]]; then
 #	/home/brtnfld/hdf5/trunk/configure $ENABLE_PARALLEL --disable-fortran --disable-hl; $make_bin -j 8 > result.txt 2>&1; $make_bin install
 #	cd ..
 #    fi
-    git clone -b develop /mnt/scr1/SnapTest/snapshots-cgns/current/CGNS
+    git clone -b develop $BASEDIR/current/CGNS
     if [[ $? != 0 ]]; then
 	echo " *** TESTING SCRIPT ERROR ***"
-	echo "   - FAILED COMMAND: git clone -b develop /mnt/scr1/SnapTest/snapshots-cgns/current/CGNS"
+	echo "   - FAILED COMMAND: git clone -b develop $BASEDIR/current/CGNS"
 	exit 1
     fi
 
@@ -302,10 +304,10 @@ if [ -d "test.$TEST_NO" ]; then
     cd test.$TEST_NO
     
     if [[ $do_test != 0 ]]; then
-	git clone -b develop /mnt/scr1/SnapTest/snapshots-cgns/current/CGNS
+	git clone -b develop $BASEDIR/current/CGNS
 	if [[ $? != 0 ]]; then
 	    echo " *** TESTING SCRIPT ERROR ***"
-	    echo "   - FAILED COMMAND: git clone -b develop /mnt/scr1/SnapTest/snapshots-cgns/current/CGNS"
+	    echo "   - FAILED COMMAND: git clone -b develop $BASEDIR/current/CGNS"
 	    exit 1
 	fi
 	CGNS="$PWD/CGNS_SRC"
