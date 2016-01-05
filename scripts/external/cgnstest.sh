@@ -34,11 +34,14 @@ if [[ $UNAME == "moohan.ad.hdfgroup.org" ]]; then
 fi
 
 # READ COMMAND LINE FOR THE TEST TO RUN
+NARGS=$#
 
 TEST_NO=$1
 shift
-TEST_COMPILER=$1
-shift
+if [[ $NARGS == 2 ]];then
+  TEST_COMPILER=$1
+  shift
+fi
 
 make_bin="make"
 
@@ -52,18 +55,46 @@ CMAKE_EXE_LINKER_FLAGS="-D CMAKE_EXE_LINKER_FLAGS:STRING=\"-Wl,--no-as-needed -l
 DASH="-"
 
 if [[ $TEST_COMPILER == "" ]]; then # System default compiler, exclude dash in the path name
-    export CC="gcc"
-    export FC="gfortran"
+    if [[ $UNAME == "emu" ]];then
+	make_bin="gmake"
+	export CC="cc"
+	export FC="f90"
+	export FCFLAGS="-m64"
+	export CFLAGS="-m64"
+	export FLIBS="-lm"
+	export LIBS="-lm"
+	CMAKE_EXE_LINKER_FLAGS=""
+    else
+	export CC="gcc"
+	export FC="gfortran"
+	if [[ $UNAME == "osx1010test" ]];then
+	    export FLIBS="-Wl,-ldl"
+	    export LIBS="-Wl,-ldl"
+	fi
+    fi
     DASH=""
-elif [[ $TEST_COMPILER == "gcc52" ]]; then
-    export CC="/usr/hdf/bin/gcc52/gcc"
-    export FC="/usr/hdf/bin/gcc52/gfortran"
-elif [[ $TEST_COMPILER == "gcc49" ]]; then
-    export CC="/usr/hdf/bin/gcc49/gcc"
-    export FC="/usr/hdf/bin/gcc49/gfortran"
-elif [[ $TEST_COMPILER == "gcc48" ]]; then
-    export CC="/usr/hdf/bin/gcc48/gcc"
-    export FC="/usr/hdf/bin/gcc48/gfortran"
+
+elif [[ $TEST_COMPILER == gcc* ]]; then
+
+    if [[ $TEST_COMPILER == "gcc52" ]]; then
+	export CC="/usr/hdf/bin/gcc52/gcc"
+	export FC="/usr/hdf/bin/gcc52/gfortran"
+    elif [[ $TEST_COMPILER == "gcc49" ]]; then
+	export CC="/usr/hdf/bin/gcc49/gcc"
+	export FC="/usr/hdf/bin/gcc49/gfortran"
+    elif [[ $TEST_COMPILER == "gcc48" ]]; then
+	export CC="/usr/hdf/bin/gcc48/gcc"
+	export FC="/usr/hdf/bin/gcc48/gfortran"
+    else
+	echo " *** TESTING SCRIPT ERROR ***"
+	echo "   - Unknown gcc compiler specified: $TEST_COMPILER"
+	exit 1
+    fi
+    if [[ $UNAME == "osx1010test" ]];then
+	export FLIBS="-Wl,-ldl"
+	export LIBS="-Wl,-ldl"
+    fi
+
 elif [[ $TEST_COMPILER == "intel" ]]; then
     export CC="icc"
     export FC="ifort"
@@ -85,12 +116,13 @@ elif [[ $TEST_COMPILER == "xl" ]]; then
     export LIBS=""
     CMAKE_EXE_LINKER_FLAGS=""
 elif [[ $TEST_COMPILER == "emu64" ]]; then
+    make_bin="gmake"
     export CC="cc"
     export FC="f90"
     export FCFLAGS="-m64"
     export CFLAGS="-m64"
-    export FLIBS=""
-    export LIBS=""
+    export FLIBS="-lm"
+    export LIBS="-lm"
     CMAKE_EXE_LINKER_FLAGS=""
 else
     echo " *** TESTING SCRIPT ERROR ***"
@@ -152,8 +184,6 @@ elif [[ $TEST_NO == 4 ]]; then
     WITH_FORTRAN="--with-fortran=yes"
     CGNS_ENABLE_FORTRAN="-D CGNS_ENABLE_FORTRAN:BOOL=ON"
     WITH_HDF5="$ENABLE_SZIP --with-zlib --with-hdf5=$HDF_DIR"
-    SZIP=`cat $HDF_DIR/bin/h5*cc | grep "H5BLD_LDFLAGS=" | sed -e 's/.*H5BLD_LDFLAGS=" -L\(.*\) ".*/\1/'`
-    WITH_HDF5="--with-szip=$SZIP/libsz.a --with-zlib --with-hdf5=$HDF_DIR"
     ENABLE_LFS="--enable-lfs"
     CGNS_ENABLE_LFS="-D CGNS_ENABLE_LFS:BOOL=ON"
     CGNS_ENABLE_HDF5="-D CGNS_ENABLE_HDF5:BOOL=ON -D HDF5_LIBRARY:STRING=$HDF_DIR/lib/libhdf5.a -D HDF5_INCLUDE_PATH:PATH=$HDF_DIR/include -D HDF5_NEED_ZLIB:BOOL=ON -D HDF5_NEED_SZIP:BOOL=$ENABLE_SZIP"
@@ -218,48 +248,6 @@ do_test=1 # default is to perform the tests
 #    else
 #	do_test=0
 #    fi
-###########################################
-#   _   _   _   _   _   _   _   _  
-#  / \ / \ / \ / \ / \ / \ / \ / \ 
-# ( P | L | A | T | Y | P | U | S )
-#  \_/ \_/ \_/ \_/ \_/ \_/ \_/ \_/ 
-#
-###########################################
-
-###########################################
-#   _   _   _   _   _   _
-#  / \ / \ / \ / \ / \ / \ 
-# ( M | O | O | H | A | N |
-#  \_/ \_/ \_/ \_/ \_/ \_/
-#
-###########################################
-
-##########################################
-#   _   _   _   _   _   _   _  
-#  / \ / \ / \ / \ / \ / \ / \ 
-# ( O | S | T | R | I | C | H )
-#  \_/ \_/ \_/ \_/ \_/ \_/ \_/ 
-#
-##########################################
-
-##########################################
-#   _   _   _  
-#  / \ / \ / \ 
-# ( E | M | U )
-#  \_/ \_/ \_/ 
-#
-##########################################
-
-
-##########################################
-#   _   _   _   _   _   _   _  
-#  / \ / \ / \ / \ / \ / \ / \ 
-# ( O | X | S | 1 | 0 | 1 | 0 )
-#  \_/ \_/ \_/ \_/ \_/ \_/ \_/
-#
-##########################################
-
-
 if [[ $do_test != 0 ]]; then  
 
     mkdir test.$TEST_NO
@@ -328,7 +316,6 @@ if [ -d "test.$TEST_NO" ]; then
 	    -D CGNS_BUILD_CGNSTOOLS:BOOL=OFF \
 	    -D CGNS_ENABLE_SCOPING:BOOL=OFF \
 	    -D CMAKE_INSTALL_PREFIX:PATH=\"./\" $CMAKE_EXE_LINKER_FLAGS $CGNS_ENABLE_PARALLEL $CGNS_ENABLE_LFS $CGNS_ENABLE_HDF5 $CGNS_ENABLE_FORTRAN $CGNS_ENABLE_64BIT $CGNS"
-
 
 	cmake \
 	    -D CMAKE_C_COMPILER:PATH=$CC \
