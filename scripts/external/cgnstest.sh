@@ -124,6 +124,8 @@ elif [[ $TEST_COMPILER == "emu64" ]]; then
     export FLIBS="-lm"
     export LIBS="-lm"
     CMAKE_EXE_LINKER_FLAGS=""
+    TEST_COMPILER=""
+    DASH=""
 else
     echo " *** TESTING SCRIPT ERROR ***"
     echo "   - Unknown compiler specified: $TEST_COMPILER"
@@ -292,6 +294,7 @@ fi
 
 #tail -n 100 results.*
 do_test=0
+CGNS_ENABLE_LFS="-D CGNS_ENABLE_LFS:BOOL=OFF"
 if [ -d "test.$TEST_NO" ]; then
     cd test.$TEST_NO
     
