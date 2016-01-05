@@ -296,7 +296,7 @@ fi
 #rm -fr test.$TEST_NO
 
 #tail -n 100 results.*
-do_test=1
+do_test=0
 CGNS_ENABLE_LFS="-D CGNS_ENABLE_LFS:BOOL=OFF"
 if [ -d "test.$TEST_NO" ]; then
     cd test.$TEST_NO
