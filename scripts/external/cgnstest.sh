@@ -171,7 +171,7 @@ elif [[ $TEST_NO == 2 ]]; then
     ENABLE_DEBUG="--enable-debug"
 elif [[ $TEST_NO == 3 ]]; then
     WITH_FORTRAN="--with-fortran=no"
-    CGNS_ENABLE_FORTRAN="-D CGNS_ENABLE_FORTRAN:BOOL=ON"
+    CGNS_ENABLE_FORTRAN="-D CGNS_ENABLE_FORTRAN:BOOL=OFF"
     WITH_HDF5="$ENABLE_SZIP --with-zlib --with-hdf5=$HDF_DIR"
     ENABLE_64BIT="--enable-64bit"
     CGNS_ENABLE_64BIT="-D CGNS_ENABLE_64BIT:BOOL=ON"
@@ -258,8 +258,13 @@ if [[ $do_test != 0 ]]; then
 #	/home/brtnfld/hdf5/trunk/configure $ENABLE_PARALLEL --disable-fortran --disable-hl; $make_bin -j 8 > result.txt 2>&1; $make_bin install
 #	cd ..
 #    fi
-    git clone -b develop https://github.com/CGNS/CGNS.git
-    
+    git clone /mnt/scr1/CGNS
+    if [[ $? != 0 ]]; then
+	echo " *** TESTING SCRIPT ERROR ***"
+	echo "   - FAILED COMMAND: git clone /mnt/scr1/CGNS"
+	exit 1
+    fi
+
     cd CGNS/src
     ./configure \
 	$WITH_HDF5 $WITH_FORTRAN $ENABLE_PARALLEL $ENABLE_64BIT $ENABLE_LFS \
