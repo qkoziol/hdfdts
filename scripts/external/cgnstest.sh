@@ -13,31 +13,31 @@ if [ -x /usr/bin/uname ]
 then
   UNAME=`/usr/bin/uname -n`
   PROC=`/usr/bin/uname -p`
+  OSTYPE=`/usr/bin/uname -s`
 fi
 if [ -x /usr/local/bin/uname ]
 then
   UNAME=`/usr/local/bin/uname -n`
   PROC=`/usr/local/bin/uname -p`
+  OSTYPE=`/usr/local/bin/uname -s`
 fi
 if [ -x /bin/uname ]
 then
   UNAME=`/bin/uname -n`
   PROC=`/bin/uname -p`
+  OSTYPE=`/bin/uname -s`
 fi
 
-if [[ $UNAME ==  "osx1010test.ad.hdfgroup.org" ]]; then
-    UNAME="osx1010test"
-fi
+# lower case OSTYPE
+OSTYPE=`echo $OSTYPE | tr '[:upper:]' '[:lower:]'`
 
-if [[ $UNAME == "moohan.ad.hdfgroup.org" ]]; then
-    UNAME="moohan"
-fi
+# Remove the domain name if present
+UNAME=`echo $UNAME | sed 's;\..*;;'`
 
 BASEDIR=/mnt/scr1/SnapTest/snapshots-cgns
 
 # READ COMMAND LINE FOR THE TEST TO RUN
 NARGS=$#
-
 TEST_NO=$1
 shift
 if [[ $NARGS == 2 ]];then
@@ -57,7 +57,7 @@ CMAKE_EXE_LINKER_FLAGS="-D CMAKE_EXE_LINKER_FLAGS:STRING=\"-Wl,--no-as-needed -l
 DASH="-"
 
 if [[ $TEST_COMPILER == "" ]]; then # System default compiler, exclude dash in the path name
-    if [[ $UNAME == "emu" ]];then
+    if [[ $OSTYPE == "sunos" ]];then
 	make_bin="gmake"
 	export CC="cc"
 	export FC="f90"
@@ -67,9 +67,10 @@ if [[ $TEST_COMPILER == "" ]]; then # System default compiler, exclude dash in t
     else
 	export CC="gcc"
 	export FC="gfortran"
-	if [[ $UNAME == "osx1010test" ]];then
-	    export FLIBS="-Wl,-ldl"
-	    export LIBS="-Wl,-ldl"
+	if [[ $OSTYPE == "darwin"* ]];then
+	    export FLIBS=""
+	    export LIBS=""
+	    CMAKE_EXE_LINKER_FLAGS=""
 	fi
     fi
     DASH=""
@@ -90,9 +91,10 @@ elif [[ $TEST_COMPILER == gcc* ]]; then
 	echo "   - Unknown gcc compiler specified: $TEST_COMPILER"
 	exit 1
     fi
-    if [[ $UNAME == "osx1010test" ]];then
-	export FLIBS="-Wl,-ldl"
-	export LIBS="-Wl,-ldl"
+    if [[ $OSTYPE == "darwin"* ]];then
+	export FLIBS=""
+	export LIBS=""
+	CMAKE_EXE_LINKER_FLAGS=""
     fi
 
 elif [[ $TEST_COMPILER == "intel" ]]; then
@@ -298,16 +300,16 @@ fi
 #rm -fr test.$TEST_NO
 
 #tail -n 100 results.*
-do_test=0
+do_test=1
 CGNS_ENABLE_LFS="-D CGNS_ENABLE_LFS:BOOL=OFF"
 if [ -d "test.$TEST_NO" ]; then
     cd test.$TEST_NO
     
     if [[ $do_test != 0 ]]; then
-	git clone -b develop $BASEDIR/current/CGNS
+	git clone -b develop $BASEDIR/current/CGNS CGNS_SRC
 	if [[ $? != 0 ]]; then
 	    echo " *** TESTING SCRIPT ERROR ***"
-	    echo "   - FAILED COMMAND: git clone -b develop $BASEDIR/current/CGNS"
+	    echo "   - FAILED COMMAND: git clone -b develop $BASEDIR/current/CGNS CGNS_SRC"
 	    exit 1
 	fi
 	CGNS="$PWD/CGNS_SRC"
