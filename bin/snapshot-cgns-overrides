@@ -1,0 +1,61 @@
+#using git now, but the function is still SVNCHECKOUT
+SVNCHECKOUT()
+{
+    SVNROOT=https://svn.hdfgroup.org
+    if [ ! -d $BASEDIR/current ]; then
+        mkdir $BASEDIR/current
+        echo "Checking out from $SVNROOT/${SVNVERSION} into $BASEDIR/current"
+        # Check out the current version from source repository.
+        (cd $BASEDIR; svn co ${SVNROOT}/${SVNVERSION} current ) || exit 1
+    else
+        cd $BASEDIR/current; svn info
+        # "svn info" returns 0 if $BASEDIR/current was previously checked out from an
+        # svn repository - i.e. it contains .svn directories and files.  If so it can
+        # be updated to the current version.  If not it can be checked out from the
+        # repository.
+        if [ "$?" = 0 ];then
+	    # $BASEDIR/current was checked out from an svn repository, so update 
+            #  to the current version.  
+            svn -q update
+	    echo "Updating $BASEDIR/current from svn."
+        else
+	    echo "Warning!  Source directory ("current") is not checked out from svn."
+        fi
+    fi    
+    GIT_DATE="24 hours ago"
+    cd ${BASEDIR}/current/CGNS
+    git pull 
+    if [[ $(git log --since="$GIT_DATE") ]]; then
+        echo "Delete CGNS directory and do a fresh clone of CGNS source."
+        cd ${BASEDIR}/current
+        rm -rf ${BASEDIR}/current/CGNS
+        git clone -b develop https://github.com/CGNS/CGNS.git
+        cd ${BASEDIR}
+    else
+        echo "CGNS source has not changed since yesterday. No testing today."
+        exit 1
+    fi
+}
+
+RUNCONFIGURE()
+{
+    if [ "${CURRENT}" != "${TESTDIR}" -a "$CPSRC" = "yes" ]; then
+        echo "Copying source files to ${TESTDIR}."
+        cp -pr ${CURRENT}/src/* ${TESTDIR}
+        cd ${TESTDIR}
+        ./${CONFIGURE}
+    else
+        ${CURRENT}/src/${CONFIGURE}
+    fi
+}
+
+MAKEINSTALL()
+{
+    echo "make install is not currently supported for cgns tests."
+}
+
+MAKEUNINSTALL()
+{
+    echo "make uninstall is not currently supported for cgns tests."
+}
+
