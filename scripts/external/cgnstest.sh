@@ -46,6 +46,10 @@ if [[ $NARGS == 2 ]];then
 fi
 
 make_bin="make"
+cmake_bin="cmake"
+if [[ $UNAME == "ostrich" ]];then
+   cmake_bin="/mnt/hdf/packages/cmake/3.3.1/ppc64/bin/cmake"
+fi
 
 HDF_DIR="0"
 
@@ -64,6 +68,7 @@ if [[ $TEST_COMPILER == "" ]]; then # System default compiler, exclude dash in t
 	export FLIBS="-lm"
 	export LIBS="-lm"
 	CMAKE_EXE_LINKER_FLAGS=""
+        export LD_LIBRARY_PATH="/opt/solarisstudio/lib:$LD_LIBRARY_PATH"
     else
 	export CC="gcc"
 	export FC="gfortran"
@@ -126,6 +131,7 @@ elif [[ $TEST_COMPILER == "emu64" ]]; then
     export FLIBS="-lm"
     export LIBS="-lm"
     CMAKE_EXE_LINKER_FLAGS=""
+    export LD_LIBRARY_PATH="/opt/solarisstudio/lib:$LD_LIBRARY_PATH"
 else
     echo " *** TESTING SCRIPT ERROR ***"
     echo "   - Unknown compiler specified: $TEST_COMPILER"
@@ -317,7 +323,7 @@ if [ -d "test.$TEST_NO" ]; then
 	mkdir CGNS_build
 	cd CGNS_build
 
-	cmake \
+	$cmake_bin \
 	    -D CMAKE_C_COMPILER:PATH=$CC \
 	    -D CMAKE_C_FLAGS:STRING="-g" \
 	    -D CMAKE_Fortran_FLAGS:STRING="-g" \
