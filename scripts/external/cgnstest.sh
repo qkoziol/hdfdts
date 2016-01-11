@@ -166,6 +166,14 @@ CGNS_ENABLE_PARALLEL="-D CGNS_ENABLE_PARALLEL:BOOL=OFF"
 CGNS_ENABLE_SZIP="OFF"
 
 HDF_DIR="/mnt/scr1/pre-release/hdf5/vdev/$UNAME$DASH$TEST_COMPILER" 
+
+#Check to make sure directory exists
+if [ ! -d "$HDF_DIR" ]; then
+    echo " *** TESTING SCRIPT ERROR ***"
+    echo "   - HDF5 directory does not exists: $HDF_DIR"
+    exit 1
+fi
+
 TEST_SZIP=`grep -iq "szip" $HDF_DIR/bin/h5*cc;echo $?`
 if [[ $TEST_SZIP == 0 ]]; then
     SZIP=`cat $HDF_DIR/bin/h5*cc | grep "H5BLD_LDFLAGS=" | sed -e 's/.*H5BLD_LDFLAGS=" -L\(.*\) ".*/\1/'`
