@@ -28,6 +28,11 @@ then
   OSTYPE=`/bin/uname -s`
 fi
 
+# set the default C FLAGS
+CFLAGS="-g"
+FCFLAGS="-g"
+
+
 # lower case OSTYPE
 OSTYPE=`echo $OSTYPE | tr '[:upper:]' '[:lower:]'`
 
@@ -126,8 +131,10 @@ elif [[ $TEST_COMPILER == "emu64" ]]; then
     make_bin="gmake"
     export CC="cc"
     export FC="f90"
-    export FCFLAGS="-m64"
-    export CFLAGS="-m64"
+    FCFLAGS="-O2 -m64"
+    CFLAGS="-O2 -m64"
+    export FCFLAGS="$FCFLAGS"
+    export CFLAGS="$CFLAGS"
     export FLIBS="-lm"
     export LIBS="-lm"
     CMAKE_EXE_LINKER_FLAGS=""
@@ -325,8 +332,8 @@ if [ -d "test.$TEST_NO" ]; then
 
 	$cmake_bin \
 	    -D CMAKE_C_COMPILER:PATH=$CC \
-	    -D CMAKE_C_FLAGS:STRING="-g" \
-	    -D CMAKE_Fortran_FLAGS:STRING="-g" \
+	    -D CMAKE_C_FLAGS:STRING="$CFLAGS" \
+	    -D CMAKE_Fortran_FLAGS:STRING="$FCFLAGS" \
 	    -D CMAKE_BUILD_TYPE:STRING="Debug" \
 	    -D CMAKE_Fortran_COMPILER:PATH=$FC \
 	    -D CGNS_BUILD_SHARED:BOOL=OFF \
