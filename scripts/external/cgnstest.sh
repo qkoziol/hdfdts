@@ -138,7 +138,7 @@ elif [[ $TEST_COMPILER == "emu64" ]]; then
     export FLIBS="-lm"
     export LIBS="-lm"
     CMAKE_EXE_LINKER_FLAGS=""
-    export LD_LIBRARY_PATH="/opt/solarisstudio/lib:$LD_LIBRARY_PATH"
+    export LD_LIBRARY_PATH_64="/opt/solarisstudio/lib/v9"
 else
     echo " *** TESTING SCRIPT ERROR ***"
     echo "   - Unknown compiler specified: $TEST_COMPILER"
