@@ -342,7 +342,7 @@ if [ -d "test.$TEST_NO" ]; then
 
 	mkdir CGNS_build
 	cd CGNS_build
-
+        echo " *** CMAKE COMMAND -- START --"	
 	set -x $cmake_bin \
 	    -D CMAKE_C_COMPILER:PATH=$CC \
 	    -D CMAKE_C_FLAGS:STRING="$CFLAGS" \
@@ -358,7 +358,7 @@ if [ -d "test.$TEST_NO" ]; then
 	    -D CMAKE_INSTALL_PREFIX:PATH="./" \
 	    -D CMAKE_EXE_LINKER_FLAGS:STRING="$CMAKE_EXE_LINKER_FLAGS" $CGNS_ENABLE_PARALLEL \
              $CGNS_ENABLE_LFS $CGNS_ENABLE_HDF5 $CGNS_ENABLE_FORTRAN $CGNS_ENABLE_64BIT $CGNS
-
+        echo " *** CMAKE COMMAND -- END --"
 	$cmake_bin \
 	    -D CMAKE_C_COMPILER:PATH=$CC \
 	    -D CMAKE_C_FLAGS:STRING="$CFLAGS" \
