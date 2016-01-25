@@ -288,7 +288,7 @@ if [[ $do_test != 0 ]]; then
 #	/home/brtnfld/hdf5/trunk/configure $ENABLE_PARALLEL --disable-fortran --disable-hl; $make_bin -j 8 > result.txt 2>&1; $make_bin install
 #	cd ..
 #    fi
-    #git clone -b develop https://github.com/CGNS/CGNS.git
+    #git clone https://github.com/CGNS/CGNS.git
     git clone $BASEDIR/current/CGNS
     
     if [[ $? != 0 ]]; then
@@ -342,7 +342,7 @@ if [ -d "test.$TEST_NO" ]; then
     cd test.$TEST_NO
     
     if [[ $do_test != 0 ]]; then
-        # git clone -b develop https://github.com/CGNS/CGNS.git CGNS_SRC
+        # git clone https://github.com/CGNS/CGNS.git CGNS_SRC
 	git clone $BASEDIR/current/CGNS CGNS_SRC
 	if [[ $? != 0 ]]; then
 	    echo " *** TESTING SCRIPT ERROR ***"
