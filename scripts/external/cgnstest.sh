@@ -317,16 +317,16 @@ if [[ $do_test != 0 ]]; then
 	echo "CGNS BUILD #FAILED"
 	exit $status
     fi
-    $make_bin test &> ../../../results.$TEST_NO.txt
-    status=$?
-    if [[ $status != 0 ]]; then
-	echo "CGNS TESTING #FAILED"
-	exit $status
-    fi
     $make_bin install
     status=$?
     if [[ $status != 0 ]]; then
 	echo "CGNS INSTALL #FAILED"
+	exit $status
+    fi
+    $make_bin test &> ../../../results.$TEST_NO.txt
+    status=$?
+    if [[ $status != 0 ]]; then
+	echo "CGNS TESTING #FAILED"
 	exit $status
     fi
     
