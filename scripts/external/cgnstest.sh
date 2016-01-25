@@ -301,6 +301,7 @@ if [[ $do_test != 0 ]]; then
     ./configure \
 	$WITH_HDF5 $WITH_FORTRAN $ENABLE_PARALLEL $ENABLE_64BIT $ENABLE_LFS \
  	$ENABLE_LEGACY $ENABLE_SCOPE $ENABLE_LFS $ENABLE_SZIP $ENABLE_DEBUG \
+        --prefix=$PWD/cgns_build \
 	--disable-shared \
 	--disable-cgnstools \
 	--disable-x
@@ -322,6 +323,13 @@ if [[ $do_test != 0 ]]; then
 	echo "CGNS TESTING #FAILED"
 	exit $status
     fi
+    $make_bin install
+    status=$?
+    if [[ $status != 0 ]]; then
+	echo "CGNS INSTALL #FAILED"
+	exit $status
+    fi
+    
     cd ../../../
 fi
 
