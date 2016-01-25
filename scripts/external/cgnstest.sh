@@ -289,11 +289,11 @@ if [[ $do_test != 0 ]]; then
 #	cd ..
 #    fi
     #git clone -b develop https://github.com/CGNS/CGNS.git
-    git clone -l $BASEDIR/current/CGNS
+    git clone $BASEDIR/current/CGNS
     
     if [[ $? != 0 ]]; then
 	echo " *** TESTING SCRIPT ERROR ***"
-	echo "   - FAILED COMMAND: git clone -l  $BASEDIR/current/CGNS"
+	echo "   - FAILED COMMAND: git clone $BASEDIR/current/CGNS"
 	exit 1
     fi
 
@@ -343,10 +343,10 @@ if [ -d "test.$TEST_NO" ]; then
     
     if [[ $do_test != 0 ]]; then
         # git clone -b develop https://github.com/CGNS/CGNS.git CGNS_SRC
-	git clone -l $BASEDIR/current/CGNS CGNS_SRC
+	git clone $BASEDIR/current/CGNS CGNS_SRC
 	if [[ $? != 0 ]]; then
 	    echo " *** TESTING SCRIPT ERROR ***"
-	    echo "   - FAILED COMMAND: git clone -l $BASEDIR/current/CGNS CGNS_SRC"
+	    echo "   - FAILED COMMAND: git clone $BASEDIR/current/CGNS CGNS_SRC"
 	    exit 1
 	fi
 	CGNS="$PWD/CGNS_SRC"
