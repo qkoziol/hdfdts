@@ -8,6 +8,22 @@
 # WREN Mac OS X 10.9.x
 # KITE Mac OS X 10.8.x
 
+# Set odd/even days of the week
+day=$(( $(date +%u) % 2 ))
+
+
+if [ $day -eq 0 ]; then #even day tests
+
+   SHARED_STATUS="--disable-shared"
+   CGNS_SHARED_STATUS="-D CGNS_BUILD_SHARED:BOOL=OFF -D CGNS_USE_SHARED:BOOL=OFF"
+
+else #odd day tests
+
+   SHARED_STATUS="--enable-shared"
+   CGNS_SHARED_STATUS="-D CGNS_BUILD_SHARED:BOOL=ON -D CGNS_USE_SHARED:BOOL=ON"
+fi
+
+
 UNAME="unknown"
 if [ -x /usr/bin/uname ]
 then
@@ -302,7 +318,7 @@ if [[ $do_test != 0 ]]; then
 	$WITH_HDF5 $WITH_FORTRAN $ENABLE_PARALLEL $ENABLE_64BIT $ENABLE_LFS \
  	$ENABLE_LEGACY $ENABLE_SCOPE $ENABLE_LFS $ENABLE_SZIP $ENABLE_DEBUG \
         --prefix=$PWD/cgns_build \
-	--disable-shared \
+	$SHARED_STATUS \
 	--disable-cgnstools \
 	--disable-x
 
@@ -353,15 +369,14 @@ if [ -d "test.$TEST_NO" ]; then
 
 	mkdir CGNS_build
 	cd CGNS_build
-        echo " *** CMAKE COMMAND -- START --"	
 	set -x $cmake_bin \
 	    -D CMAKE_C_COMPILER:PATH=$CC \
 	    -D CMAKE_C_FLAGS:STRING="$CFLAGS" \
 	    -D CMAKE_Fortran_FLAGS:STRING="$FCFLAGS" \
 	    -D CMAKE_BUILD_TYPE:STRING="Debug" \
 	    -D CMAKE_Fortran_COMPILER:PATH=$FC \
-	    -D CGNS_BUILD_SHARED:BOOL=OFF \
-	    -D CGNS_USE_SHARED:BOOL=OFF \
+	    $CGNS_SHARED_STATUS \
+	    -D CGNS_BUILD_SHARED:BOOL=OFF -D CGNS_USE_SHARED:BOOL=OFF \
 	    -D CMAKE_STATIC_LINKER_FLAGS:STRING="" \
 	    -D CGNS_ENABLE_TESTS:BOOL=ON \
 	    -D CGNS_BUILD_CGNSTOOLS:BOOL=OFF \
@@ -369,15 +384,13 @@ if [ -d "test.$TEST_NO" ]; then
 	    -D CMAKE_INSTALL_PREFIX:PATH="./" \
 	    -D CMAKE_EXE_LINKER_FLAGS:STRING="$CMAKE_EXE_LINKER_FLAGS" $CGNS_ENABLE_PARALLEL \
              $CGNS_ENABLE_LFS $CGNS_ENABLE_HDF5 $CGNS_ENABLE_FORTRAN $CGNS_ENABLE_64BIT $CGNS
-        echo " *** CMAKE COMMAND -- END --"
 	$cmake_bin \
 	    -D CMAKE_C_COMPILER:PATH=$CC \
 	    -D CMAKE_C_FLAGS:STRING="$CFLAGS" \
 	    -D CMAKE_Fortran_FLAGS:STRING="$FCFLAGS" \
 	    -D CMAKE_BUILD_TYPE:STRING="Debug" \
 	    -D CMAKE_Fortran_COMPILER:PATH=$FC \
-	    -D CGNS_BUILD_SHARED:BOOL=OFF \
-	    -D CGNS_USE_SHARED:BOOL=OFF \
+	    $CGNS_SHARED_STATUS \
 	    -D CMAKE_STATIC_LINKER_FLAGS:STRING="" \
 	    -D CGNS_ENABLE_TESTS:BOOL=ON \
 	    -D CGNS_BUILD_CGNSTOOLS:BOOL=OFF \
