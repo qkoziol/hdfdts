@@ -8,22 +8,6 @@
 # WREN Mac OS X 10.9.x
 # KITE Mac OS X 10.8.x
 
-# Set odd/even days of the week
-day=$(( $(date +%u) % 2 ))
-
-
-if [ $day -eq 0 ]; then #even day tests
-
-   SHARED_STATUS="--disable-shared"
-   CGNS_SHARED_STATUS="-D CGNS_BUILD_SHARED:BOOL=OFF -D CGNS_USE_SHARED:BOOL=OFF"
-
-else #odd day tests
-
-   SHARED_STATUS="--enable-shared"
-   CGNS_SHARED_STATUS="-D CGNS_BUILD_SHARED:BOOL=ON -D CGNS_USE_SHARED:BOOL=ON"
-fi
-
-
 UNAME="unknown"
 if [ -x /usr/bin/uname ]
 then
@@ -74,6 +58,22 @@ fi
 
 HDF_DIR="0"
 
+
+# Set odd/even days of the week
+day=$(( $(date +%u) % 2 ))
+
+if [ $day -eq 0 ]; then #even day tests
+
+   SHARED_STATUS="--disable-shared"
+   CGNS_SHARED_STATUS="-D CGNS_BUILD_SHARED:BOOL=OFF -D CGNS_USE_SHARED:BOOL=OFF"
+
+else #odd day tests
+
+   SHARED_STATUS="--enable-shared"
+   CGNS_SHARED_STATUS="-D CGNS_BUILD_SHARED:BOOL=ON -D CGNS_USE_SHARED:BOOL=ON"
+fi
+
+
 # COMPILER TESTS: LINKED TO THE CORRESPONDING COMPILED HDF5 LIBRARY
 
 export FLIBS="-Wl,--no-as-needed -ldl"
@@ -97,6 +97,12 @@ if [[ $TEST_COMPILER == "" ]]; then # System default compiler, exclude dash in t
 	    export FLIBS=""
 	    export LIBS=""
 	    CMAKE_EXE_LINKER_FLAGS=""
+
+	    # CURRENTLY DOES NOT SUPPORT SHARED BUILDS ON MAC, CGNS-66
+	    SHARED_STATUS="--disable-shared"
+	    CGNS_SHARED_STATUS="-D CGNS_BUILD_SHARED:BOOL=OFF -D CGNS_USE_SHARED:BOOL=OFF"
+	    
+
 	fi
     fi
     DASH=""
