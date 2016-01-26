@@ -61,7 +61,7 @@ HDF_DIR="0"
 
 # Set odd/even days of the week
 day=$(( $(date +%u) % 2 ))
-day=2
+day=0
 if [ $day -eq 0 ]; then #even day tests
 
    SHARED_STATUS="--disable-shared"
