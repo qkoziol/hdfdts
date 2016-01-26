@@ -61,7 +61,7 @@ HDF_DIR="0"
 
 # Set odd/even days of the week
 day=$(( $(date +%u) % 2 ))
-
+day=2
 if [ $day -eq 0 ]; then #even day tests
 
    SHARED_STATUS="--disable-shared"
@@ -81,6 +81,9 @@ export LIBS="-Wl,--no-as-needed -ldl"
 CMAKE_EXE_LINKER_FLAGS='-Wl,--no-as-needed -ldl'
 DASH="-"
 
+export FCFLAGS=""
+export CFLAGS=""
+
 if [[ $TEST_COMPILER == "" ]]; then # System default compiler, exclude dash in the path name
     if [[ $OSTYPE == "sunos" ]];then
 	make_bin="gmake"
@@ -93,16 +96,21 @@ if [[ $TEST_COMPILER == "" ]]; then # System default compiler, exclude dash in t
     else
 	export CC="gcc"
 	export FC="gfortran"
+
+	
+	if [[ $SHARED_STATUS == "--enable-shared" ]]; then 
+	    FCFLAGS="$FCFLAGS -fPIC"
+	    CFLAGS="$CFLAGS -fPIC"
+	fi
+
 	if [[ $OSTYPE == "darwin"* ]];then
 	    export FLIBS=""
 	    export LIBS=""
 	    CMAKE_EXE_LINKER_FLAGS=""
-
+	    
 	    # CURRENTLY DOES NOT SUPPORT SHARED BUILDS ON MAC, CGNS-66
 	    SHARED_STATUS="--disable-shared"
 	    CGNS_SHARED_STATUS="-D CGNS_BUILD_SHARED:BOOL=OFF -D CGNS_USE_SHARED:BOOL=OFF"
-	    
-
 	fi
     fi
     DASH=""
@@ -153,8 +161,8 @@ elif [[ $TEST_COMPILER == "emu64" ]]; then
     make_bin="gmake"
     export CC="cc"
     export FC="f90"
-    FCFLAGS="-O2 -m64"
-    CFLAGS="-O2 -m64"
+    FCFLAGS="$FCFLAGS -O2 -m64"
+    CFLAGS="$CFLAGS -O2 -m64"
     export FCFLAGS="$FCFLAGS"
     export CFLAGS="$CFLAGS"
     export FLIBS="-lm"
