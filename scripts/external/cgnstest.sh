@@ -61,15 +61,16 @@ HDF_DIR="0"
 
 # Set odd/even days of the week
 day=$(( $(date +%u) % 2 ))
-day=0
+
+SHARED_STATUS="--disable-shared"
+CGNS_SHARED_STATUS="-D CGNS_BUILD_SHARED:BOOL=OFF -D CGNS_USE_SHARED:BOOL=OFF"
 if [ $day -eq 0 ]; then #even day tests
 
-   SHARED_STATUS="--disable-shared"
-   CGNS_SHARED_STATUS="-D CGNS_BUILD_SHARED:BOOL=OFF -D CGNS_USE_SHARED:BOOL=OFF"
+   echo "an even day"
 
 else #odd day tests
 
-   SHARED_STATUS="--enable-shared"
+#   SHARED_STATUS="--enable-shared"
    CGNS_SHARED_STATUS="-D CGNS_BUILD_SHARED:BOOL=ON -D CGNS_USE_SHARED:BOOL=ON"
 fi
 
