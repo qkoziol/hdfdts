@@ -196,7 +196,9 @@ CGNS_ENABLE_LFS="-D CGNS_ENABLE_LFS:BOOL=OFF"
 CGNS_ENABLE_PARALLEL="-D CGNS_ENABLE_PARALLEL:BOOL=OFF"
 CGNS_ENABLE_SZIP="OFF"
 
-HDF_DIR="/mnt/scr1/pre-release/hdf5/vdev/$UNAME$DASH$TEST_COMPILER" 
+HDF_VERSION="vdev"
+
+HDF_DIR="/mnt/scr1/pre-release/hdf5/$HDF_VERSION/$UNAME$DASH$TEST_COMPILER" 
 
 #Check to make sure directory exists
 if [ ! -d "$HDF_DIR" ]; then
@@ -360,7 +362,17 @@ if [[ $do_test != 0 ]]; then
 	echo "CGNS TESTING #FAILED"
 	exit $status
     fi
-    
+
+    ## date format
+    NOW=$(date +"%F")
+    FILE="/mnt/scr1/SnapTest/benchmarks/cgns/$NOW"
+    ## Save timing data
+    if [ -f tests/CGNS_timing.txt ]; then
+	echo "# $HDF_VERSION $TEST_NO" >> $FILE
+	cat tests/CGNS_timing.txt >> $FILE
+	echo "" >> $FILE
+    fi
+
     cd ../../../
 fi
 
