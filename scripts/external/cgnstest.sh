@@ -34,7 +34,7 @@ FCFLAGS="-g"
 
 # set to change to testing a different branch (default is develop)
 BRANCH=""
-BRANCH="config-2.69"
+#BRANCH="master"
 
 # lower case OSTYPE
 OSTYPE=`echo $OSTYPE | tr '[:upper:]' '[:lower:]'`
