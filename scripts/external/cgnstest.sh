@@ -34,7 +34,7 @@ FCFLAGS="-g"
 
 # set to change to testing a different branch (default is develop)
 BRANCH=""
-BRANCH="-b config-2.69"
+BRANCH="config-2.69"
 
 # lower case OSTYPE
 OSTYPE=`echo $OSTYPE | tr '[:upper:]' '[:lower:]'`
@@ -324,13 +324,19 @@ if [[ $do_test != 0 ]]; then
 #	/home/brtnfld/hdf5/trunk/configure $ENABLE_PARALLEL --disable-fortran --disable-hl; $make_bin -j 8 > result.txt 2>&1; $make_bin install
 #	cd ..
 #    fi
+
     #git clone https://github.com/CGNS/CGNS.git
-    git clone $BRANCH $BASEDIR/current/CGNS
-    
+    git clone $BASEDIR/current/CGNS
     if [[ $? != 0 ]]; then
 	echo " *** TESTING SCRIPT ERROR ***"
-	echo "   - FAILED COMMAND: git clone $BRANCH $BASEDIR/current/CGNS"
+	echo "   - FAILED COMMAND: git clone $BASEDIR/current/CGNS"
 	exit 1
+    fi
+
+    if [ $BRANCH != "" ]; then
+      cd CGNS
+      git checkout $BRANCH
+      cd ..
     fi
 
     cd CGNS/src
@@ -389,12 +395,18 @@ if [ -d "test.$TEST_NO" ]; then
     
     if [[ $do_test != 0 ]]; then
         # git clone https://github.com/CGNS/CGNS.git CGNS_SRC
-	git clone $BRANCH $BASEDIR/current/CGNS CGNS_SRC
+	git clone $BASEDIR/current/CGNS CGNS_SRC
 	if [[ $? != 0 ]]; then
 	    echo " *** TESTING SCRIPT ERROR ***"
-	    echo "   - FAILED COMMAND: git clone $BRANCH $BASEDIR/current/CGNS CGNS_SRC"
+	    echo "   - FAILED COMMAND: git clone $BASEDIR/current/CGNS CGNS_SRC"
 	    exit 1
 	fi
+	if [ $BRANCH != "" ]; then
+          cd CGNS_SRC
+          git checkout $BRANCH
+          cd ..
+        fi
+
 	CGNS="$PWD/CGNS_SRC"
 
 	mkdir CGNS_build
