@@ -333,7 +333,7 @@ if [[ $do_test != 0 ]]; then
 	exit 1
     fi
 
-    if [ $BRANCH != "" ]; then
+    if [[ $BRANCH != "" ]]; then
       cd CGNS
       git checkout $BRANCH
       cd ..
@@ -401,7 +401,7 @@ if [ -d "test.$TEST_NO" ]; then
 	    echo "   - FAILED COMMAND: git clone $BASEDIR/current/CGNS CGNS_SRC"
 	    exit 1
 	fi
-	if [ $BRANCH != "" ]; then
+	if [[ $BRANCH != "" ]]; then
           cd CGNS_SRC
           git checkout $BRANCH
           cd ..
