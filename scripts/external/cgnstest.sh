@@ -338,7 +338,13 @@ if [[ $do_test != 0 ]]; then
       git checkout $BRANCH
       cd ..
     fi
-
+    echo "./configure \
+        $WITH_HDF5 $WITH_FORTRAN $ENABLE_PARALLEL $ENABLE_64BIT $ENABLE_LFS \
+        $ENABLE_LEGACY $ENABLE_SCOPE $ENABLE_LFS $ENABLE_SZIP $ENABLE_DEBUG \
+        --prefix=$PWD/cgns_build \
+        $SHARED_STATUS \
+        --disable-cgnstools \
+        --disable-xi"
     cd CGNS/src
     ./configure \
 	$WITH_HDF5 $WITH_FORTRAN $ENABLE_PARALLEL $ENABLE_64BIT $ENABLE_LFS \
@@ -447,7 +453,7 @@ if [ -d "test.$TEST_NO" ]; then
 	   echo "CGNS CONFIGURE #FAILED"
 	   exit $status
         fi
-	make
+	make -j1
 	status=$?
 	if [[ $status != 0 ]]; then
 	    echo "CGNS BUILD #FAILED"
