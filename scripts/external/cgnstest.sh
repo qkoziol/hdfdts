@@ -54,6 +54,7 @@ if [[ $NARGS == 2 ]];then
 fi
 
 make_bin="make"
+make_opt="-j1"
 cmake_bin="cmake"
 if [[ $UNAME == "ostrich" ]];then
    cmake_bin="/mnt/hdf/packages/cmake/3.3.1/ppc64/bin/cmake"
@@ -163,6 +164,7 @@ elif [[ $TEST_COMPILER == "xl" ]]; then
     CMAKE_EXE_LINKER_FLAGS=""
 elif [[ $TEST_COMPILER == "emu64" ]]; then
     make_bin="gmake"
+    make_opt=""
     export CC="cc"
     export FC="f90"
     FCFLAGS="$FCFLAGS -O2 -m64"
@@ -453,13 +455,13 @@ if [ -d "test.$TEST_NO" ]; then
 	   echo "CGNS CONFIGURE #FAILED"
 	   exit $status
         fi
-	make -j1
+	$make_bin $make_opt
 	status=$?
 	if [[ $status != 0 ]]; then
 	    echo "CGNS BUILD #FAILED"
 	    exit $status
 	fi
-	make test
+	$make_bin test
 	status=$?
 	if [[ $status != 0 ]]; then
 	    echo "CGNS TESTING #FAILED"
