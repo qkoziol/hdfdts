@@ -75,7 +75,7 @@ if [ $day -eq 0 ]; then #even day tests
 else #odd day tests
 
 #   SHARED_STATUS="--enable-shared"
-   CGNS_SHARED_STATUS="-D CGNS_BUILD_SHARED:BOOL=ON -D CGNS_USE_SHARED:BOOL=ON"
+#   CGNS_SHARED_STATUS="-D CGNS_BUILD_SHARED:BOOL=ON -D CGNS_USE_SHARED:BOOL=ON"
 fi
 
 
@@ -345,16 +345,14 @@ if [[ $do_test != 0 ]]; then
         $ENABLE_LEGACY $ENABLE_SCOPE $ENABLE_LFS $ENABLE_SZIP $ENABLE_DEBUG \
         --prefix=$PWD/cgns_build \
         $SHARED_STATUS \
-        --disable-cgnstools \
-        --disable-xi"
+        --disable-cgnstools"
     cd CGNS/src
     ./configure \
 	$WITH_HDF5 $WITH_FORTRAN $ENABLE_PARALLEL $ENABLE_64BIT $ENABLE_LFS \
  	$ENABLE_LEGACY $ENABLE_SCOPE $ENABLE_LFS $ENABLE_SZIP $ENABLE_DEBUG \
         --prefix=$PWD/cgns_build \
 	$SHARED_STATUS \
-	--disable-cgnstools \
-	--disable-x
+	--disable-cgnstools
 
     status=$?
     if [[ $status != 0 ]]; then
