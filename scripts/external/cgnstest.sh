@@ -68,15 +68,15 @@ day=$(( $(date +%u) % 2 ))
 
 SHARED_STATUS="--disable-shared"
 CGNS_SHARED_STATUS="-D CGNS_BUILD_SHARED:BOOL=OFF -D CGNS_USE_SHARED:BOOL=OFF"
-#if [ $day -eq 0 ]; then #even day tests
-#
-#   echo "an even day"
-#
-#else #odd day tests
-#
+if [ $day -eq 0 ]; then #even day tests
+
+   echo "an even day"
+
+else #odd day tests
+
 ##   SHARED_STATUS="--enable-shared"
-#   CGNS_SHARED_STATUS="-D CGNS_BUILD_SHARED:BOOL=ON -D CGNS_USE_SHARED:BOOL=ON"
-#fi
+   CGNS_SHARED_STATUS="-D CGNS_BUILD_SHARED:BOOL=ON -D CGNS_USE_SHARED:BOOL=ON"
+fi
 
 
 # COMPILER TESTS: LINKED TO THE CORRESPONDING COMPILED HDF5 LIBRARY
