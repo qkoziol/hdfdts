@@ -1,0 +1,120 @@
+#!/bin/sh
+
+# Check out the svn version, generate all the autoconfigure files, copy to
+# the <version>_Ag version and commit them there.
+# 
+# $1: version name to be copied
+# $1_Ag: version with autogen files
+#
+# Author: Albert Cheng, 2015/10/09
+
+# Algorithm:
+# 1. Check out an export version of Original branch. (prevent any commit)
+# 2. Run autogen in the Original branch.
+# 3. If the Ag-export version is not around (from previous run), check
+#    out an export version of the Ag branch.
+# 4. diff the Original branch with the Ag-export branch for any differences.
+#    If no difference, no conversion is needed. Exit 0
+# 5. Check out an commit-able version of the Ag branch.
+# 6. Copy the whole Original branch to the Ag branch and commit any changes.
+# 7. Check out an export version of the Ag branch.
+# 8. Post conversion diff the Original branch with the Ag-export branch for
+#    any differences.  Report any difference detected.
+# Leave the Ag-export branch around for next conversion run.
+
+# Debug printing.
+DPRINT=:
+#DPRINT=echo
+
+progname=$0
+
+# function definitions
+Usage()
+{
+    echo "Usage: $progname <orig-version> <ag-version>"
+    echo "	where orig-version is the developer version"
+    echo "	ag-version has all the autogen files"
+    echo "Example:"
+    echo "$progname https://svn.hdfgroup.org/hdf5/branches/featureX https://svn.hdfgroup.org/hdf5/branches/featureX_Ag"
+    echo "$progname https://svn.hdfgroup.org/hdf5/trunk https://svn.hdfgroup.org/hdf5/branches/trunk_Ag"
+}
+
+# Show a banner
+BANNER()
+{
+    echo "*-------------------*"
+    echo "$*"
+    echo "*-------------------*"
+}
+if [ $# -ne 2 ]
+then
+    Usage
+    exit 1
+fi
+
+orig_ver=$1
+ag_ver=$2
+orig_name=`basename $orig_ver`
+orig_export_name=${orig_name}_export
+ag_name=`basename $ag_ver`
+ag_export_name=${ag_name}_export
+
+$DPRINT $orig_ver $ag_ver
+$DPRINT $orig_name orig_export_name $ag_name $ag_export_name
+
+# Step 1: check out export copy from original version
+BANNER check out export copy from original version
+rm -rf $orig_export_name
+svn export -q $orig_ver $orig_export_name
+
+# Step 2: run autogen
+# make sure AM_MAINTAINER_MODE is diabled so that make does not rebuild
+# configure, Makefile.in, etc, just because timestamps are messed up in
+# autotools file. Use autogen.sh if rebuilding is needed.
+BANNER run autogen
+ed - $orig_export_name/configure.ac <<EOF
+/^AM_MAINTAINER_MODE/s/.*/AM_MAINTAINER_MODE([disable])/
+w
+q
+EOF
+(cd $orig_export_name && ./autogen.sh -p)
+
+# Step 3: check out Ag-export version if not around
+BANNER check out Ag-export version if not around
+if [ ! -d $ag_export_name ]; then
+    svn export -q $ag_ver $ag_export_name
+fi
+
+# Step 4: pre-conversion diff Original with Ag-export
+BANNER compare $orig_export_name vs $ag_export_name
+diff -r $orig_export_name $ag_export_name
+if [ $? -eq 0 ]; then
+    echo there is no differences between the original and the autogen-ed versions.
+    echo No conversion is needed.
+    exit 0
+fi
+
+# Step 5: Check out Ag version
+BANNER Check out Ag version
+svn co -q $ag_ver
+
+# Step 6: copy generated files from Original branch and commit any changes.
+cp -rp $orig_export_name/. $ag_name
+echo Committed any changes into the autogened branch
+svn commit -m "Update from original version with generated files" $ag_name
+
+# Step 7: Check out an export copy of the Ag branch
+BANNER Check out an export copy of the Ag branch
+rm -rf $ag_export_name
+svn export -q $ag_ver $ag_export_name
+
+# Step 8:  Verify if the two branches are consistent.
+# Known differences:
+# Configure.ac will have AM_MAINTAINER_MODE([disable])
+BANNER compare $orig_export_name vs $ag_export_name
+diff -r $orig_export_name $ag_export_name
+if [ $? -ne 0 ]; then
+    echo there are differences between the original and the autogen-ed versions.
+    echo You need to fix them.
+    exit 1
+fi
