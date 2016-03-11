@@ -394,7 +394,21 @@ fi
 #rm -fr test.$TEST_NO
 
 #tail -n 100 results.*
+
 do_test=1
+
+# ******* COMMENTED OUT FAILED TESTS ******
+# shared test fail with Fortran because cmake tries to remove a .mod file that is not there.
+# Building C object src/CMakeFiles/cgns_shared.dir/cgnslib.c.o
+# Fatal Error: Can't delete temporary module file 'cgns.mod0': No such file or directory
+# gmake[2]: *** [src/CMakeFiles/cgns_shared.dir/cgns_f.F90.o] Error 1
+
+if [[ $SHARED_STATUS == "--enable-shared" && $WITH_FORTRAN == "--with-fortran=yes" ]]; then
+    if [[ $UNAME == "ostrich" || $UNAME == "kituo" || $UNAME == "mayll" || $UNAME == "moohan" || $UNAME == "platypus" ]];then
+	dp_test=0
+    fi
+fi
+
 CGNS_ENABLE_LFS="-D CGNS_ENABLE_LFS:BOOL=OFF"
 if [ -d "test.$TEST_NO" ]; then
     cd test.$TEST_NO
