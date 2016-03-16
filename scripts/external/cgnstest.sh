@@ -405,7 +405,7 @@ do_test=1
 
 if [[ $SHARED_STATUS == "--enable-shared" && $WITH_FORTRAN == "--with-fortran=yes" ]]; then
     if [[ $UNAME == "ostrich" || $UNAME == "kituo" || $UNAME == "mayll" || $UNAME == "moohan" || $UNAME == "platypus" ]];then
-	dp_test=0
+	do_test=0
     fi
 fi
 
