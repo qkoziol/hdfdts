@@ -74,7 +74,7 @@ if [ $day -eq 0 ]; then #even day tests
 
 else #odd day tests
 
-##   SHARED_STATUS="--enable-shared"
+   SHARED_STATUS="--enable-shared"
    CGNS_SHARED_STATUS="-D CGNS_BUILD_SHARED:BOOL=ON -D CGNS_USE_SHARED:BOOL=ON"
 fi
 
@@ -202,7 +202,7 @@ CGNS_ENABLE_PARALLEL="-D CGNS_ENABLE_PARALLEL:BOOL=OFF"
 CGNS_ENABLE_SZIP="OFF"
 
 HDF_VERSION="vdev"
-
+HDF_VERSION="v1100/dailytest"
 HDF_DIR="/mnt/scr1/pre-release/hdf5/$HDF_VERSION/$UNAME$DASH$TEST_COMPILER" 
 
 #Check to make sure directory exists
