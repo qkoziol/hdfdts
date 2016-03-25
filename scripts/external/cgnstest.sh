@@ -122,6 +122,11 @@ if [[ $TEST_COMPILER == "" ]]; then # System default compiler, exclude dash in t
 
 elif [[ $TEST_COMPILER == gcc* ]]; then
 
+    if [[ $SHARED_STATUS == "--enable-shared" ]]; then 
+	FCFLAGS="$FCFLAGS -fPIC"
+	CFLAGS="$CFLAGS -fPIC"
+    fi
+
     if [[ $TEST_COMPILER == "gcc52" ]]; then
 	export CC="/usr/hdf/bin/gcc52/gcc"
 	export FC="/usr/hdf/bin/gcc52/gfortran"
@@ -148,6 +153,10 @@ elif [[ $TEST_COMPILER == "intel" ]]; then
     export FLIBS=""
     export LIBS=""
     CMAKE_EXE_LINKER_FLAGS=""
+    if [[ $SHARED_STATUS == "--enable-shared" ]]; then 
+	FCFLAGS="$FCFLAGS -fPIC"
+	CFLAGS="$CFLAGS -fPIC"
+    fi
 elif [[ $TEST_COMPILER == "pgi" ]]; then
     export CC="pgcc"
     export FC="pgf90"
@@ -156,6 +165,10 @@ elif [[ $TEST_COMPILER == "pp" ]]; then
     export CC="$MPI/mpicc"
     export FC="$MPI/mpif90"
     export FFLAGS=""
+    if [[ $SHARED_STATUS == "--enable-shared" ]]; then 
+	FCFLAGS="$FCFLAGS -fPIC"
+	CFLAGS="$CFLAGS -fPIC"
+    fi
 elif [[ $TEST_COMPILER == "xl" ]]; then
     export CC="/opt/xl/xlf15.1_xlc13.1/xlc"
     export FC="/opt/xl/xlf15.1_xlc13.1/xlf"
