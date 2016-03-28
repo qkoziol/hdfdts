@@ -78,6 +78,7 @@ else #odd day tests
    CGNS_SHARED_STATUS="-D CGNS_BUILD_SHARED:BOOL=ON -D CGNS_USE_SHARED:BOOL=ON"
 fi
 
+TEST_DIR="test.$TEST_NO"
 
 # COMPILER TESTS: LINKED TO THE CORRESPONDING COMPILED HDF5 LIBRARY
 
@@ -156,6 +157,7 @@ elif [[ $TEST_COMPILER == "intel" ]]; then
     if [[ $SHARED_STATUS == "--enable-shared" ]]; then 
 	FCFLAGS="$FCFLAGS -fPIC"
 	CFLAGS="$CFLAGS -fPIC"
+	export DYLD_LIBRARY_PATH "$PWD/$TEST_DIR/CGNS/src/lib" #needed for mac
     fi
 elif [[ $TEST_COMPILER == "pgi" ]]; then
     export CC="pgcc"
@@ -331,8 +333,8 @@ do_test=1 # default is to perform the tests
 #    fi
 if [[ $do_test != 0 ]]; then  
 
-    mkdir test.$TEST_NO
-    cd test.$TEST_NO
+    mkdir $TEST_DIR
+    cd $TEST_DIR
 #    if [[ $HDF_DIR == 0 ]]; then
 #	mkdir trunk; cd trunk
 #	HDF_DIR="$PWD/hdf5"
@@ -404,7 +406,6 @@ if [[ $do_test != 0 ]]; then
     cd ../../../
 fi
 
-#rm -fr test.$TEST_NO
 
 #tail -n 100 results.*
 
@@ -423,8 +424,8 @@ if [[ $SHARED_STATUS == "--enable-shared" && $WITH_FORTRAN == "--with-fortran=ye
 fi
 
 CGNS_ENABLE_LFS="-D CGNS_ENABLE_LFS:BOOL=OFF"
-if [ -d "test.$TEST_NO" ]; then
-    cd test.$TEST_NO
+if [ -d "$TEST_DIR" ]; then
+    cd $TEST_DIR
     
     if [[ $do_test != 0 ]]; then
         # git clone https://github.com/CGNS/CGNS.git CGNS_SRC
