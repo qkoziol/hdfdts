@@ -157,7 +157,7 @@ elif [[ $TEST_COMPILER == "intel" ]]; then
     if [[ $SHARED_STATUS == "--enable-shared" ]]; then 
 	FCFLAGS="$FCFLAGS -fPIC"
 	CFLAGS="$CFLAGS -fPIC"
-	export DYLD_LIBRARY_PATH "$PWD/$TEST_DIR/CGNS/src/lib" #needed for mac
+	export DYLD_LIBRARY_PATH="$PWD/$TEST_DIR/CGNS/src/lib" #needed for mac
     fi
 elif [[ $TEST_COMPILER == "pgi" ]]; then
     export CC="pgcc"
