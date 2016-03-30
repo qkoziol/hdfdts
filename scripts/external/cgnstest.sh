@@ -217,7 +217,7 @@ CGNS_ENABLE_PARALLEL="-D CGNS_ENABLE_PARALLEL:BOOL=OFF"
 CGNS_ENABLE_SZIP="OFF"
 
 HDF_VERSION="vdev"
-HDF_VERSION="v1100/dailytest"
+#HDF_VERSION="v1100/dailytest"
 HDF_DIR="/mnt/scr1/pre-release/hdf5/$HDF_VERSION/$UNAME$DASH$TEST_COMPILER" 
 
 #Check to make sure directory exists
