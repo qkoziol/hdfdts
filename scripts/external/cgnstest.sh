@@ -184,6 +184,7 @@ elif [[ $TEST_COMPILER == "emu64" ]]; then
     export FC="f90"
     FCFLAGS="$FCFLAGS -O2 -m64"
     CFLAGS="$CFLAGS -O2 -m64"
+    export LDFLAGS="-m64"
     export FCFLAGS="$FCFLAGS"
     export CFLAGS="$CFLAGS"
     export FLIBS="-lm"
