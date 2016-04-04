@@ -184,11 +184,11 @@ elif [[ $TEST_COMPILER == "emu64" ]]; then
     export FC="f90"
     FCFLAGS="$FCFLAGS -O2 -m64"
     CFLAGS="$CFLAGS -O2 -m64"
-    export LDFLAGS="-m64"
     export FCFLAGS="$FCFLAGS"
     export CFLAGS="$CFLAGS"
     export FLIBS="-lm"
     export LIBS="-lm"
+    export SYSCFLAGS="-m64"
     CMAKE_EXE_LINKER_FLAGS=""
     export LD_LIBRARY_PATH_64="/opt/solarisstudio/lib/v9"
 else
