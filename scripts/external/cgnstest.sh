@@ -85,10 +85,16 @@ TEST_DIR="test.$TEST_NO"
 export FLIBS="-Wl,--no-as-needed -ldl"
 export LIBS="-Wl,--no-as-needed -ldl"
 CMAKE_EXE_LINKER_FLAGS='-Wl,--no-as-needed -ldl'
-DASH="-"
 
 export FCFLAGS=""
 export CFLAGS=""
+
+
+HDF_VERSION="vdev"
+
+DASH="-"
+HDF_DIR="/mnt/scr1/pre-release/hdf5/$HDF_VERSION/$UNAME$DASH$TEST_COMPILER" # default, but changed in "" case below.
+
 
 if [[ $TEST_COMPILER == "" ]]; then # System default compiler, exclude dash in the path name
     if [[ $OSTYPE == "sunos" ]];then
@@ -120,6 +126,7 @@ if [[ $TEST_COMPILER == "" ]]; then # System default compiler, exclude dash in t
 	fi
     fi
     DASH=""
+    HDF_DIR="/mnt/scr1/pre-release/hdf5/$HDF_VERSION/$UNAME$DASH$TEST_COMPILER" 
 
 elif [[ $TEST_COMPILER == gcc* ]]; then
 
@@ -157,7 +164,10 @@ elif [[ $TEST_COMPILER == "intel" ]]; then
     if [[ $SHARED_STATUS == "--enable-shared" ]]; then 
 	FCFLAGS="$FCFLAGS -fPIC"
 	CFLAGS="$CFLAGS -fPIC"
-	export DYLD_LIBRARY_PATH="$PWD/$TEST_DIR/CGNS/src/lib" #needed for mac
+        if [[ $OSTYPE == "darwin"* ]];then # needed for mac
+	  export DYLD_LIBRARY_PATH="$PWD/$TEST_DIR/CGNS/src/lib" 
+	  export LDFLAGS="$HDF_DIR/lib/libhdf5.dylib"
+        fi
     fi
 elif [[ $TEST_COMPILER == "pgi" ]]; then
     export CC="pgcc"
@@ -197,6 +207,14 @@ else
     exit 1
 fi
 
+
+#Check to make sure directory exists
+if [ ! -d "$HDF_DIR" ]; then
+    echo " *** TESTING SCRIPT ERROR ***"
+    echo "   - HDF5 directory does not exists: $HDF_DIR"
+    exit 1
+fi
+
 # See Document CGNS_TestingSpecs.docx in the CGNS source git repository
 
 #AUTOCONF
@@ -216,17 +234,6 @@ CGNS_ENABLE_HDF5="-D CGNS_ENABLE_HDF5:BOOL=OFF"
 CGNS_ENABLE_LFS="-D CGNS_ENABLE_LFS:BOOL=OFF"
 CGNS_ENABLE_PARALLEL="-D CGNS_ENABLE_PARALLEL:BOOL=OFF"
 CGNS_ENABLE_SZIP="OFF"
-
-HDF_VERSION="vdev"
-#HDF_VERSION="v1100/dailytest"
-HDF_DIR="/mnt/scr1/pre-release/hdf5/$HDF_VERSION/$UNAME$DASH$TEST_COMPILER" 
-
-#Check to make sure directory exists
-if [ ! -d "$HDF_DIR" ]; then
-    echo " *** TESTING SCRIPT ERROR ***"
-    echo "   - HDF5 directory does not exists: $HDF_DIR"
-    exit 1
-fi
 
 #export HDF5_ROOT="$HDF_DIR"
 #export HDF5_DIR="$HDF_DIR"
