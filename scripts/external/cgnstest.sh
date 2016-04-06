@@ -97,6 +97,10 @@ HDF_DIR="/mnt/scr1/pre-release/hdf5/$HDF_VERSION/$UNAME$DASH$TEST_COMPILER" # de
 
 
 if [[ $TEST_COMPILER == "" ]]; then # System default compiler, exclude dash in the path name
+
+    DASH=""
+    HDF_DIR="/mnt/scr1/pre-release/hdf5/$HDF_VERSION/$UNAME$DASH$TEST_COMPILER"
+
     if [[ $OSTYPE == "sunos" ]];then
 	make_bin="gmake"
 	export CC="cc"
@@ -119,14 +123,15 @@ if [[ $TEST_COMPILER == "" ]]; then # System default compiler, exclude dash in t
 	    export FLIBS=""
 	    export LIBS=""
 	    CMAKE_EXE_LINKER_FLAGS=""
-	    
+	    	  
+	    export DYLD_LIBRARY_PATH="$PWD/$TEST_DIR/CGNS/src/lib" 
+	    export LDFLAGS="$HDF_DIR/lib/libhdf5.dylib"
+
 	    # CURRENTLY DOES NOT SUPPORT SHARED BUILDS ON MAC, CGNS-66
-	    SHARED_STATUS="--disable-shared"
+	  #  SHARED_STATUS="--disable-shared"
 	    CGNS_SHARED_STATUS="-D CGNS_BUILD_SHARED:BOOL=OFF -D CGNS_USE_SHARED:BOOL=OFF"
 	fi
     fi
-    DASH=""
-    HDF_DIR="/mnt/scr1/pre-release/hdf5/$HDF_VERSION/$UNAME$DASH$TEST_COMPILER" 
 
 elif [[ $TEST_COMPILER == gcc* ]]; then
 
