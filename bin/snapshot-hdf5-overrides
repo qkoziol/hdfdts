@@ -8,6 +8,8 @@ CHECKINSTALL()
 COMMITSNAPSHOT()
 {
    echo "Committing snapshot from function in snapshot-hdf5-overrides."
-   svn -q commit -m "Snapshot $RELEASE_VERSION" .
+   git add .
+   git commit -q -m "Snapshot $RELEASE_VERSION"
+   git push -q
 }
 

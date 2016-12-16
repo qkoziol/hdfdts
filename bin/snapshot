@@ -48,38 +48,56 @@ EXTRACT()
 }
 
 # Standard procedure for checking out or updating source code from an hdfgroup
-# svn repository.  Override the function for other repositories or procedures.
-SVNCHECKOUT()
+# git repository.  Override the function for other repositories or procedures.
+SOURCECHECKOUT()
 {
-   SVNROOT=https://svn.hdfgroup.org
-   if [ -n "$AUTOGEN" ]; then
-      if [ ! -d $BASEDIR/current_src ]; then
-         mkdir -p $BASEDIR/current_src
-         echo "Checking out from $SVNROOT/${SVNVERSION} into $BASEDIR/current_src"
-         (cd $BASEDIR; svn co ${SVNROOT}/${SVNVERSION} ./current_src ) || exit 1
-      else
-         cd $BASEDIR/current_src;
-         svn -q update
-         echo "Updating $BASEDIR/current_src from svn."
-      fi 
-   elif [ ! -d $BASEDIR/current ]; then
-      mkdir $BASEDIR/current
-      echo "Checking out from $SVNROOT/${SVNVERSION} into $BASEDIR/current"
+   if test -n $GIT_URL; then
+      echo "Creating fresh clone of $GIT_URL in $BASEDIR/current"
       # Check out the current version from source repository.
-      (cd $BASEDIR; svn co ${SVNROOT}/${SVNVERSION} current ) || exit 1
+      (cd $BASEDIR
+          if test -n $GIT_BRANCH; then
+             git clone $GIT_URL -b $GIT_BRANCH
+          else
+             git clone $GIT_URL
+          fi
+          if [ -n "$AUTOGEN" ]; then
+             rm -rf current_src
+             mv $HDFREPOS current_src
+          else
+             rm -rf current
+             mv $HDFREPOS current
+          fi ) || exit 1
    else
-      cd $BASEDIR/current; svn info
-      # "svn info" returns 0 if $BASEDIR/current was previously checked out from an
-      # svn repository - i.e. it contains .svn directories and files.  If so it can
-      # be updated to the current version.  If not it can be checked out from the
-      # repository.
-      if [ "$?" = 0 ];then
-         # $BASEDIR/current was checked out from an svn repository, so update
-         #  to the current version.
-         svn -q update
-         echo "Updating $BASEDIR/current from svn."
+      SVNROOT=https://svn.hdfgroup.org
+      if [ -n "$AUTOGEN" ]; then
+         if [ ! -d $BASEDIR/current_src ]; then
+            mkdir -p $BASEDIR/current_src
+            echo "Checking out from $SVNROOT/${SVNVERSION} into $BASEDIR/current_src"
+            (cd $BASEDIR; svn co ${SVNROOT}/${SVNVERSION} ./current_src ) || exit 1
+         else
+            cd $BASEDIR/current_src;
+            svn -q update
+            echo "Updating $BASEDIR/current_src from svn."
+         fi
+      elif [ ! -d $BASEDIR/current ]; then
+         mkdir $BASEDIR/current
+         echo "Checking out from $SVNROOT/${SVNVERSION} into $BASEDIR/current"
+         # Check out the current version from source repository.
+         (cd $BASEDIR; svn co ${SVNROOT}/${SVNVERSION} current ) || exit 1
       else
-         echo "Warning!  Source directory ("current") is not checked out from svn."
+         cd $BASEDIR/current; svn info
+         # "svn info" returns 0 if $BASEDIR/current was previously checked out from an
+         # svn repository - i.e. it contains .svn directories and files.  If so it can
+         # be updated to the current version.  If not it can be checked out from the
+         # repository.
+         if [ "$?" = 0 ];then
+            # $BASEDIR/current was checked out from an svn repository, so update
+            #  to the current version.
+            svn -q update
+            echo "Updating $BASEDIR/current from svn."
+         else
+            echo "Warning!  Source directory ("current") is not checked out from svn."
+         fi
       fi
    fi
 }
@@ -537,7 +555,7 @@ if [ "$cmd" = "all" -o -n "$cmdcheckout" ]; then
             EXTRACT
         fi
     else
-        SVNCHECKOUT
+        SOURCECHECKOUT
     fi
 fi # Do source checkout
 
