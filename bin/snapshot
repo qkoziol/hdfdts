@@ -776,12 +776,18 @@ if [ "$cmd" = "all" -o -n "$cmdrel" ]; then
 	        bin/release -d $ReleaseDir $METHODS
 	        perl bin/h4vers -i
             elif [ "$HDFREPOS" = "hdf5" ]; then
+                if test -n $MAINTAINER_MODE_ENABLED; then
+                    bin/switch_maint_mode -disable ./configure.ac
+                fi
 	        RELEASE_VERSION="`perl bin/h5vers -v`"
 	        echo "Making snapshot release ($RELEASE_VERSION) to ${ReleaseDir}..."
                 if [ "${DOCVERSION}" ]; then
 	            bin/release -d $ReleaseDir --docver ${DOCVERSION} $METHODS
                 else
 	            bin/release -d $ReleaseDir $METHODS
+                fi
+                if test -n $MAINTAINER_MODE_ENABLED; then
+                    bin/switch_maint_mode -enable ./configure.ac
                 fi
 	        perl bin/h5vers -i
             else
