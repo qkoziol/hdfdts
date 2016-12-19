@@ -1,6 +1,8 @@
 COMMITSNAPSHOT()
 {
-   svn -q commit -m "Snapshot $RELEASE_VERSION ."
+   git add .
+   git commit -q -m "Snapshot $RELEASE_VERSION"
+   git push -q
 }
 
 CHECKINSTALL()
