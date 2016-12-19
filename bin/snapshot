@@ -52,21 +52,24 @@ EXTRACT()
 SOURCECHECKOUT()
 {
    if test -n $GIT_URL; then
-      echo "Creating fresh clone of $GIT_URL in $BASEDIR/current"
+      echo "Creating fresh clone of $GIT_URL in $BASEDIR/current or current_src"
       # Check out the current version from source repository.
       (cd $BASEDIR
+       if [ -n "$AUTOGEN" ]; then
+          rm -rf current_src
           if test -n $GIT_BRANCH; then
-             git clone $GIT_URL -b $GIT_BRANCH
+             git clone $GIT_URL -b $GIT_BRANCH current_src
           else
-             git clone $GIT_URL
+             git clone $GIT_URL current_src
           fi
-          if [ -n "$AUTOGEN" ]; then
-             rm -rf current_src
-             mv $HDFREPOS current_src
+       else
+          rm -rf current
+          if test -n $GIT_BRANCH; then
+             git clone $GIT_URL -b $GIT_BRANCH current
           else
-             rm -rf current
-             mv $HDFREPOS current
-          fi ) || exit 1
+             git clone $GIT_URL current
+          fi
+       fi ) || exit 1
    else
       SVNROOT=https://svn.hdfgroup.org
       if [ -n "$AUTOGEN" ]; then
