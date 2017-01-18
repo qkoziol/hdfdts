@@ -1,5 +1,4 @@
-#using git now, but the function is still SVNCHECKOUT
-SVNCHECKOUT()
+SOURCE_CHECKOUT()
 {
    HOSTNAME=`hostname | cut -f1 -d.`
    if [ "${HOSTNAME}" = "jam" ]; then

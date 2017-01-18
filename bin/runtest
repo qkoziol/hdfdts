@@ -348,6 +348,11 @@ RUNSNAPTEST()
 		# option for configure
 		SNAPCMD_OPT="$SNAPCMD_OPT $1"
 		;;
+            module-load)
+                # option for snapshot
+                shift
+                SNAPCMD_OPT="$SNAPCMD_OPT module-load $1"
+                ;;
 	    op-configure)
 		# option for configure
 		SNAPCMD_OPT="$SNAPCMD_OPT $1 $2"
@@ -937,33 +942,44 @@ if [ -z "$NOREPO" ]; then
     # ===================
     PRINT Checking MANIFEST file ...
     errcode=0
-    POS4=`perl -e "print index(\"$HDFREPOS}\", 'hdf4')"`
-    POS5=`perl -e "print index(\"${HDFREPOS}\", 'hdf4')"`
-    if [ "${HDFREPOS}" =  "hdf4" ] || [ "${HDFREPOS}" = "hdf5" ]; then
-        if [ -z "$AUTOGEN" ]; then
-            (cd $SNAPYARD/current; ./bin/chkmanifest) > $TMPFILE 2>&1
-        else
-            (cd $SNAPYARD/current_src; ./bin/chkmanifest) > $TMPFILE 2>&1
-        fi
+    # chkmanifest will always fail when testing with a source tarball.
+    # Don't run it if "git log" doesn't return "0"
+    if [ -z "$AUTOGEN" ]; then
+        (cd $SNAPYARD/current; git log)
+        errcode=$?
+    else
+        (cd $SNAPYARD/current_src; git log)
         errcode=$?
     fi
     if [ $errcode -eq 0 ]; then
-	# test passed.
-	cat $TMPFILE
+        if [ "${HDFREPOS}" =  "hdf4" ] || [ "${HDFREPOS}" = "hdf5" ]; then
+            if [ -z "$AUTOGEN" ]; then
+                (cd $SNAPYARD/current; ./bin/chkmanifest) > $TMPFILE 2>&1
+            else
+                (cd $SNAPYARD/current_src; ./bin/chkmanifest) > $TMPFILE 2>&1
+            fi
+            errcode=$?
+        fi
+        if [ $errcode -eq 0 ]; then
+            # test passed.
+            cat $TMPFILE
+        else
+            # test failed.
+            REPORT_ERR "****FAILED ${HOST_NAME}: MANIFEST check****"
+            (   echo =========================
+	        echo "MANIFEST checking failed output"
+                echo =========================
+	        cat $TMPFILE
+                echo =========================
+	        echo "MANIFEST checking failed output done"
+                echo =========================
+                echo ""
+            ) >> $FAILEDDETAIL
+        fi
+        rm $TMPFILE
     else
-	# test failed.
-	REPORT_ERR "****FAILED ${HOST_NAME}: MANIFEST check****"
-        (   echo =========================
-	    echo "MANIFEST checking failed output"
-	    echo =========================
-	    cat $TMPFILE
-            echo =========================
-	    echo "MANIFEST checking failed output done"
-            echo =========================
-	    echo ""
-	) >> $FAILEDDETAIL
+        PRINT Cannot check MANIFEST when source is not checked out from svn repository
     fi
-    rm $TMPFILE
     PRINT_BLANK
     # No copyright checking until what need copyright is decided. 2006/4/7.
     if false; then

@@ -49,27 +49,31 @@ EXTRACT()
 
 # Standard procedure for checking out or updating source code from an hdfgroup
 # git repository.  Override the function for other repositories or procedures.
-SOURCECHECKOUT()
+SOURCE_CHECKOUT()
 {
    if test -n $GIT_URL; then
-      echo "Creating fresh clone of $GIT_URL in $BASEDIR/current or current_src"
-      # Check out the current version from source repository.
-      (cd $BASEDIR
-       if [ -n "$AUTOGEN" ]; then
-          rm -rf current_src
-          if test -n $GIT_BRANCH; then
-             git clone $GIT_URL -b $GIT_BRANCH current_src
-          else
+      if [ -n "$AUTOGEN" ]; then
+         echo "Creating fresh clone of $GIT_URL in $BASEDIR/current_src"
+         # Check out the current version from source repository.
+         (cd $BASEDIR; rm -rf current_src
+          if test -z $GIT_BRANCH; then
+             echo "Testing empty branch $GIT_BRANCH." 
              git clone $GIT_URL current_src
+          else
+             echo "Testing branch $GIT_BRANCH." 
+             git clone $GIT_URL -b $GIT_BRANCH current_src
           fi
-       else
-          rm -rf current
+          ) || exit 1
+      else
+         echo "Creating fresh clone of $GIT_URL in $BASEDIR/current"
+         # Check out the current version from source repository.
+         (cd $BASEDIR; rm -rf current
           if test -n $GIT_BRANCH; then
              git clone $GIT_URL -b $GIT_BRANCH current
           else
              git clone $GIT_URL current
-          fi
-       fi ) || exit 1
+          fi ) || exit 1
+      fi
    else
       SVNROOT=https://svn.hdfgroup.org
       if [ -n "$AUTOGEN" ]; then
@@ -160,7 +164,8 @@ DISPLAYUSAGE()
 Usage: $PROGNAME [all] [checkout] [ftp <URL> [diff] [test] [srcdir] [release] [help]
 	[clean] [distclean] [echo] [deploy <dir>] [deploydir <dir>]
 	[zlib <zlib_path>] [releasedir <dir>] [srcdirname <dir>] [check-vfd]
-	[op-configure <option>] [--<option>]
+	[exec <command>] [module-load <module-list>] [op-configure <option>] 
+        [--<option>]
     all:      Run all commands (checkout, test & release)
               [Default is all]
     checkout: Run source checkout
@@ -198,6 +203,10 @@ Usage: $PROGNAME [all] [checkout] [ftp <URL> [diff] [test] [srcdir] [release] [h
 	      Run make check-vfd instead of just make check.
     exttest <testscript>;
               Run testscript;
+    exec <command>:
+              Run <command>;
+    module-load <module-list>:
+              Load modules in comma-separated <module-list>;
     op-configure <option>:
               Pass <option> to the configure command
               E.g., "snapshot op-configure --enable-parallel"
@@ -217,6 +226,7 @@ PROGNAME=$0
 SNAPSHOTNAME=
 HDFREPOS=
 DOCVERSION=""
+MODULELIST=""
 
 if [ -f bin/snapshot_params ]; then
    . bin/snapshot_params
@@ -444,6 +454,16 @@ while [ $# -gt 0 ] ; do
 	check-vfd)
 	    CHECKVAL=check-vfd
 	    ;;
+        module-load)
+            shift
+            if [ $# -lt 1 ]; then
+                echo "missing module list to load"
+                errcode=1
+                cmd="help"
+                break
+            fi 
+            MODULELIST="$1"
+            ;;
 	--*)
 	    OP_CONFIGURE="$OP_CONFIGURE $1"
 	    ;;
@@ -466,6 +486,15 @@ while [ $# -gt 0 ] ; do
     esac
     shift
 done
+
+if [ -n "$MODULELIST" ]; then
+   . ~/.bashrc
+   module use /opt/pkgs/modules/all
+   # load module command will take a space separated list of modules.
+   # If we have a comma separated list, convert ',' to ' '.
+   MODULELIST="$( echo -e "$MODULELIST" | tr  ',' ' '  )"  
+   module load $MODULELIST
+fi
 
 # Dump environment variables after option parsing
 echo ===Dumping environment variables after option parsing ===
@@ -558,7 +587,7 @@ if [ "$cmd" = "all" -o -n "$cmdcheckout" ]; then
             EXTRACT
         fi
     else
-        SOURCECHECKOUT
+        SOURCE_CHECKOUT
     fi
 fi # Do source checkout
 
@@ -779,18 +808,12 @@ if [ "$cmd" = "all" -o -n "$cmdrel" ]; then
 	        bin/release -d $ReleaseDir $METHODS
 	        perl bin/h4vers -i
             elif [ "$HDFREPOS" = "hdf5" ]; then
-                if test -n $MAINTAINER_MODE_ENABLED; then
-                    bin/switch_maint_mode -disable ./configure.ac
-                fi
 	        RELEASE_VERSION="`perl bin/h5vers -v`"
 	        echo "Making snapshot release ($RELEASE_VERSION) to ${ReleaseDir}..."
                 if [ "${DOCVERSION}" ]; then
 	            bin/release -d $ReleaseDir --docver ${DOCVERSION} $METHODS
                 else
 	            bin/release -d $ReleaseDir $METHODS
-                fi
-                if test -n $MAINTAINER_MODE_ENABLED; then
-                    bin/switch_maint_mode -enable ./configure.ac
                 fi
 	        perl bin/h5vers -i
             else

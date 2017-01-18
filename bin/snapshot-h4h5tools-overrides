@@ -1,3 +1,13 @@
+SOURCE_CHECKOUT()
+{
+    HOSTNAME=`hostname | cut -f1 -d.`
+    if [ "${HOSTNAME}" = "jam" ]; then
+        echo "Creating fresh clone of ssh://git@bitbucket.hdfgroup.org:7999/hdfeos/h4h5tools.git in $BASEDIR/current"
+        # Check out the current version from source repository.
+        (cd $BASEDIR; rm -rf current; git clone ssh://git@bitbucket.hdfgroup.org:7999/hdfeos/h4h5tools.git; mv h4h5tools current ) || exit 1
+      fi
+}
+
 RUNCONFIGURE()
 {
     if [ "${CURRENT}" != "${TESTDIR}" ] && [ $CPSRC ]; then

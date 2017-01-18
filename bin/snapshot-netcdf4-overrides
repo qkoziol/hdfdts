@@ -1,4 +1,28 @@
 # netcdf-4 function overrides and flags for snapshot
+SOURCE_CHECKOUT()
+{
+    cd $BASEDIR/current; git status
+      if [ "$?" = "0" ];then
+         echo "Updating $BASEDIR/current with git."
+         ( git reset --hard HEAD;git clean -d -x -q -f;git pull --ff-only ) || exit 1
+      else
+         echo "Checking out from $SVNROOT/${SVNVERSION} into $BASEDIR/current"
+         # Check out the current version from source repository.
+         (cd $BASEDIR; git clone https://github.com/Unidata/netcdf-c.git; mv netcdf-c current ) || exit 1
+      fi
+      AUTOTOOLSDIR=/mnt/hdf/packages/AUTOTOOLS
+      AUTOCONFDIR=${AUTOTOOLSDIR}/autoconf/2.69/x86_64/bin
+      AUTOMAKEDIR=${AUTOTOOLSDIR}/automake/1.15/x86_64/bin
+      LIBTOOLDIR=${AUTOTOOLSDIR}/libtool/2.4.5/x86_64/bin
+      PATH=${AUTOCONFDIR}:${AUTOMAKEDIR}:${AUTOTOOLSDIR}/m4/m4-1.4.17/x86_64/bin:${AUTOTOOLSDIR}/m4/1.4.17/x86_64/share:${LIBTOOLDIR}:$PATH
+      export $PATH
+      ${LIBTOOLDIR}/libtoolize
+      ${AUTOMAKEDIR}/aclocal-1.15 --force
+      ${AUTOCONFDIR}/autoconf
+      ${AUTOCONFDIR}/autoheader
+      ${AUTOMAKEDIR}/automake-1.15 --add-missing --copy --force-missing
+      ${AUTOCONFDIR}/autoreconf -vif
+}
 
 EXTRACT()
 {
