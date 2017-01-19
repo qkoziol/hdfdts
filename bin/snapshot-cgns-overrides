@@ -1,6 +1,6 @@
 SOURCE_CHECKOUT()
 {
-    GIT_DATE="48 hours ago"
+    GIT_DATE="2 days ago"
     UPDATED_HDF5=""
 
     UPDATED_HDF5=`cd ~/snapshots-hdf5/current_src; git log --since="$GIT_DATE"`
