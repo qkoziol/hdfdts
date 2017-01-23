@@ -12,7 +12,7 @@ RUNCONFIGURE()
 # year from one of ~80 subdirectories of TES files and one of ~75 subdirectories
 # of MLS, OMI, HIRDL, and TOMS files chosen by day-of-year modulo number of 
 # subdirectories (from one of 4 NASA ftp servers). 
-SVNCHECKOUT()
+SOURCE_CHECKOUT()
 {
    echo "Run script to download sample NASA files."
    rm -rf /mnt/scr1/NASA/oldselected

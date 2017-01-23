@@ -3,6 +3,8 @@ Each snapshot-<TestName> directory should have 2 local files (not checked into s
 snapshot_params - containing 
 HDFREPOS=<name of the svn repository> and 
 SNAPSHOTNAME=<TestName>
+GIT_URL=<url to clone git repository>
+GIT_BRANCH=<name of branch to be tested (may be omitted for testing default branches)>
 
 snapshot_version - containing
 SWVERSION=<name of the svn repository> and
