@@ -945,10 +945,10 @@ if [ -z "$NOREPO" ]; then
     # chkmanifest will always fail when testing with a source tarball.
     # Don't run it if "git log" doesn't return "0"
     if [ -z "$AUTOGEN" ]; then
-        (cd $SNAPYARD/current; git log)
+        (cd $SNAPYARD/current; git log --since="24 hours ago")
         errcode=$?
     else
-        (cd $SNAPYARD/current_src; git log)
+        (cd $SNAPYARD/current_src; git log --since="24 hours ago")
         errcode=$?
     fi
     if [ $errcode -eq 0 ]; then
