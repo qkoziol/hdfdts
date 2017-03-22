@@ -178,6 +178,8 @@ elif [[ $TEST_COMPILER == "pgi" ]]; then
     export CC="pgcc"
     export FC="pgf90"
 elif [[ $TEST_COMPILER == "pp" ]]; then
+    #HDF_VERSION="v18"
+    HDF_DIR="/mnt/scr1/pre-release/hdf5/$HDF_VERSION/$UNAME$DASH$TEST_COMPILER"
     MPI="/mnt/hdf/packages/mpich/3.1.4_gnu4.9.2/$PROC/bin"
     export CC="$MPI/mpicc"
     export FC="$MPI/mpif90"
@@ -186,12 +188,23 @@ elif [[ $TEST_COMPILER == "pp" ]]; then
 	FCFLAGS="$FCFLAGS -fPIC"
 	CFLAGS="$CFLAGS -fPIC"
     fi
+elif [[ $TEST_COMPILER == "openmpi" ]]; then
+    HDF_VERSION="v18"
+    HDF_DIR="/mnt/scr1/pre-release/hdf5/$HDF_VERSION/$UNAME$DASH$TEST_COMPILER"
+    # using OpenMPI module, previously loaded?
+    MPI="/opt/pkgs/software/OpenMPI/2.0.1-GCC-4.9.3/bin"
+    export CC="$MPI/mpicc"
+    export FC="$MPI/mpif90"
 elif [[ $TEST_COMPILER == "xl" ]]; then
     export CC="/opt/xl/xlf15.1_xlc13.1/xlc"
     export FC="/opt/xl/xlf15.1_xlc13.1/xlf"
     export FLIBS=""
     export LIBS=""
     CMAKE_EXE_LINKER_FLAGS=""
+    if [[ $SHARED_STATUS == "--enable-shared" ]]; then 
+	FCFLAGS="$FCFLAGS -fPIC"
+	CFLAGS="$CFLAGS -fPIC"
+    fi
 elif [[ $TEST_COMPILER == "emu64" ]]; then
     make_bin="gmake"
     make_opt=""
@@ -245,9 +258,15 @@ CGNS_ENABLE_SZIP="OFF"
 #export HDF5_DIR="$HDF_DIR"
 #export CMAKE_PREFIX_PATH="$HDF_DIR"
 
-TEST_SZIP=`grep -iq "szip" $HDF_DIR/bin/h5*cc;echo $?`
+if [[ "$H5CC" = "" ]]; then 
+    H5CC=$HDF_DIR/bin/h5*cc
+fi
+
+#TEST_SZIP=`grep -iq "szip" $HDF_DIR/bin/h5*cc;echo $?`
+TEST_SZIP=`grep -iq "szip" $H5CC;echo $?`
 if [[ $TEST_SZIP == 0 ]]; then
-    SZIP=`cat $HDF_DIR/bin/h5*cc | grep "H5BLD_LDFLAGS=" | sed -e 's/.*H5BLD_LDFLAGS=" -L\(.*\) ".*/\1/'`
+    SZIP=`cat $H5CC | grep "H5BLD_LDFLAGS=" | sed -e 's/.*H5BLD_LDFLAGS=" -L\(.*\) ".*/\1/'`
+#    SZIP=`cat $HDF_DIR/bin/h5*cc | grep "H5BLD_LDFLAGS=" | sed -e 's/.*H5BLD_LDFLAGS=" -L\(.*\) ".*/\1/'`
     ENABLE_SZIP="--with-szip=$SZIP/libsz.a"
     CGNS_ENABLE_SZIP="ON -D SZIP_LIBRARY:PATH=$SZIP/libsz.a"
 fi
@@ -261,8 +280,6 @@ if [[ $TEST_NO == 1 ]]; then
     ENABLE_LFS="--enable-lfs"
     CGNS_ENABLE_LFS="-D CGNS_ENABLE_LFS:BOOL=ON"
     ENABLE_DEBUG="--enable-debug"
-#    ENABLE_SCOPE="--enable-scope"
-#    CGNS_ENABLE_SCOPING="-D CGNS_ENABLE_SCOPING:BOOL=ON"
 elif [[ $TEST_NO == 2 ]]; then
     WITH_FORTRAN="--with-fortran=yes"
     CGNS_ENABLE_FORTRAN="-D CGNS_ENABLE_FORTRAN:BOOL=ON"
@@ -300,8 +317,6 @@ elif [[ $TEST_NO == 5 ]]; then
     CGNS_ENABLE_HDF5="-D CGNS_ENABLE_HDF5:BOOL=ON -D CMAKE_PREFIX_PATH=$HDF_DIR -D HDF5_NEED_ZLIB:BOOL=ON -D HDF5_NEED_SZIP:BOOL=$CGNS_ENABLE_SZIP"
     echo "$CGNS_ENABLE_HDF5"
     CGNS_ENABLE_PARALLEL="-D CGNS_ENABLE_PARALLEL:BOOL=ON -D HDF5_NEED_MPI:BOOL=ON"
-#    ENABLE_SCOPE="--enable-scope"
-#    CGNS_ENABLE_SCOPING="-D CGNS_ENABLE_SCOPING:BOOL=ON"
 elif [[ $TEST_NO == 6 ]]; then
     WITH_FORTRAN="--with-fortran=yes"
     CGNS_ENABLE_FORTRAN="-D CGNS_ENABLE_FORTRAN:BOOL=ON"
@@ -496,7 +511,7 @@ if [ -d "$TEST_DIR" ]; then
 	    -D CMAKE_EXE_LINKER_FLAGS:STRING="$CMAKE_EXE_LINKER_FLAGS" $CGNS_ENABLE_PARALLEL \
              $CGNS_ENABLE_LFS $CGNS_ENABLE_HDF5 $CGNS_ENABLE_FORTRAN $CGNS_ENABLE_64BIT \
              $CGNS_ENABLE_SCOPING \
-             $CGNS 
+             $CGNS
 	    
         status=$?
         if [[ $status != 0 ]]; then
