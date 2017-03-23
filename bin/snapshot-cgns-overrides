@@ -5,6 +5,9 @@ SOURCE_CHECKOUT()
 
     UPDATED_HDF5=`cd ~/snapshots-hdf5/current_src; git log --since="$GIT_DATE"`
 
+    (cd ${BASEDIR}/hdfdts; git pull)
+    cp ${BASEDIR}/hdfdts/scripts/external/cgnstest.sh ${BASEDIR}/current
+
     cd ${BASEDIR}/current/CGNS
     git pull 
     if [[ $(git log --since="$GIT_DATE") ||  "${UPDATED_HDF5}" != "" ]]; then
