@@ -177,6 +177,7 @@ elif [[ $TEST_COMPILER == "intel" ]]; then
 elif [[ $TEST_COMPILER == "pgi" ]]; then
     export CC="pgcc"
     export FC="pgf90"
+    export LIBS="-ldl"
 elif [[ $TEST_COMPILER == "pp" ]]; then
     #HDF_VERSION="v18"
     HDF_DIR="/mnt/scr1/pre-release/hdf5/$HDF_VERSION/$UNAME$DASH$TEST_COMPILER"
