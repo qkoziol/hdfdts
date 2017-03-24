@@ -196,16 +196,16 @@ elif [[ $TEST_COMPILER == "openmpi" ]]; then
     MPI="/opt/pkgs/software/OpenMPI/2.0.1-GCC-4.9.3/bin"
     export CC="$MPI/mpicc"
     export FC="$MPI/mpif90"
+    if [[ $SHARED_STATUS == "--enable-shared" ]]; then 
+	FCFLAGS="$FCFLAGS -fPIC"
+	CFLAGS="$CFLAGS -fPIC"
+    fi
 elif [[ $TEST_COMPILER == "xl" ]]; then
     export CC="/opt/xl/xlf15.1_xlc13.1/xlc"
     export FC="/opt/xl/xlf15.1_xlc13.1/xlf"
     export FLIBS=""
     export LIBS=""
     CMAKE_EXE_LINKER_FLAGS=""
-    if [[ $SHARED_STATUS == "--enable-shared" ]]; then 
-	FCFLAGS="$FCFLAGS -fPIC"
-	CFLAGS="$CFLAGS -fPIC"
-    fi
 elif [[ $TEST_COMPILER == "emu64" ]]; then
     make_bin="gmake"
     make_opt=""
