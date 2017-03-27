@@ -422,7 +422,9 @@ if [[ $do_test != 0 ]]; then
 	echo "CGNS INSTALL #FAILED"
 	exit $status
     fi
-    $make_bin test &> ../../../results.$TEST_NO.txt
+#    $make_bin test &> ../../../results.$TEST_NO.txt
+#    cat ../../../results.$TEST_NO.txt
+    $make_bin test
     status=$?
     if [[ $status != 0 ]]; then
 	echo "CGNS TESTING #FAILED"
@@ -441,9 +443,6 @@ if [[ $do_test != 0 ]]; then
 
     cd ../../../
 fi
-
-
-#tail -n 100 results.*
 
 do_test=1
 
