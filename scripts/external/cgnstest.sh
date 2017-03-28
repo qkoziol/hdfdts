@@ -367,6 +367,8 @@ do_test=1 # default is to perform the tests
 #    else
 #	do_test=0
 #    fi
+
+autotools_status=0
 if [[ $do_test != 0 ]]; then  
 
     mkdir $TEST_DIR
@@ -404,31 +406,29 @@ if [[ $do_test != 0 ]]; then
         --prefix=$PWD/cgns_build \
 	$SHARED_STATUS \
 	--disable-cgnstools
-
     status=$?
     if [[ $status != 0 ]]; then
 	echo "CGNS CONFIGURE #FAILED"
-	exit $status
+	autotools_status=$status
     fi
     $make_bin
     status=$?
     if [[ $status != 0 ]]; then
 	echo "CGNS BUILD #FAILED"
-	exit $status
+	autotools_status=$status
     fi
     $make_bin install
     status=$?
     if [[ $status != 0 ]]; then
 	echo "CGNS INSTALL #FAILED"
-	exit $status
+	autotools_status=$status
     fi
     $make_bin test &> ../../../results.$TEST_NO.txt
-    cat ../../../results.$TEST_NO.txt
-#    $make_bin test
     status=$?
+    cat ../../../results.$TEST_NO.txt
     if [[ $status != 0 ]]; then
 	echo "CGNS TESTING #FAILED"
-	exit $status
+	autotools_status=$status
     fi
 
     ## date format
@@ -458,6 +458,7 @@ if [[ $SHARED_STATUS == "--enable-shared" && $WITH_FORTRAN == "--with-fortran=ye
     fi
 fi
 
+cmake_status=0
 CGNS_ENABLE_LFS="-D CGNS_ENABLE_LFS:BOOL=OFF"
 if [ -d "$TEST_DIR" ]; then
     cd $TEST_DIR
@@ -515,22 +516,27 @@ if [ -d "$TEST_DIR" ]; then
 	    
         status=$?
         if [[ $status != 0 ]]; then
-	   echo "CGNS CONFIGURE #FAILED"
-	   exit $status
+	   echo "CGNS CMAKE CONFIGURE #FAILED"
+	   cmake_status=$status
         fi
 	$make_bin $make_opt
 	status=$?
 	if [[ $status != 0 ]]; then
-	    echo "CGNS BUILD #FAILED"
-	    exit $status
+	    echo "CGNS CMAKE BUILD #FAILED"
+	    cmake_status=$status
 	fi
 	$make_bin test
 	status=$?
 	if [[ $status != 0 ]]; then
-	    echo "CGNS TESTING #FAILED"
-	    exit $status
+	    echo "CGNS CMAKE TESTING #FAILED"
+	    cmake_status=$status
 	fi
     fi
+fi
+
+if [[ $autotools_status != 0 || $cmake_status != 0 ]]; then
+    echo "CGNS #FAILED"
+    exit 1
 fi
 exit 0
 
