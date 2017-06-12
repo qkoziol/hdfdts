@@ -1098,8 +1098,16 @@ if [ -n "$TESTHOST" -a $HOST_NAME != "$TESTHOST" ]; then
 	# run the remote shell command with output to $TMP_OUTPUT
 	case "$RSH" in
 	    "ssh -o ConnectTimeout=$SSH_TIMEOUT")
-		CMD="$RSH $h -n cd $BASEDIR;$PROGNAME -configname $CONFIGNAME"
-		PRINT $CMD
+                #CMD="$RSH $h -n cd $BASEDIR;$PROGNAME -configname $CONFIGNAME"
+                # changed the above, assuming that ssh $h always starts in $HOME on
+                # $h, and cd to the snapshot directory is therefore sufficient.  Done
+                # to eliminate the occasional failure on Macs to
+                # cd /home/hdftest/<snapshot directory> because $HOME on launch host
+                # (linux machine) is /home/hdftest whereas $HOME on Macs is
+                # /Users/hdftest and /home/hdftest/<snapshot directory> is not always
+                # found even though it exits (mount or NFS problem).  LRK 20170608
+                CMD="$RSH $h -n cd snapshots-${SNAPSHOTNAME};$PROGNAME -configname $CONFIGNAME"                
+                PRINT $CMD
 
 		# launch concurrent tests only if srcdir is used
 		if [ -n "$SRCDIR" ]; then
