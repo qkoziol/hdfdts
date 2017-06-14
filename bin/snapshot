@@ -65,14 +65,20 @@ SOURCE_CHECKOUT()
           fi
           ) || exit 1
       else
-         echo "Creating fresh clone of $GIT_URL in $BASEDIR/current"
-         # Check out the current version from source repository.
-         (cd $BASEDIR; rm -rf current
-          if test -n $GIT_BRANCH; then
-             git clone $GIT_URL -b $GIT_BRANCH current
-          else
-             git clone $GIT_URL current
-          fi ) || exit 1
+         (cd $BASEDIR/current; git log --since="24 hours ago")
+         gitcode=$?
+         if [ "$gitcode" = 0 ];then
+             echo "Creating fresh clone of $GIT_URL in $BASEDIR/current"
+             # Check out the current version from source repository.
+             (cd $BASEDIR; rm -rf current
+              if test -n $GIT_BRANCH; then
+                 git clone $GIT_URL -b $GIT_BRANCH current
+              else
+                 git clone $GIT_URL current
+              fi ) || exit 1
+         else
+             echo "Warning!  Source directory ("current") is not checked out from a git repository."
+         fi
       fi
    else
       SVNROOT=https://svn.hdfgroup.org
