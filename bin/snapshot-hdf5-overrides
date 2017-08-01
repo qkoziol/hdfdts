@@ -8,7 +8,18 @@ CHECKINSTALL()
 COMMITSNAPSHOT()
 {
    echo "Committing snapshot from function in snapshot-hdf5-overrides."
-   git add .
+   git add README.txt c++/src/cpp_doc_config configure.ac src/H5public.h
+   git add release_docs/RELEASE.txt hl/src/H5LTparse.c hl/src/H5LTparse.h
+   git add config/cmake/scripts/HDF5config.cmake
+
+   # "cmdrel" can be "" or "release" or "autogen-release".  "release" should
+   # commit the change to configure because it is already in source control.
+   # Checking whether configure is "modified" or "new" may be a better way to
+   # determine whether it should be added to the commit.   
+   if [ "cmdrel" = "release" ]; then
+      git add configure
+   fi
+
    git commit -q -m "Snapshot $RELEASE_VERSION"
    git push -q
 }
