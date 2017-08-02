@@ -64,6 +64,16 @@ SOURCE_CHECKOUT()
              git clone $GIT_URL -b $GIT_BRANCH current_src
           fi
           ) || exit 1
+      elif [ ! -d $BASEDIR/current ]; then
+         mkdir $BASEDIR/current
+         echo "Creating fresh clone of $GIT_URL in $BASEDIR/current"
+         if test -n $GIT_BRANCH; then
+            echo "Checking out $GIT_BRANCH from $GIT_URL} into $BASEDIR/current"
+            # Check out the current version from source repository.
+            (cd $BASEDIR; git clone $GIT_URL -b $GIT_BRANCH current ) || exit 1
+         else
+            (cd $BASEDIR; git clone $GIT_URL current ) || exit 1
+         fi
       else
          (cd $BASEDIR/current; git log --since="24 hours ago")
          gitcode=$?
@@ -174,13 +184,16 @@ Usage: $PROGNAME [all] [checkout] [ftp <URL> [diff] [test] [srcdir] [release] [h
         [--<option>]
     all:      Run all commands (checkout, test & release)
               [Default is all]
-    checkout: Run source checkout
+    checkout: Clone source into current directory
+    checkout-autogen: Clone source into current_src directory
     diff:     Run diff on current and previous versions.  Exit 0 if
               no significant differences are found.  Otherwise, non-zero.
+    diff-autogen:  Same as diff except current_src vs. previous
     deploy:   deploy binary to directory <dir>
     deploydir: use <dir> as the default directory for deployment
     test:     Run test
     release:  Run release
+    release-autogen:  Run release from current_src directory
     clean:    Run make clean
     distclean:Run make distclean
     echo:     Turn on echo mode (set -x)
@@ -325,6 +338,11 @@ while [ $# -gt 0 ] ; do
             ;;
 	diff)
 	    cmddiff="diff"
+	    cmd=""
+	    ;;
+	diff-autogen)
+	    cmddiff="diff"
+            AUTOGEN="autogen"
 	    cmd=""
 	    ;;
 	deploy)
