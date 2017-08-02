@@ -1048,7 +1048,11 @@ fi
 if [ -z "$NODIFF" ]; then
 #    (cd $SNAPYARD/current;svn info | grep "Last Changed" >> $REPORTED 2>&1)
 #    $SNAPYARD/$SNAPSHOT diff >> $DIFFLOG 2>&1
-    $SNAPSHOT diff >> $DIFFLOG 2>&1
+    if [ -n "$AUTOGEN" ]; then
+        $SNAPSHOT diff-autogen >> $DIFFLOG 2>&1
+    else
+        $SNAPSHOT diff >> $DIFFLOG 2>&1
+    fi
     errcode=$?
     # check the errcode only if NOT in DEBUG MODE
     if [ -z "$DEBUGMODE" -a $errcode -eq 0 ]; then
