@@ -624,7 +624,7 @@ if [ "$cmd" = "all" -o -n "$cmdtest" -o -n "$cmddiff" ]; then
     # setup if srcdir is used.
     if [ -z "$srcdir" ]; then
 	TESTDIR=${CURRENT}
-    else
+    elif [ -z "$cmddiff" ]; then 
 	#create TESTDIR if not exist yet
 	case "$SRCDIRNAME" in
 	"")
@@ -642,15 +642,16 @@ if [ "$cmd" = "all" -o -n "$cmdtest" -o -n "$cmddiff" ]; then
         TESTDIR=`pwd -P`
         cd ${CURRENT}
     fi
-    # Make sure current version exists and is clean
-    if [ -d ${TESTDIR} ]; then
-        DISTCLEAN    
-    else
-	errcode=$?
-        snapshot=no
-        exit $errcode
+    if [ -z "$cmddiff" ]; then
+        # Make sure current version exists and is clean
+        if [ -d ${TESTDIR} xxx]; then
+            DISTCLEAN    
+        else
+	    errcode=$?
+            snapshot=no
+            exit $errcode
+        fi
     fi
-
     # Compare it with the previous version.  Compare only files listed in
     # the MANIFEST plus the MANIFEST itself.
     if [ -d ${PREVIOUS} ]; then
