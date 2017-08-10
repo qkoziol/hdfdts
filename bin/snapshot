@@ -644,7 +644,7 @@ if [ "$cmd" = "all" -o -n "$cmdtest" -o -n "$cmddiff" ]; then
     fi
     if [ -z "$cmddiff" ]; then
         # Make sure current version exists and is clean
-        if [ -d ${TESTDIR} xxx]; then
+        if [ -d ${TESTDIR} ]; then
             DISTCLEAN    
         else
 	    errcode=$?
