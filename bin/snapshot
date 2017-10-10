@@ -529,6 +529,9 @@ if [ "$cmd" = help ]; then
    DISPLAYUSAGE
 fi
 
+TODAY=`date +%m%d%a`
+THIS_MINUTE=`date +%H%M`
+
 # Setup the proper configure option (--with-zlib) to use zlib library
 # provide ZLIB is non-empty.
 ZLIB=${ZLIB:+"--with-zlib="$ZLIB}
