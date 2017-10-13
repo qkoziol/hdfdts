@@ -4,7 +4,7 @@ SOURCE_CHECKOUT()
     if [ "${HOSTNAME}" = "jam" ]; then
         echo "Creating fresh clone of ssh://git@bitbucket.hdfgroup.org:7999/hdfeos/h4h5tools.git in $BASEDIR/current"
         # Check out the current version from source repository.
-        (cd $BASEDIR; rm -rf current; git clone ssh://git@bitbucket.hdfgroup.org:7999/hdfeos/h4h5tools.git; mv h4h5tools current ) || exit 1
+        (cd $BASEDIR; rm -rf current; git clone ssh://git@bitbucket.hdfgroup.org:7999/hdfeos/h4h5tools.git current ) || exit 1
       fi
 }
 
@@ -13,10 +13,17 @@ RUNCONFIGURE()
     if [ "${CURRENT}" != "${TESTDIR}" ] && [ $CPSRC ]; then
         cp -pr ${CURRENT}/* ${TESTDIR}
         cd ${TESTDIR}
+        if [ -z "$DEPLOYDIRNAME" ]; then
+            INSTALLDIR=${TESTDIR}/installdir
+            ./${CONFIGURE} --prefix=$INSTALLDIR
+        else
+            ./${CONFIGURE}
+        fi
+    elif [ -z "$DEPLOYDIRNAME" ]; then
         INSTALLDIR=${TESTDIR}/installdir
-        ./${CONFIGURE} --prefix=$INSTALLDIR
-    else
         ${srcdir:+${CURRENT}/}${CONFIGURE} --prefix=$INSTALLDIR
+    else
+        ${srcdir:+${CURRENT}/}${CONFIGURE}
     fi
 }
 

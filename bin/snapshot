@@ -529,6 +529,9 @@ if [ "$cmd" = help ]; then
    DISPLAYUSAGE
 fi
 
+TODAY=`date +%m%d%a`
+THIS_MINUTE=`date +%H%M`
+
 # Setup the proper configure option (--with-zlib) to use zlib library
 # provide ZLIB is non-empty.
 ZLIB=${ZLIB:+"--with-zlib="$ZLIB}
@@ -548,6 +551,9 @@ if [ ! -d ${BASEDIR} ]; then
     echo "BASEDIR ($BASEDIR) does not exist"
     exit 1
 fi
+
+# Setup Mailing command
+MAIL=mail
 
 CURRENT=${BASEDIR}/current
 PREVIOUS=${BASEDIR}/previous
@@ -746,6 +752,18 @@ if [ "$cmd" = "all" -o -n "$cmdtest" -o -n "$cmddiff" ]; then
             FAIL_SECTION=`cat ${TESTDIR}/failsection`
             echo "Failed running ${FAIL_SECTION}"
 	    snapshot=no
+            # Save failed test directory for examination of possible core file.  
+            # Check for available space at least equal to the failed directory
+            # could be done, but for now we care more about saving the failed 
+            #directory than about whether tests can continue.
+            mv ${TESTDIR} ${TESTDIR}_${TODAY}_${THIS_MINUTE}
+            # print log message and send email to hdftest that failed directory was saved.
+            echo "Test failed.  Test directory and files from failed test were saved in "
+            echo "${TESTDIR}_${TODAY}_${THIS_MINUTE}."
+            ( echo "Notice:  Failed test directory ${TESTDIR} was moved to ${TESTDIR}_${TODAY}_${THIS_MINUTE}. The directory should be examined and  moved or deleted to avoid filling the /scr drive."
+            ) | $MAIL -s "Failed test directory saved" hdftest
+
+            mkdir ${TESTDIR}
 	    exit $errcode
 	fi
     elif [ $CPSRC ]; then
