@@ -209,6 +209,7 @@ elif [[ $TEST_COMPILER == "xl" ]]; then
 elif [[ $TEST_COMPILER == "emu64" ]]; then
     make_bin="gmake"
     make_opt=""
+    alias make="gmake"
     export CC="cc"
     export FC="f90"
     FCFLAGS="$FCFLAGS -O2 -m64"
