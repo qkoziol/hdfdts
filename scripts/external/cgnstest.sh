@@ -107,6 +107,7 @@ if [[ $TEST_COMPILER == "" ]]; then # System default compiler, exclude dash in t
 	export FC="f90"
 	export FLIBS="-lm"
 	export LIBS="-lm"
+        alias make="gmake"
 	CMAKE_EXE_LINKER_FLAGS=""
         export LD_LIBRARY_PATH="/opt/solarisstudio/lib:$LD_LIBRARY_PATH"
     else
@@ -209,7 +210,6 @@ elif [[ $TEST_COMPILER == "xl" ]]; then
 elif [[ $TEST_COMPILER == "emu64" ]]; then
     make_bin="gmake"
     make_opt=""
-    alias make="gmake"
     export CC="cc"
     export FC="f90"
     FCFLAGS="$FCFLAGS -O2 -m64"
