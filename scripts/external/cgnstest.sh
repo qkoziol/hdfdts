@@ -101,13 +101,12 @@ if [[ $TEST_COMPILER == "" ]]; then # System default compiler, exclude dash in t
     DASH=""
     HDF_DIR="/mnt/scr1/pre-release/hdf5/$HDF_VERSION/$UNAME$DASH$TEST_COMPILER"
 
-    if [[ $OSTYPE == "SunOS" ]];then
+    if [[ $OSTYPE == "sunos" ]];then
 	make_bin="gmake"
 	export CC="cc"
 	export FC="f90"
 	export FLIBS="-lm"
 	export LIBS="-lm"
-        alias make="gmake -j 4"
 	CMAKE_EXE_LINKER_FLAGS=""
         export LD_LIBRARY_PATH="/opt/solarisstudio/lib:$LD_LIBRARY_PATH"
     else
