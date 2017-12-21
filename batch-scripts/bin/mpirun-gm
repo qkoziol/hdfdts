@@ -1,0 +1,20 @@
+#!/bin/sh
+
+for x in $HOME/bin/loginhosts.$USER $HOME/bin/loginhosts /home/ncsa/acheng/bin/loginhosts; do
+    if [ -r $x ]; then
+        mymachinefile=$x
+        break
+    fi
+done
+PBS_NODEFILE=${PBS_NODEFILE:-$mymachinefile}
+
+# parse options
+while [ $# -gt 0 ]; do
+    if [ $1 = -echo ]; then
+        set -x
+    else
+        args="$args $1"
+    fi
+    shift
+done
+mpirun -machinefile $PBS_NODEFILE $args
