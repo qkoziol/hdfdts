@@ -226,7 +226,6 @@ else
     exit 1
 fi
 
-
 #Check to make sure directory exists
 if [ ! -d "$HDF_DIR" ]; then
     echo " *** TESTING SCRIPT ERROR ***"
