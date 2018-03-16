@@ -378,8 +378,8 @@ if [[ $do_test != 0 ]]; then
 #	cd ..
 #    fi
 
-    git clone https://github.com/CGNS/CGNS.git
-    #git clone $BASEDIR/current/CGNS
+    #git clone https://github.com/CGNS/CGNS.git
+    git clone $BASEDIR/current/CGNS
     if [[ $? != 0 ]]; then
 	echo " *** TESTING SCRIPT ERROR ***"
 	echo "   - FAILED COMMAND: git clone $BASEDIR/current/CGNS"
