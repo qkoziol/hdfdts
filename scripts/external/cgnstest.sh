@@ -64,7 +64,7 @@ HDF_DIR="0"
 
 
 # Set odd/even days of the week
-day=$(( $(date +%u) % 2 ))
+day=$(( $(date +%d) % 2 ))
 
 SHARED_STATUS="--disable-shared"
 CGNS_SHARED_STATUS="-D CGNS_BUILD_SHARED:BOOL=OFF -D CGNS_USE_SHARED:BOOL=OFF"
@@ -78,6 +78,13 @@ else #odd day tests
    CGNS_SHARED_STATUS="-D CGNS_BUILD_SHARED:BOOL=ON -D CGNS_USE_SHARED:BOOL=ON"
 fi
 
+if [ $(( day % 4 )) -eq 0 ]; then
+  echo "every 4th day"  
+  HDF_VERSION="v18"
+else
+  HDF_VERSION="vdev"
+fi
+
 TEST_DIR="test.$TEST_NO"
 
 # COMPILER TESTS: LINKED TO THE CORRESPONDING COMPILED HDF5 LIBRARY
@@ -88,9 +95,6 @@ CMAKE_EXE_LINKER_FLAGS='-Wl,--no-as-needed -ldl'
 
 export FCFLAGS=""
 export CFLAGS=""
-
-
-HDF_VERSION="vdev"
 
 DASH="-"
 HDF_DIR="/mnt/scr1/pre-release/hdf5/$HDF_VERSION/$UNAME$DASH$TEST_COMPILER" # default, but changed in "" case below.
@@ -179,23 +183,18 @@ elif [[ $TEST_COMPILER == "pgi" ]]; then
     export FC="pgf90"
     export LIBS="-ldl"
 elif [[ $TEST_COMPILER == "pp" ]]; then
-    #HDF_VERSION="v18"
     HDF_DIR="/mnt/scr1/pre-release/hdf5/$HDF_VERSION/$UNAME$DASH$TEST_COMPILER"
-    MPI="/mnt/hdf/packages/mpich/3.1.4_gnu4.9.2/$PROC/bin"
-    export CC="$MPI/mpicc"
-    export FC="$MPI/mpif90"
+    export CC="mpicc"
+    export FC="mpif90"
     export FFLAGS=""
     if [[ $SHARED_STATUS == "--enable-shared" ]]; then 
 	FCFLAGS="$FCFLAGS -fPIC"
 	CFLAGS="$CFLAGS -fPIC"
     fi
 elif [[ $TEST_COMPILER == "openmpi" ]]; then
-    HDF_VERSION="v18"
     HDF_DIR="/mnt/scr1/pre-release/hdf5/$HDF_VERSION/$UNAME$DASH$TEST_COMPILER"
-    # using OpenMPI module, previously loaded?
-    MPI="/opt/pkgs/software/OpenMPI/2.0.1-GCC-4.9.3/bin"
-    export CC="$MPI/mpicc"
-    export FC="$MPI/mpif90"
+    export CC="mpicc"
+    export FC="mpif90"
     if [[ $SHARED_STATUS == "--enable-shared" ]]; then 
 	FCFLAGS="$FCFLAGS -fPIC"
 	CFLAGS="$CFLAGS -fPIC"
@@ -271,6 +270,7 @@ if [[ $TEST_SZIP == 0 ]]; then
     CGNS_ENABLE_SZIP="ON -D SZIP_LIBRARY:PATH=$SZIP/libsz.a"
 fi
 
+
 if [[ $TEST_NO == 1 ]]; then
     WITH_FORTRAN="--with-fortran=yes"
     CGNS_ENABLE_FORTRAN="-D CGNS_ENABLE_FORTRAN:BOOL=ON"
@@ -308,7 +308,7 @@ elif [[ $TEST_NO == 5 ]]; then
     WITH_FORTRAN="--with-fortran=yes"
     CGNS_ENABLE_FORTRAN="-D CGNS_ENABLE_FORTRAN:BOOL=ON"
     WITH_HDF5="$ENABLE_SZIP --with-zlib --with-hdf5=$HDF_DIR"
-    ENABLE_PARALLEL="--with-mpi=$MPI --enable-parallel"
+    ENABLE_PARALLEL="--enable-parallel"
     ENABLE_64BIT="--enable-64bit"
     CGNS_ENABLE_64BIT="-D CGNS_ENABLE_64BIT:BOOL=ON"
     ENABLE_LFS="--enable-lfs"
@@ -320,7 +320,7 @@ elif [[ $TEST_NO == 5 ]]; then
 elif [[ $TEST_NO == 6 ]]; then
     WITH_FORTRAN="--with-fortran=yes"
     CGNS_ENABLE_FORTRAN="-D CGNS_ENABLE_FORTRAN:BOOL=ON"
-    ENABLE_PARALLEL="--with-mpi=$MPI --enable-parallel"
+    ENABLE_PARALLEL="--enable-parallel"
     WITH_HDF5="$ENABLE_SZIP --with-zlib --with-hdf5=$HDF_DIR"
     ENABLE_LEGACY="--enable-legacy"
     CGNS_ENABLE_HDF5="-D CGNS_ENABLE_HDF5:BOOL=ON -D CMAKE_PREFIX_PATH=$HDF_DIR -D HDF5_NEED_ZLIB:BOOL=ON -D HDF5_NEED_SZIP:BOOL=$CGNS_ENABLE_SZIP"
@@ -362,7 +362,6 @@ do_test=1 # default is to perform the tests
 #	export LIBS="-Wl,--no-as-needed -ldl"
 #	ENABLE_64BIT="--enable-64bit"
 #	ENABLE_PARALLEL="--enable-parallel"
-#	WITH_MPI="--with-mpi=$MPI"
 #    else
 #	do_test=0
 #    fi
@@ -379,8 +378,8 @@ if [[ $do_test != 0 ]]; then
 #	cd ..
 #    fi
 
-    #git clone https://github.com/CGNS/CGNS.git
-    git clone $BASEDIR/current/CGNS
+    git clone https://github.com/CGNS/CGNS.git
+    #git clone $BASEDIR/current/CGNS
     if [[ $? != 0 ]]; then
 	echo " *** TESTING SCRIPT ERROR ***"
 	echo "   - FAILED COMMAND: git clone $BASEDIR/current/CGNS"
