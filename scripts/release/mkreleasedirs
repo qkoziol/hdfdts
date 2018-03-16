@@ -1,0 +1,48 @@
+#!/bin/sh
+
+# script to create directories for release source, and binary tar files for release testing.
+
+# arguments required: directory path where directories should be created
+#                     one or more release subdirectories - e.g. release pre1 pre2
+#                     directories that exist will not be overwritten
+
+# structure of release subdirectories to be created:
+#
+#    <release subdirectory name specified> 
+#        binaries
+#            unix
+#                extra
+#            windows
+#                extra
+#        CMake
+#            unix
+#            windows
+#        source
+
+if [ "$#" -lt 2 ]; then
+  echo "Usage: $0 DIRECTORY subdirectory ..." >&2
+  exit 1
+fi
+TOPDIR=$1
+shift
+if ! [ -d "$TOPDIR" ]; then
+  echo "Create $TOPDIR"
+  mkdir -p $TOPDIR
+  chmod 775 $TOPDIR
+  mkdir $TOPDIR/dailytest
+  mkdir $TOPDIR/dailytest-dev
+  mkdir $TOPDIR/thg-builds
+fi
+while [ "$#" -ge 1 ]; do
+  if ! [ -d "$TOPDIR/$1" ]; then
+    "Create $TOPDIR/$1 and subdirectories"
+    mkdir -p $TOPDIR/$1/binaries/unix/extra
+    mkdir -p $TOPDIR/$1/binaries/windows/extra
+    mkdir -p $TOPDIR/$1/CMake/unix
+    mkdir -p $TOPDIR/$1/CMake/unix
+    mkdir -p $TOPDIR/$1/source
+    chmod 775 -R $TOPDIR/$1
+  fi
+  shift
+done
+

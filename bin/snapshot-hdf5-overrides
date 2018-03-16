@@ -12,11 +12,18 @@ COMMITSNAPSHOT()
    git add release_docs/RELEASE.txt hl/src/H5LTparse.c hl/src/H5LTparse.h
    git add config/cmake/scripts/HDF5config.cmake
 
-   # "cmdrel" can be "" or "release" or "autogen-release".  "release" should
-   # commit the change to configure because it is already in source control.
-   # Checking whether configure is "modified" or "new" may be a better way to
-   # determine whether it should be added to the commit.   
-   if [ "cmdrel" = "release" ]; then
+   # When the configure file is source controlled it should also be added
+   # to the commit;  otherwise the "snap" version in the previous directory
+   # will be different than the version in the git clone in the current 
+   # directory, and tests will always run even though source code hasn't 
+   # changed.  The configure file is source controlled in the hdf5_1_8 
+   # branch and should be also in all release branches, but is not source
+   # controlled in develop or in support branches hdf5_1_10 and above.
+   # The best indicator I've found to determine whether configure should be
+   # added to the commit is that if USE_MAINTAINER_MODE=no is found in 
+   # configure, configure should be added to the commit.
+   grep_result=`grep USE_MAINTAINER_MODE=no configure`
+   if [ "$grep_result" != "" ]; then
       git add configure
    fi
 
