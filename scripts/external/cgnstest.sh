@@ -366,6 +366,13 @@ do_test=1 # default is to perform the tests
 #	do_test=0
 #    fi
 
+## USED FOR TESTING REPO
+#CGNS_SRC=https://github.com/CGNS/CGNS.git
+## USED FOR TESING LOCAL COPY
+#CGNS_SRC=$BASEDIR/current/CGNS
+## USED FOR TESTING FORKS
+CGNS_SRC="https://github.com/MicK7/CGNS.git"
+
 autotools_status=0
 if [[ $do_test != 0 ]]; then  
 
@@ -378,11 +385,10 @@ if [[ $do_test != 0 ]]; then
 #	cd ..
 #    fi
 
-    #git clone https://github.com/CGNS/CGNS.git
-    git clone $BASEDIR/current/CGNS
+    git clone $CGNS_SRC
     if [[ $? != 0 ]]; then
 	echo " *** TESTING SCRIPT ERROR ***"
-	echo "   - FAILED COMMAND: git clone $BASEDIR/current/CGNS"
+	echo "   - FAILED COMMAND: git clone $CGNS_SRC"
 	exit 1
     fi
 
@@ -462,11 +468,10 @@ if [ -d "$TEST_DIR" ]; then
     cd $TEST_DIR
     
     if [[ $do_test != 0 ]]; then
-        # git clone https://github.com/CGNS/CGNS.git CGNS_SRC
-	git clone $BASEDIR/current/CGNS CGNS_SRC
+	git clone $CGNS_SRC
 	if [[ $? != 0 ]]; then
 	    echo " *** TESTING SCRIPT ERROR ***"
-	    echo "   - FAILED COMMAND: git clone $BASEDIR/current/CGNS CGNS_SRC"
+	    echo "   - FAILED COMMAND: git clone $CGNS_SRC CGNS_SRC"
 	    exit 1
 	fi
 	if [[ $BRANCH != "" ]]; then
