@@ -35,6 +35,7 @@ FCFLAGS="-g"
 # set to change to testing a different branch (default is develop)
 BRANCH=""
 #BRANCH="master"
+BRANCH="ngon_new_definition"
 
 # lower case OSTYPE
 OSTYPE=`echo $OSTYPE | tr '[:upper:]' '[:lower:]'`
