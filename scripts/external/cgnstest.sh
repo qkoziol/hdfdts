@@ -32,6 +32,13 @@ fi
 CFLAGS="-g"
 FCFLAGS="-g"
 
+## USED FOR TESTING REPO
+#CGNS_SRC=https://github.com/CGNS/CGNS.git
+## USED FOR TESING LOCAL COPY
+#CGNS_SRC=$BASEDIR/current/CGNS
+## USED FOR TESTING FORKS
+CGNS_SRC="https://github.com/MicK7/CGNS.git"
+
 # set to change to testing a different branch (default is develop)
 BRANCH=""
 #BRANCH="master"
@@ -366,13 +373,6 @@ do_test=1 # default is to perform the tests
 #    else
 #	do_test=0
 #    fi
-
-## USED FOR TESTING REPO
-#CGNS_SRC=https://github.com/CGNS/CGNS.git
-## USED FOR TESING LOCAL COPY
-#CGNS_SRC=$BASEDIR/current/CGNS
-## USED FOR TESTING FORKS
-CGNS_SRC="https://github.com/MicK7/CGNS.git"
 
 autotools_status=0
 if [[ $do_test != 0 ]]; then  
