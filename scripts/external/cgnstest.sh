@@ -32,12 +32,14 @@ fi
 CFLAGS="-g"
 FCFLAGS="-g"
 
+BASEDIR=/mnt/scr1/SnapTest/snapshots-cgns
+
+## USED FOR TESING LOCAL COPY
+CGNS_SRC=$BASEDIR/current/CGNS
 ## USED FOR TESTING REPO
 #CGNS_SRC=https://github.com/CGNS/CGNS.git
-## USED FOR TESING LOCAL COPY
-#CGNS_SRC=$BASEDIR/current/CGNS
 ## USED FOR TESTING FORKS
-CGNS_SRC="https://github.com/MicK7/CGNS.git"
+##CGNS_SRC="https://github.com/MicK7/CGNS.git"
 
 # set to change to testing a different branch (default is develop)
 BRANCH=""
@@ -50,7 +52,6 @@ OSTYPE=`echo $OSTYPE | tr '[:upper:]' '[:lower:]'`
 # Remove the domain name if present
 UNAME=`echo $UNAME | sed 's;\..*;;'`
 
-BASEDIR=/mnt/scr1/SnapTest/snapshots-cgns
 
 # READ COMMAND LINE FOR THE TEST TO RUN
 NARGS=$#
@@ -469,7 +470,7 @@ if [ -d "$TEST_DIR" ]; then
     cd $TEST_DIR
     
     if [[ $do_test != 0 ]]; then
-	git clone $CGNS_SRC
+	git clone $CGNS_SRC CGNS_SRC
 	if [[ $? != 0 ]]; then
 	    echo " *** TESTING SCRIPT ERROR ***"
 	    echo "   - FAILED COMMAND: git clone $CGNS_SRC CGNS_SRC"
