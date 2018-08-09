@@ -14,8 +14,7 @@ SOURCE_CHECKOUT()
         echo "Delete CGNS directory and do a fresh clone of CGNS source."
         cd ${BASEDIR}/current
         rm -rf ${BASEDIR}/current/CGNS
-        #git clone -b develop https://github.com/CGNS/CGNS.git
-        git clone -b ngon_new_definition https://github.com/MicK7/CGNS.git
+        git clone -b develop https://github.com/CGNS/CGNS.git
         cd ${BASEDIR}
     else
         echo "CGNS source has not changed since yesterday. No testing today."
