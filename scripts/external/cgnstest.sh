@@ -40,7 +40,7 @@ CGNS_SRC=$BASEDIR/current/CGNS
 #CGNS_SRC=https://github.com/CGNS/CGNS.git
 
 # set to change to testing a different branch (default is develop)
-BRANCH="CompactStorage"
+BRANCH="CompactStorageRev"
 #BRANCH="master"
 
 # lower case OSTYPE
