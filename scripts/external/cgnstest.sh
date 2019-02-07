@@ -171,8 +171,12 @@ elif [[ $TEST_COMPILER == gcc* ]]; then
     fi
 
 elif [[ $TEST_COMPILER == "intel" ]]; then
-   if [[ $UNAME == "osx1011test" ]];then
-      /opt/intel/compilers_and_libraries_2016.2.146/mac/bin/compilervars.sh -arch ia32 -platform mac
+
+    if [[ $OSTYPE == "darwin"* ]];then
+       HOSTNAME=`hostname -s`
+       if [[ $HOSTNAME == "osx1011test" ]];then
+          /opt/intel/compilers_and_libraries_2016.2.146/mac/bin/compilervars.sh -arch ia32 -platform mac
+       fi
     fi
     export CC="icc"
     export FC="ifort"
