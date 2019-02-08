@@ -174,8 +174,8 @@ elif [[ $TEST_COMPILER == "intel" ]]; then
 
     if [[ $OSTYPE == "darwin"* ]];then
        HOSTNAME=`hostname -s`
-       if [[ $HOSTNAME == "osx1011test" && $TEST_NO == 1 ]];then
-          source /opt/intel/compilers_and_libraries_2016.2.146/mac/bin/compilervars.sh -arch ia32 -platform mac
+       if [[ $HOSTNAME == "osx1011test" ]];then
+          source /opt/intel/compilers_and_libraries_2016.2.146/mac/bin/compilervars.sh -arch intel64 -platform mac
        fi
     fi
 
