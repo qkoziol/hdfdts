@@ -392,7 +392,7 @@ if [[ $do_test != 0 ]]; then
 #	cd ..
 #    fi
 
-    git clone https://github.com/CGNS/CGNS.git $CGNS_SRC
+    git clone https://github.com/CGNS/CGNS.git
 #    git clone $CGNS_SRC
     if [[ $? != 0 ]]; then
 	echo " *** TESTING SCRIPT ERROR ***"
