@@ -1,7 +1,50 @@
 #!/bin/bash -l
 
-HDF5_VER="1.11.4"
+#Defaults
 
+HDF5_VER="1.11.4"
+KNL="false"
+
+# READ COMMAND LINE FOR THE TEST TO RUN
+
+POSITIONAL=()
+while [[ $# -gt 0 ]]
+do
+key="$1"
+
+case $key in
+    -v|--version)
+    HDF5_VER="$2"
+    shift # past argument
+    shift # past value
+    ;;
+    -knl)
+    KNL="true"
+    shift # past argument
+    ;;
+    -h|--help)
+    echo "USAGE: nnsa.sh [-v,--version x.x.x] [-knl] [-h,--help]
+
+    where:
+
+       -v,--version x.x.x    hdf5 version to test [default: 1.11.4]
+       -knl                  compile for KNL [default: no]
+       -h,--help             show this help text"
+    exit 0
+    ;;
+    *)    # unknown option
+    POSITIONAL+=("$1") # save it in an array for later
+    shift # past argument
+    ;;
+esac
+done
+set -- "${POSITIONAL[@]}" # restore positional parameters
+
+# Summary of command line inputs
+echo "HDF5_VER: $HDF5_VER"
+echo "KNL: $KNL"
+
+# Get the host name
 UNAME="unknown"
 if [ -x /usr/bin/uname ]
 then
@@ -34,62 +77,57 @@ ln -s hdf5-$HDF5_VER/config/cmake/scripts/CTestScript.cmake .
 ln -s hdf5-$HDF5_VER/config/cmake/scripts/HDF5config.cmake .
 ln -s hdf5-$HDF5_VER/config/cmake/scripts/HDF5options.cmake .
 
-# CROSS-COMPILATION
-# TODO:: INPUT TO SCRIPT
-CCOMP=""
-#CCOMP="KNL"
-KNL="false"
+
 HPC=""
-if [[ $CCOMP == "KNL" ]];then
-    KNL="true"
-fi
-
-# Get the curent PrgEnv module setting
-module list &> out
-PRGENV_TYPE=`grep -i PrgEnv out | sed -e 's/.*PrgEnv-\(.*\)\/.*/\1/'`
-
 if [[ $UNAME == "mutrino" ]];then
+# Get the curent PrgEnv module setting
+    module list &> out
+    PRGENV_TYPE=`grep -i PrgEnv out | sed -e 's/.*PrgEnv-\(.*\)\/.*/\1/'`
     module unload craype-hugepages2M
+
     module load cmake
-# unload the current PrgEnv and compiler assoicated with PrgEnv
+# unload the current PrgEnv and compiler associated with PrgEnv
     module unload PrgEnv-$PRGENV_TYPE
     module unload $PRGENV_TYPE
 # the modules to test
 #   the PrgEnv to test
-    MPI_MOD="PrgEnv-gnu/6.0.4 PrgEnv-intel/6.0.4"
+    MASTER_MOD="PrgEnv-gnu/6.0.4 PrgEnv-intel/6.0.4"
 #   the Compiler to switch to:
-#    Format: <number of compiler versions to check> <compiler type> <list of compiler versions (modules) ... repeat) 
-    CC_MOD=(2 gcc gcc/4.9.3 gcc/7.2.0 2 intel intel/16.0.3 intel/18.0.2)
+#    Format: <number of compiler versions to check> <compiler type> <list of compiler versions (modules) ... repeat)
+    CC_VER=(2 gcc gcc/4.9.3 gcc/7.2.0 2 intel intel/16.0.3 intel/18.0.2)
     HPC="sbatch"
 fi
 module list
 
 icnt=-1
-for mpi_mod in $MPI_MOD; do
-  icnt=$(($icnt+1))
-  num_CC=${CC_MOD[$icnt]}
-  icnt=$(($icnt+1))
-  CC_VER=${CC_MOD[$icnt]}
-  for i in `seq 1 $num_CC`; do
-    icnt=$(($icnt+1))
-    cc_mod=${CC_MOD[$icnt]}
-    
-    module load $mpi_mod
+for master_mod in $MASTER_MOD; do
 
-    module unload $CC_VER
-    module load $cc_mod
+  icnt=$(($icnt+1))
+  num_CC=${CC_VER[$icnt]} # number of compilers for the  master_mod
+
+  icnt=$(($icnt+1))
+  module load $master_mod # Load the master module
+
+  module unload ${CC_VER[$icnt]} # unload the general compiler type
+
+  for i in `seq 1 $num_CC`; do # loop over compiler versions
+    icnt=$(($icnt+1))
+    cc_ver=${CC_VER[$icnt]} # compiler version
+
+    module load $cc_ver # load the compiler with version
 
     export CC=cc
     export FC=ftn
     export CXX=CC
 
-#    module list
+#DEBUG    module list
 
-    echo "timeout 3h ctest . -S HDF5config.cmake,SITE_BUILDNAME_SUFFIX=\"$mpi_mod $cc_mod\",HPC=\"$HPC\",MPI=\"true\",KNL=\"$KNL\",BUILD_GENERATOR=Unix -C Release -VV -O hdf5.log"
-    timeout 3h ctest . LOCAL_SUBMIT=true MODEL="HPC" -S HDF5config.cmake,SITE_BUILDNAME_SUFFIX="$mpi_mod",HPC="$HPC",MPI="true",KNL="$KNL",BUILD_GENERATOR=Unix -C Release -VV -O hdf5.log
+    echo "timeout 3h ctest . -S HDF5config.cmake,SITE_BUILDNAME_SUFFIX=\"$master_mod $cc_ver\",HPC=\"$HPC\",MPI=\"true\",KNL=\"$KNL\",BUILD_GENERATOR=Unix,LOCAL_SUBMIT=true,MODEL=HPC -C Release -VV -O hdf5.log"
+    timeout 3h ctest . -S HDF5config.cmake,SITE_BUILDNAME_SUFFIX="$master_mod",HPC="$HPC",MPI="true",KNL="$KNL",BUILD_GENERATOR=Unix,LOCAL_SUBMIT=true,MODEL=HPC -C Release -VV -O hdf5.log
 
-    module unload $mpi_mod
-    module unload $cc_mod
-    rm -fr build
+    module unload $cc_ver  # unload the compiler with version
+
+    rm -fr build 
   done
+  module unload $master_mod # 
 done
