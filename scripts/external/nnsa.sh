@@ -79,7 +79,7 @@ ln -s hdf5-$HDF5_VER/config/cmake/scripts/HDF5options.cmake .
 
 
 HPC=""
-if [[ $UNAME == "mutrino" ]];then
+if [[ $UNAME == mutrino* ]];then
 # Get the curent PrgEnv module setting
     module list &> out
     PRGENV_TYPE=`grep -i PrgEnv out | sed -e 's/.*PrgEnv-\(.*\)\/.*/\1/'`
@@ -96,6 +96,16 @@ if [[ $UNAME == "mutrino" ]];then
 #    Format: <number of compiler versions to check> <compiler type> <list of compiler versions (modules) ... repeat)
     CC_VER=(2 gcc gcc/4.9.3 gcc/7.2.0 2 intel intel/16.0.3 intel/18.0.2)
     HPC="sbatch"
+
+elif [[ $UNAME == eclipse* ]]; then
+
+    module purge
+    module load cmake
+
+    MASTER_MOD="intel-mpi/2018"
+    CC_VER=(2 intel intel/16.0 intel/18.0)
+    HPC="sbatch"
+
 fi
 module list
 
