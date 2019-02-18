@@ -11,15 +11,19 @@ POSITIONAL=()
 while [[ $# -gt 0 ]]
 do
 key="$1"
-
 case $key in
     -v|--version)
     HDF5_VER="$2"
     shift # past argument
     shift # past value
     ;;
+    -a|--account)
+    CTEST_OPTS="LOCAL_BATCH_SCRIPT_ARGS=$2,$CTEST_OPTS"
+    shift # past argument
+    shift # past value
+    ;;
     -knl)
-    KNL="true"
+    CTEST_OPTS="KNL=true,$CTEST_OPTS"
     shift # past argument
     ;;
     -h|--help)
@@ -29,6 +33,7 @@ case $key in
 
        -v,--version x.x.x    hdf5 version to test [default: 1.11.4]
        -knl                  compile for KNL [default: no]
+       -a,--acount id        batch job account 
        -h,--help             show this help text"
     exit 0
     ;;
@@ -42,7 +47,7 @@ set -- "${POSITIONAL[@]}" # restore positional parameters
 
 # Summary of command line inputs
 echo "HDF5_VER: $HDF5_VER"
-echo "KNL: $KNL"
+echo "MISC OPTIONS: $CTEST_OPTS"
 
 # Get the host name
 UNAME="unknown"
@@ -77,8 +82,6 @@ ln -s hdf5-$HDF5_VER/config/cmake/scripts/CTestScript.cmake .
 ln -s hdf5-$HDF5_VER/config/cmake/scripts/HDF5config.cmake .
 ln -s hdf5-$HDF5_VER/config/cmake/scripts/HDF5options.cmake .
 
-
-HPC=""
 if [[ $UNAME == mutrino* ]];then
 # Get the curent PrgEnv module setting
     module list &> out
@@ -95,7 +98,11 @@ if [[ $UNAME == mutrino* ]];then
 #   the Compiler to switch to:
 #    Format: <number of compiler versions to check> <compiler type> <list of compiler versions (modules) ... repeat)
     CC_VER=(2 gcc gcc/4.9.3 gcc/7.2.0 2 intel intel/16.0.3 intel/18.0.2)
-    HPC="sbatch"
+    CTEST_OPTS="HPC=sbatch,$CTEST_OPTS"
+
+    _CC=cc
+    _FC=ftn
+    _CXX=CC
 
 elif [[ $UNAME == eclipse* ]]; then
 
@@ -104,7 +111,11 @@ elif [[ $UNAME == eclipse* ]]; then
 
     MASTER_MOD="intel-mpi/2018"
     CC_VER=(2 intel intel/16.0 intel/18.0)
-    HPC="sbatch"
+    HPC="HPC=sbatch,$CTEST_OPTS"
+
+    _CC=mpicc
+    _FC=mpif90
+    _CXX=mpicxx
 
 fi
 module list
@@ -126,18 +137,18 @@ for master_mod in $MASTER_MOD; do
 
     module load $cc_ver # load the compiler with version
 
-    export CC=cc
-    export FC=ftn
-    export CXX=CC
+    export CC=$_CC
+    export FC=$_FC
+    export CXX=$_CXX
 
-#DEBUG    module list
+    module list
 
-    echo "timeout 3h ctest . -S HDF5config.cmake,SITE_BUILDNAME_SUFFIX=\"$master_mod $cc_ver\",HPC=\"$HPC\",MPI=\"true\",KNL=\"$KNL\",BUILD_GENERATOR=Unix,LOCAL_SUBMIT=true,MODEL=HPC -C Release -VV -O hdf5.log"
-    timeout 3h ctest . -S HDF5config.cmake,SITE_BUILDNAME_SUFFIX="$master_mod",HPC="$HPC",MPI="true",KNL="$KNL",BUILD_GENERATOR=Unix,LOCAL_SUBMIT=true,MODEL=HPC -C Release -VV -O hdf5.log
+    echo "timeout 3h ctest . -S HDF5config.cmake,SITE_BUILDNAME_SUFFIX=\"$master_mod_$cc_ver\",MPI=true,BUILD_GENERATOR=Unix,LOCAL_SUBMIT=true,MODEL=HPC,$CTEST_OPTS -C Release -VV -O hdf5.log"
+    timeout 3h ctest . -S HDF5config.cmake,SITE_BUILDNAME_SUFFIX="$master_mod$cc_ver",MPI=true,BUILD_GENERATOR=Unix,LOCAL_SUBMIT=true,MODEL=HPC,$CTEST_OPTS -C Release -VV -O hdf5.log
 
     module unload $cc_ver  # unload the compiler with version
 
     rm -fr build 
   done
-  module unload $master_mod # 
+  module unload $master_mod #unload master module 
 done
