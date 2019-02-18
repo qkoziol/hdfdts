@@ -6,7 +6,7 @@ HDF5_VER="1.11.4"
 KNL="false"
 
 # READ COMMAND LINE FOR THE TEST TO RUN
-
+CTEST_OPTS=""
 POSITIONAL=()
 while [[ $# -gt 0 ]]
 do
@@ -111,7 +111,7 @@ elif [[ $UNAME == eclipse* ]]; then
 
     MASTER_MOD="intel-mpi/2018"
     CC_VER=(2 intel intel/16.0 intel/18.0)
-    HPC="HPC=sbatch,$CTEST_OPTS"
+    CTEST_OPTS="HPC=sbatch,$CTEST_OPTS"
 
     _CC=mpicc
     _FC=mpif90
@@ -143,8 +143,8 @@ for master_mod in $MASTER_MOD; do
 
     module list
 
-    echo "timeout 3h ctest . -S HDF5config.cmake,SITE_BUILDNAME_SUFFIX=\"$master_mod_$cc_ver\",MPI=true,BUILD_GENERATOR=Unix,LOCAL_SUBMIT=true,MODEL=HPC,$CTEST_OPTS -C Release -VV -O hdf5.log"
-    timeout 3h ctest . -S HDF5config.cmake,SITE_BUILDNAME_SUFFIX="$master_mod$cc_ver",MPI=true,BUILD_GENERATOR=Unix,LOCAL_SUBMIT=true,MODEL=HPC,$CTEST_OPTS -C Release -VV -O hdf5.log
+    echo "timeout 3h ctest . -S HDF5config.cmake,SITE_BUILDNAME_SUFFIX=\"$master_mod\",${CTEST_OPTS}MPI=true,BUILD_GENERATOR=Unix,LOCAL_SUBMIT=true,MODEL=HPC -C Release -VV -O hdf5.log"
+    timeout 3h ctest . -S HDF5config.cmake,SITE_BUILDNAME_SUFFIX="$master_mod",${CTEST_OPTS}MPI=true,BUILD_GENERATOR=Unix,LOCAL_SUBMIT=true,MODEL=HPC -C Release -VV -O hdf5.log
 
     module unload $cc_ver  # unload the compiler with version
 
