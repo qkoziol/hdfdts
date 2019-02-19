@@ -35,10 +35,10 @@ FCFLAGS="-g"
 BASEDIR=/mnt/scr1/SnapTest/snapshots-cgns
 
 ## USED FOR TESING LOCAL COPY
-CGNS_SRC=$BASEDIR/current/CGNS
+#CGNS_SRC=$BASEDIR/current/CGNS
 ## USED FOR TESTING REPO (DOES NOT WORK ON OLDER MACHINES)
 #CGNS_SRC=https://github.com/CGNS/CGNS.git
-
+CGNS_SRC=https://github.com/brtnfld/CGNS.git
 # set to change to testing a different branch (default is develop)
 #BRANCH="CompactStorageRev"
 #BRANCH="master"
