@@ -302,7 +302,7 @@ elif [[ $TEST_NO == 2 ]]; then
 elif [[ $TEST_NO == 3 ]]; then
     WITH_FORTRAN="--with-fortran=no"
     CGNS_ENABLE_FORTRAN="-D CGNS_ENABLE_FORTRAN:BOOL=OFF"
-    WITH_HDF5="$ENABLE_SZIP  --with-hdf5=$HDF_DIR"
+    WITH_HDF5="  --with-hdf5=$HDF_DIR"
     ENABLE_64BIT="--enable-64bit"
     CGNS_ENABLE_64BIT="-D CGNS_ENABLE_64BIT:BOOL=ON"
     ENABLE_LEGACY="--enable-legacy"
@@ -315,14 +315,14 @@ elif [[ $TEST_NO == 3 ]]; then
 elif [[ $TEST_NO == 4 ]]; then
     WITH_FORTRAN="--with-fortran=yes"
     CGNS_ENABLE_FORTRAN="-D CGNS_ENABLE_FORTRAN:BOOL=ON"
-    WITH_HDF5="$ENABLE_SZIP  --with-hdf5=$HDF_DIR"
+    WITH_HDF5="  --with-hdf5=$HDF_DIR"
     ENABLE_LFS="--enable-lfs"
     CGNS_ENABLE_LFS="-D CGNS_ENABLE_LFS:BOOL=ON"
     CGNS_ENABLE_HDF5="-D CGNS_ENABLE_HDF5:BOOL=ON -D CMAKE_PREFIX_PATH=$HDF_DIR -D HDF5_NEED_ZLIB:BOOL=ON -D HDF5_NEED_SZIP:BOOL=$CGNS_ENABLE_SZIP"
 elif [[ $TEST_NO == 5 ]]; then
     WITH_FORTRAN="--with-fortran=yes"
     CGNS_ENABLE_FORTRAN="-D CGNS_ENABLE_FORTRAN:BOOL=ON"
-    WITH_HDF5="$ENABLE_SZIP  --with-hdf5=$HDF_DIR"
+    WITH_HDF5="  --with-hdf5=$HDF_DIR"
     ENABLE_PARALLEL="--enable-parallel"
     ENABLE_64BIT="--enable-64bit"
     CGNS_ENABLE_64BIT="-D CGNS_ENABLE_64BIT:BOOL=ON"
@@ -336,7 +336,7 @@ elif [[ $TEST_NO == 6 ]]; then
     WITH_FORTRAN="--with-fortran=yes"
     CGNS_ENABLE_FORTRAN="-D CGNS_ENABLE_FORTRAN:BOOL=ON"
     ENABLE_PARALLEL="--enable-parallel"
-    WITH_HDF5="$ENABLE_SZIP --with-hdf5=$HDF_DIR"
+    WITH_HDF5=" --with-hdf5=$HDF_DIR"
     ENABLE_LEGACY="--enable-legacy"
     CGNS_ENABLE_HDF5="-D CGNS_ENABLE_HDF5:BOOL=ON -D CMAKE_PREFIX_PATH=$HDF_DIR -D HDF5_NEED_ZLIB:BOOL=ON -D HDF5_NEED_SZIP:BOOL=$CGNS_ENABLE_SZIP"
     CGNS_ENABLE_PARALLEL="-D CGNS_ENABLE_PARALLEL:BOOL=ON -D HDF5_NEED_MPI:BOOL=ON"
@@ -408,14 +408,14 @@ if [[ $do_test != 0 ]]; then
     fi
     echo "./configure \
         $WITH_HDF5 $WITH_FORTRAN $ENABLE_PARALLEL $ENABLE_64BIT $ENABLE_LFS \
-        $ENABLE_LEGACY $ENABLE_SCOPE $ENABLE_LFS $ENABLE_SZIP $ENABLE_DEBUG \
+        $ENABLE_LEGACY $ENABLE_SCOPE $ENABLE_LFS  $ENABLE_DEBUG \
         --prefix=$PWD/cgns_build \
         $SHARED_STATUS \
         --disable-cgnstools"
     cd CGNS/src
     ./configure \
 	$WITH_HDF5 $WITH_FORTRAN $ENABLE_PARALLEL $ENABLE_64BIT $ENABLE_LFS \
- 	$ENABLE_LEGACY $ENABLE_SCOPE $ENABLE_LFS $ENABLE_SZIP $ENABLE_DEBUG \
+ 	$ENABLE_LEGACY $ENABLE_SCOPE $ENABLE_LFS  $ENABLE_DEBUG \
         --prefix=$PWD/cgns_build \
 	$SHARED_STATUS \
 	--disable-cgnstools
