@@ -281,7 +281,7 @@ TEST_SZIP=`grep -iq "szip" $H5CC;echo $?`
 if [[ $TEST_SZIP == 0 ]]; then
     SZIP=`cat $H5CC | grep "H5BLD_LDFLAGS=" | sed -e 's/.*H5BLD_LDFLAGS=" -L\(.*\) ".*/\1/'`
 #    SZIP=`cat $HDF_DIR/bin/h5*cc | grep "H5BLD_LDFLAGS=" | sed -e 's/.*H5BLD_LDFLAGS=" -L\(.*\) ".*/\1/'`
-    ENABLE_SZIP="--with-szip=$SZIP/libsz.a"
+#    ENABLE_SZIP="--with-szip=$SZIP/libsz.a"
     CGNS_ENABLE_SZIP="ON -D SZIP_LIBRARY:PATH=$SZIP/libsz.a"
 fi
 
@@ -302,7 +302,7 @@ elif [[ $TEST_NO == 2 ]]; then
 elif [[ $TEST_NO == 3 ]]; then
     WITH_FORTRAN="--with-fortran=no"
     CGNS_ENABLE_FORTRAN="-D CGNS_ENABLE_FORTRAN:BOOL=OFF"
-    WITH_HDF5="$ENABLE_SZIP --with-zlib --with-hdf5=$HDF_DIR"
+    WITH_HDF5="$ENABLE_SZIP  --with-hdf5=$HDF_DIR"
     ENABLE_64BIT="--enable-64bit"
     CGNS_ENABLE_64BIT="-D CGNS_ENABLE_64BIT:BOOL=ON"
     ENABLE_LEGACY="--enable-legacy"
@@ -315,14 +315,14 @@ elif [[ $TEST_NO == 3 ]]; then
 elif [[ $TEST_NO == 4 ]]; then
     WITH_FORTRAN="--with-fortran=yes"
     CGNS_ENABLE_FORTRAN="-D CGNS_ENABLE_FORTRAN:BOOL=ON"
-    WITH_HDF5="$ENABLE_SZIP --with-zlib --with-hdf5=$HDF_DIR"
+    WITH_HDF5="$ENABLE_SZIP  --with-hdf5=$HDF_DIR"
     ENABLE_LFS="--enable-lfs"
     CGNS_ENABLE_LFS="-D CGNS_ENABLE_LFS:BOOL=ON"
     CGNS_ENABLE_HDF5="-D CGNS_ENABLE_HDF5:BOOL=ON -D CMAKE_PREFIX_PATH=$HDF_DIR -D HDF5_NEED_ZLIB:BOOL=ON -D HDF5_NEED_SZIP:BOOL=$CGNS_ENABLE_SZIP"
 elif [[ $TEST_NO == 5 ]]; then
     WITH_FORTRAN="--with-fortran=yes"
     CGNS_ENABLE_FORTRAN="-D CGNS_ENABLE_FORTRAN:BOOL=ON"
-    WITH_HDF5="$ENABLE_SZIP --with-zlib --with-hdf5=$HDF_DIR"
+    WITH_HDF5="$ENABLE_SZIP  --with-hdf5=$HDF_DIR"
     ENABLE_PARALLEL="--enable-parallel"
     ENABLE_64BIT="--enable-64bit"
     CGNS_ENABLE_64BIT="-D CGNS_ENABLE_64BIT:BOOL=ON"
@@ -336,7 +336,7 @@ elif [[ $TEST_NO == 6 ]]; then
     WITH_FORTRAN="--with-fortran=yes"
     CGNS_ENABLE_FORTRAN="-D CGNS_ENABLE_FORTRAN:BOOL=ON"
     ENABLE_PARALLEL="--enable-parallel"
-    WITH_HDF5="$ENABLE_SZIP --with-zlib --with-hdf5=$HDF_DIR"
+    WITH_HDF5="$ENABLE_SZIP --with-hdf5=$HDF_DIR"
     ENABLE_LEGACY="--enable-legacy"
     CGNS_ENABLE_HDF5="-D CGNS_ENABLE_HDF5:BOOL=ON -D CMAKE_PREFIX_PATH=$HDF_DIR -D HDF5_NEED_ZLIB:BOOL=ON -D HDF5_NEED_SZIP:BOOL=$CGNS_ENABLE_SZIP"
     CGNS_ENABLE_PARALLEL="-D CGNS_ENABLE_PARALLEL:BOOL=ON -D HDF5_NEED_MPI:BOOL=ON"
