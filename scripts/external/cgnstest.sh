@@ -138,7 +138,7 @@ if [[ $TEST_COMPILER == "" ]]; then # System default compiler, exclude dash in t
 	    export LDFLAGS="$HDF_DIR/lib/libhdf5.dylib"
 
 	    # CURRENTLY DOES NOT SUPPORT SHARED BUILDS ON MAC, CGNS-66
-	  #  SHARED_STATUS="--disable-shared"
+	    SHARED_STATUS="--disable-shared"
 	    CGNS_SHARED_STATUS="-D CGNS_BUILD_SHARED:BOOL=OFF -D CGNS_USE_SHARED:BOOL=OFF"
 	fi
     fi
