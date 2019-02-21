@@ -124,7 +124,6 @@ if [[ $TEST_COMPILER == "" ]]; then # System default compiler, exclude dash in t
 	export CC="gcc"
 	export FC="gfortran"
 
-	
 	if [[ $SHARED_STATUS == "--enable-shared" ]]; then 
 	    FCFLAGS="$FCFLAGS -fPIC"
 	    CFLAGS="$CFLAGS -fPIC"
@@ -282,6 +281,7 @@ if [[ $TEST_SZIP == 0 ]]; then
     SZIP=`cat $H5CC | grep "H5BLD_LDFLAGS=" | sed -e 's/.*H5BLD_LDFLAGS=" -L\(.*\) ".*/\1/'`
 #    SZIP=`cat $HDF_DIR/bin/h5*cc | grep "H5BLD_LDFLAGS=" | sed -e 's/.*H5BLD_LDFLAGS=" -L\(.*\) ".*/\1/'`
 #    ENABLE_SZIP="--with-szip=$SZIP/libsz.a"
+    export LD_LIBRARY_PATH="$LD_LIBRARY_PATH:$SZIP"
     CGNS_ENABLE_SZIP="ON -D SZIP_LIBRARY:PATH=$SZIP/libsz.a"
 fi
 
