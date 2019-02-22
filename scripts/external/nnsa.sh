@@ -2,8 +2,9 @@
 
 #Defaults
 
-HDF5_VER="1.11.4"
+HDF5_VER="1.10.5-pre1"
 KNL="false"
+HDF5_BRANCH="hdf5_1_10_5"
 
 # READ COMMAND LINE FOR THE TEST TO RUN
 CTEST_OPTS=""
@@ -76,7 +77,15 @@ UNAME=`echo $UNAME | sed 's;\..*;;'`
 mkdir -p CI; cd CI
 rm -rf hdf5-$HDF5_VER build hdf5.log Failed*
 sleep 1
-git clone https://git@bitbucket.hdfgroup.org/scm/hdffv/hdf5.git hdf5-$HDF5_VER
+
+if [[ $HDF5_BRANCH == "" ]]; then
+  git clone https://git@bitbucket.hdfgroup.org/scm/hdffv/hdf5.git hdf5-$HDF5_VER
+else
+  git clone https://git@bitbucket.hdfgroup.org/scm/hdffv/hdf5.git -b $HDF5_BRANCH hdf5-$HDF5_VER
+fi
+
+sleep 1
+rm -f CTestScript.cmake HDF5config.cmake HDF5options.cmake
 sleep 1
 ln -s hdf5-$HDF5_VER/config/cmake/scripts/CTestScript.cmake .
 ln -s hdf5-$HDF5_VER/config/cmake/scripts/HDF5config.cmake .
@@ -117,6 +126,20 @@ elif [[ $UNAME == eclipse* ]]; then
     _FC=mpif90
     _CXX=mpicxx
 
+elif [[ $UNAME == quartz* ]]; then
+
+    module purge
+    module load cmake/3.12.1
+    module load intel/16.0.4
+
+    MASTER_MOD="openmpi/4.0.0 openmpi/4.0.0 openmpi/4.0.0"
+    CC_VER=(1 intel intel/16.0.4 2 gcc gcc/4.9.3 gcc/4.8-redhat 1 clang clang/3.9.0)
+    CTEST_OPTS="HPC=sbatch,$CTEST_OPTS"
+
+    _CC=mpicc
+    _FC=mpif90
+    _CXX=mpicxx
+
 fi
 module list
 
@@ -136,6 +159,8 @@ for master_mod in $MASTER_MOD; do
     cc_ver=${CC_VER[$icnt]} # compiler version
 
     module load $cc_ver # load the compiler with version
+    module load $master_mod
+    module load cmake/3.12.1
 
     export CC=$_CC
     export FC=$_FC
@@ -143,8 +168,8 @@ for master_mod in $MASTER_MOD; do
 
     module list
 
-    echo "timeout 3h ctest . -S HDF5config.cmake,SITE_BUILDNAME_SUFFIX=\"$master_mod\",${CTEST_OPTS}MPI=true,BUILD_GENERATOR=Unix,LOCAL_SUBMIT=true,MODEL=HPC -C Release -VV -O hdf5.log"
-    timeout 3h ctest . -S HDF5config.cmake,SITE_BUILDNAME_SUFFIX="$master_mod",${CTEST_OPTS}MPI=true,BUILD_GENERATOR=Unix,LOCAL_SUBMIT=true,MODEL=HPC -C Release -VV -O hdf5.log
+    echo "timeout 3h ctest . -S HDF5config.cmake,SITE_BUILDNAME_SUFFIX=\"$HDF5_VER-$master_mod-$cc_ver\",${CTEST_OPTS}MPI=true,BUILD_GENERATOR=Unix,LOCAL_SUBMIT=true,MODEL=HPC -C Release -VV -O hdf5.log"
+    timeout 3h ctest . -S HDF5config.cmake,SITE_BUILDNAME_SUFFIX="$HDF5_VER-$master_mod--$cc_ver",${CTEST_OPTS}MPI=true,BUILD_GENERATOR=Unix,LOCAL_SUBMIT=true,MODEL=HPC -C Release -VV -O hdf5.log
 
     module unload $cc_ver  # unload the compiler with version
 
@@ -152,3 +177,4 @@ for master_mod in $MASTER_MOD; do
   done
   module unload $master_mod #unload master module 
 done
+
