@@ -91,7 +91,7 @@ if [ $(( day % 4 )) -eq 0 ]; then
 else
   HDF_VERSION="vdev"
 fi
-
+HDF_VERSION="vdev"
 TEST_DIR="test.$TEST_NO"
 
 # COMPILER TESTS: LINKED TO THE CORRESPONDING COMPILED HDF5 LIBRARY
@@ -177,6 +177,8 @@ elif [[ $TEST_COMPILER == "intel" ]]; then
        if [[ $HOSTNAME == "osx1011test" ]];then
           source /opt/intel/compilers_and_libraries_2016.2.146/mac/bin/compilervars.sh -arch intel64 -platform mac
        fi
+       # CURRENTLY DOES NOT SUPPORT SHARED BUILDS ON MAC, CGNS-66
+       SHARED_STATUS="--disable-shared"
     fi
 
     export CC="icc"
@@ -195,7 +197,18 @@ elif [[ $TEST_COMPILER == "intel" ]]; then
 elif [[ $TEST_COMPILER == "pgi" ]]; then
     export CC="pgcc"
     export FC="pgf90"
-    export LIBS="-ldl"
+##    export LIBS="-ldl"
+elif [[ $TEST_COMPILER == "nag" ]]; then
+    export CC="gcc"
+    export FC="nagfor"
+    export FLIBS="-ldl"
+    CMAKE_EXE_LINKER_FLAGS='-ldl'
+elif [[ $TEST_COMPILER == "intel-nag" ]]; then
+    export CC="icc"
+    export FC="nagfor"
+    export LIBS="-ldl -limf -lirc -lsvml"
+    export FLIBS="-ldl"
+    CMAKE_EXE_LINKER_FLAGS='-ldl'
 elif [[ $TEST_COMPILER == "pp" ]]; then
     HDF_DIR="/mnt/scr1/pre-release/hdf5/$HDF_VERSION/$UNAME$DASH$TEST_COMPILER"
     export CC="mpicc"
