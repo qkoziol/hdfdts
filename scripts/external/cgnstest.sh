@@ -206,7 +206,7 @@ elif [[ $TEST_COMPILER == "nag" ]]; then
 elif [[ $TEST_COMPILER == "intel-nag" ]]; then
     export CC="icc"
     export FC="nagfor"
-    export LIBS="-ldl -limf -lirc -lsvml"
+    export LIBS="-ldl"
     export FLIBS="-ldl"
     CMAKE_EXE_LINKER_FLAGS='-ldl'
 elif [[ $TEST_COMPILER == "pp" ]]; then
