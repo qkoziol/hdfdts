@@ -33,7 +33,6 @@ CFLAGS="-g"
 FCFLAGS="-g"
 
 BASEDIR=/mnt/scr1/SnapTest/snapshots-cgns
-BASEDIR=/mnt/scr1/brtnfld
 
 ## USED FOR TESING LOCAL COPY
 CGNS_SRC=$BASEDIR/current/CGNS
@@ -206,10 +205,10 @@ elif [[ $TEST_COMPILER == "nag" ]]; then
 elif [[ $TEST_COMPILER == "intel-nag" ]]; then
     export CC="icc"
     export FC="nagfor"
-    export LIBS="-ldl"
+    export LIBS="-ldl "
     export FLIBS="-ldl"
     CMAKE_EXE_LINKER_FLAGS='-ldl'
-elif [[ $TEST_COMPILER == "pp" ]]; then
+elif [[ $TEST_COMPILER == "pp"* ]]; then
     HDF_DIR="/mnt/scr1/pre-release/hdf5/$HDF_VERSION/$UNAME$DASH$TEST_COMPILER"
     export CC="mpicc"
     export FC="mpif90"
