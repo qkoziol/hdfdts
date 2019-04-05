@@ -208,16 +208,7 @@ elif [[ $TEST_COMPILER == "intel-nag" ]]; then
     export LIBS="-ldl "
     export FLIBS="-ldl"
     CMAKE_EXE_LINKER_FLAGS='-ldl'
-elif [[ $TEST_COMPILER == "pp"* ]]; then
-    HDF_DIR="/mnt/scr1/pre-release/hdf5/$HDF_VERSION/$UNAME$DASH$TEST_COMPILER"
-    export CC="mpicc"
-    export FC="mpif90"
-    export FFLAGS=""
-    if [[ $SHARED_STATUS == "--enable-shared" ]]; then 
-	FCFLAGS="$FCFLAGS -fPIC"
-	CFLAGS="$CFLAGS -fPIC"
-    fi
-elif [[ $TEST_COMPILER == "openmpi" ]]; then
+elif [[ $TEST_COMPILER == "pp"* || $TEST_COMPILER == "openmpi"* ]]; then
     HDF_DIR="/mnt/scr1/pre-release/hdf5/$HDF_VERSION/$UNAME$DASH$TEST_COMPILER"
     export CC="mpicc"
     export FC="mpif90"
