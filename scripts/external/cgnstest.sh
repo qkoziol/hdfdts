@@ -70,7 +70,7 @@ HDF_DIR="0"
 
 
 # Set odd/even days of the week
-day=$(( $(date +%d) % 2 ))
+day=$(( $(date +%-d) % 2 ))
 
 SHARED_STATUS="--disable-shared"
 CGNS_SHARED_STATUS="-D CGNS_BUILD_SHARED:BOOL=OFF -D CGNS_USE_SHARED:BOOL=OFF"
