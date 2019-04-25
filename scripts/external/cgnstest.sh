@@ -103,6 +103,7 @@ CMAKE_EXE_LINKER_FLAGS='-Wl,--no-as-needed -ldl'
 export FCFLAGS=""
 export CFLAGS=""
 
+
 DASH="-"
 HDF_DIR="/mnt/scr1/pre-release/hdf5/$HDF_VERSION/$UNAME$DASH$TEST_COMPILER" # default, but changed in "" case below.
 
@@ -200,7 +201,8 @@ elif [[ $TEST_COMPILER == "pp" ]]; then
     HDF_DIR="/mnt/scr1/pre-release/hdf5/$HDF_VERSION/$UNAME$DASH$TEST_COMPILER"
     export CC="mpicc"
     export FC="mpif90"
-    export FFLAGS=""
+    export FFLAGS=""  
+    #export MPIEXEC="mpiexec -n 10"
     if [[ $SHARED_STATUS == "--enable-shared" ]]; then 
 	FCFLAGS="$FCFLAGS -fPIC"
 	CFLAGS="$CFLAGS -fPIC"
@@ -436,7 +438,7 @@ if [[ $do_test != 0 ]]; then
 	echo "CGNS INSTALL #FAILED"
 	autotools_status=$status
     fi
-    $make_bin test &> ../../../results.$TEST_NO.txt
+    timeout 1h $make_bin test &> ../../../results.$TEST_NO.txt
     status=$?
     cat ../../../results.$TEST_NO.txt
     if [[ $status != 0 ]]; then
@@ -537,7 +539,7 @@ if [ -d "$TEST_DIR" ]; then
 	    echo "CGNS CMAKE BUILD #FAILED"
 	    cmake_status=$status
 	fi
-	$make_bin test
+	timeout 1h $make_bin test
 	status=$?
 	if [[ $status != 0 ]]; then
 	    echo "CGNS CMAKE TESTING #FAILED"
