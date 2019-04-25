@@ -1,4 +1,10 @@
 #!/bin/bash
+
+NO_COLOR="\033[0m"
+OK_COLOR="\033[32;01m"
+WARN_COLOR="\033[33;01m"
+ERROR_COLOR="\033[31;01m"
+
 #
 #
 # Platypus (64 bit CentOS6)
@@ -33,7 +39,6 @@ CFLAGS="-g"
 FCFLAGS="-g"
 
 BASEDIR=/mnt/scr1/SnapTest/snapshots-cgns
-BASEDIR=/mnt/scr1/brtnfld
 
 ## USED FOR TESING LOCAL COPY
 CGNS_SRC=$BASEDIR/current/CGNS
@@ -41,7 +46,7 @@ CGNS_SRC=$BASEDIR/current/CGNS
 #CGNS_SRC=https://github.com/CGNS/CGNS.git
 
 # set to change to testing a different branch (default is develop)
-#BRANCH="CompactStorageRev"
+BRANCH="CompactStorageRev"
 #BRANCH="master"
 
 # lower case OSTYPE
@@ -71,7 +76,8 @@ HDF_DIR="0"
 
 
 # Set odd/even days of the week
-day=$(( $(date +%d) % 2 ))
+day_date="$(date +%-d)"
+day=$(( $(date +%-d) % 2 ))
 
 SHARED_STATUS="--disable-shared"
 CGNS_SHARED_STATUS="-D CGNS_BUILD_SHARED:BOOL=OFF -D CGNS_USE_SHARED:BOOL=OFF"
@@ -85,13 +91,17 @@ else #odd day tests
    CGNS_SHARED_STATUS="-D CGNS_BUILD_SHARED:BOOL=ON -D CGNS_USE_SHARED:BOOL=ON"
 fi
 
-if [ $(( day % 4 )) -eq 0 ]; then
-  echo "every 4th day"  
-  HDF_VERSION="v18"
-else
-  HDF_VERSION="vdev"
-fi
+# Check different versions of HDF5 
 
+HDF_VERSION="vdev"
+if [ $(( day_date % 7 )) -eq 0 ]; then
+  echo "every 7th day"
+  HDF_VERSION="v110"
+  if [ $(( day_date % 14 )) -eq 0 ]; then
+      echo "every 14th day"
+      HDF_VERSION="v18"
+  fi
+fi
 TEST_DIR="test.$TEST_NO"
 
 # COMPILER TESTS: LINKED TO THE CORRESPONDING COMPILED HDF5 LIBRARY
@@ -178,6 +188,8 @@ elif [[ $TEST_COMPILER == "intel" ]]; then
        if [[ $HOSTNAME == "osx1011test" ]];then
           source /opt/intel/compilers_and_libraries_2016.2.146/mac/bin/compilervars.sh -arch intel64 -platform mac
        fi
+       # CURRENTLY DOES NOT SUPPORT SHARED BUILDS ON MAC, CGNS-66
+       SHARED_STATUS="--disable-shared"
     fi
 
     export CC="icc"
@@ -196,18 +208,19 @@ elif [[ $TEST_COMPILER == "intel" ]]; then
 elif [[ $TEST_COMPILER == "pgi" ]]; then
     export CC="pgcc"
     export FC="pgf90"
-    export LIBS="-ldl"
-elif [[ $TEST_COMPILER == "pp" ]]; then
-    HDF_DIR="/mnt/scr1/pre-release/hdf5/$HDF_VERSION/$UNAME$DASH$TEST_COMPILER"
-    export CC="mpicc"
-    export FC="mpif90"
-    export FFLAGS=""  
-    #export MPIEXEC="mpiexec -n 10"
-    if [[ $SHARED_STATUS == "--enable-shared" ]]; then 
-	FCFLAGS="$FCFLAGS -fPIC"
-	CFLAGS="$CFLAGS -fPIC"
-    fi
-elif [[ $TEST_COMPILER == "openmpi" ]]; then
+##    export LIBS="-ldl"
+elif [[ $TEST_COMPILER == "nag" ]]; then
+    export CC="gcc"
+    export FC="nagfor"
+    export FLIBS="-ldl"
+    CMAKE_EXE_LINKER_FLAGS='-ldl'
+elif [[ $TEST_COMPILER == "intel-nag" ]]; then
+    export CC="icc"
+    export FC="nagfor"
+    export LIBS="-ldl "
+    export FLIBS="-ldl"
+    CMAKE_EXE_LINKER_FLAGS='-ldl'
+elif [[ $TEST_COMPILER == "pp"* || $TEST_COMPILER == "openmpi"* ]]; then
     HDF_DIR="/mnt/scr1/pre-release/hdf5/$HDF_VERSION/$UNAME$DASH$TEST_COMPILER"
     export CC="mpicc"
     export FC="mpif90"
@@ -304,7 +317,7 @@ elif [[ $TEST_NO == 2 ]]; then
 elif [[ $TEST_NO == 3 ]]; then
     WITH_FORTRAN="--with-fortran=no"
     CGNS_ENABLE_FORTRAN="-D CGNS_ENABLE_FORTRAN:BOOL=OFF"
-    WITH_HDF5="  --with-hdf5=$HDF_DIR"
+    WITH_HDF5="--with-hdf5=$HDF_DIR"
     ENABLE_64BIT="--enable-64bit"
     CGNS_ENABLE_64BIT="-D CGNS_ENABLE_64BIT:BOOL=ON"
     ENABLE_LEGACY="--enable-legacy"
@@ -317,14 +330,14 @@ elif [[ $TEST_NO == 3 ]]; then
 elif [[ $TEST_NO == 4 ]]; then
     WITH_FORTRAN="--with-fortran=yes"
     CGNS_ENABLE_FORTRAN="-D CGNS_ENABLE_FORTRAN:BOOL=ON"
-    WITH_HDF5="  --with-hdf5=$HDF_DIR"
+    WITH_HDF5="--with-hdf5=$HDF_DIR"
     ENABLE_LFS="--enable-lfs"
     CGNS_ENABLE_LFS="-D CGNS_ENABLE_LFS:BOOL=ON"
     CGNS_ENABLE_HDF5="-D CGNS_ENABLE_HDF5:BOOL=ON -D CMAKE_PREFIX_PATH=$HDF_DIR -D HDF5_NEED_ZLIB:BOOL=ON -D HDF5_NEED_SZIP:BOOL=$CGNS_ENABLE_SZIP"
 elif [[ $TEST_NO == 5 ]]; then
     WITH_FORTRAN="--with-fortran=yes"
     CGNS_ENABLE_FORTRAN="-D CGNS_ENABLE_FORTRAN:BOOL=ON"
-    WITH_HDF5="  --with-hdf5=$HDF_DIR"
+    WITH_HDF5="--with-hdf5=$HDF_DIR"
     ENABLE_PARALLEL="--enable-parallel"
     ENABLE_64BIT="--enable-64bit"
     CGNS_ENABLE_64BIT="-D CGNS_ENABLE_64BIT:BOOL=ON"
@@ -332,13 +345,12 @@ elif [[ $TEST_NO == 5 ]]; then
     CGNS_ENABLE_LFS="-D CGNS_ENABLE_LFS:BOOL=ON"
     ENABLE_DEBUG="--enable-debug"
     CGNS_ENABLE_HDF5="-D CGNS_ENABLE_HDF5:BOOL=ON -D CMAKE_PREFIX_PATH=$HDF_DIR -D HDF5_NEED_ZLIB:BOOL=ON -D HDF5_NEED_SZIP:BOOL=$CGNS_ENABLE_SZIP"
-    echo "$CGNS_ENABLE_HDF5"
     CGNS_ENABLE_PARALLEL="-D CGNS_ENABLE_PARALLEL:BOOL=ON -D HDF5_NEED_MPI:BOOL=ON"
 elif [[ $TEST_NO == 6 ]]; then
     WITH_FORTRAN="--with-fortran=yes"
     CGNS_ENABLE_FORTRAN="-D CGNS_ENABLE_FORTRAN:BOOL=ON"
     ENABLE_PARALLEL="--enable-parallel"
-    WITH_HDF5=" --with-hdf5=$HDF_DIR"
+    WITH_HDF5="--with-hdf5=$HDF_DIR"
     ENABLE_LEGACY="--enable-legacy"
     CGNS_ENABLE_HDF5="-D CGNS_ENABLE_HDF5:BOOL=ON -D CMAKE_PREFIX_PATH=$HDF_DIR -D HDF5_NEED_ZLIB:BOOL=ON -D HDF5_NEED_SZIP:BOOL=$CGNS_ENABLE_SZIP"
     CGNS_ENABLE_PARALLEL="-D CGNS_ENABLE_PARALLEL:BOOL=ON -D HDF5_NEED_MPI:BOOL=ON"
@@ -386,6 +398,10 @@ do_test=1 # default is to perform the tests
 autotools_status=0
 if [[ $do_test != 0 ]]; then  
 
+    if [ -d "$TEST_DIR" ]; then
+        rm -fr $TEST_DIR
+    fi
+
     mkdir $TEST_DIR
     cd $TEST_DIR
 #    if [[ $HDF_DIR == 0 ]]; then
@@ -404,23 +420,36 @@ if [[ $do_test != 0 ]]; then
     fi
 
     if [[ $BRANCH != "" ]]; then
-      cd CGNS
-      git checkout $BRANCH
-      cd ..
+        printf "$WARN_COLOR ********************************************************************************* \n"
+        printf "  ____  ____      _    _   _  ____ _   _   _____ _____ ____ _____ ___ _   _  ____\n"
+        printf " | __ )|  _ \    / \  | \ | |/ ___| | | | |_   _| ____/ ___|_   _|_ _| \ | |/ ___|\n"
+        printf " |  _ \| |_) |  / _ \ |  \| | |   | |_| |   | | |  _| \___ \ | |  | ||  \| | |  _\n"
+        printf " | |_) |  _ <  / ___ \| |\  | |___|  _  |   | | | |___ ___) || |  | || |\  | |_| |\n"
+        printf " |____/|_| \_\/_/   \_\_| \_|\____|_| |_|   |_| |_____|____/ |_| |___|_| \_|\____|\n\n"
+        printf " *********************************************************************************\n"
+        printf " TESTING BRANCH ... $BRANCH $NO_COLOR \n"
+        echo ""
+        cd CGNS
+        git checkout -b $BRANCH origin/$BRANCH
+        cd ..
     fi
-    echo "./configure \
-        $WITH_HDF5 $WITH_FORTRAN $ENABLE_PARALLEL $ENABLE_64BIT $ENABLE_LFS \
-        $ENABLE_LEGACY $ENABLE_SCOPE $ENABLE_LFS  $ENABLE_DEBUG \
-        --prefix=$PWD/cgns_build \
-        $SHARED_STATUS \
-        --disable-cgnstools"
+
+    CONFIG_CMD="./configure"
+    CONFIG_CMD="$CONFIG_CMD $WITH_HDF5 $WITH_FORTRAN $ENABLE_PARALLEL $ENABLE_64BIT"
+    CONFIG_CMD="$CONFIG_CMD $ENABLE_LEGACY $ENABLE_SCOPE $ENABLE_LFS $ENABLE_DEBUG"
+    CONFIG_CMD="$CONFIG_CMD --prefix=$PWD/cgns_build $SHARED_STATUS --disable-cgnstools"
     cd CGNS/src
-    ./configure \
-	$WITH_HDF5 $WITH_FORTRAN $ENABLE_PARALLEL $ENABLE_64BIT $ENABLE_LFS \
- 	$ENABLE_LEGACY $ENABLE_SCOPE $ENABLE_LFS  $ENABLE_DEBUG \
-        --prefix=$PWD/cgns_build \
-	$SHARED_STATUS \
-	--disable-cgnstools
+    
+    echo "       ___   __  ____________  __________  ____  __   _____"
+    echo "      /   | / / / /_  __/ __ \/_  __/ __ \/ __ \/ /  / ___/"
+    echo "     / /| |/ / / / / / / / / / / / / / / / / / / /   \__ \ "
+    echo "    / ___ / /_/ / / / / /_/ / / / / /_/ / /_/ / /______/ / "
+    echo "   /_/  |_\____/ /_/  \____/ /_/  \____/\____/_____/____/  "
+    echo ""
+
+    echo "$CONFIG_CMD"
+    $CONFIG_CMD
+
     status=$?
     if [[ $status != 0 ]]; then
 	echo "CGNS CONFIGURE #FAILED"
@@ -479,6 +508,14 @@ if [ -d "$TEST_DIR" ]; then
     cd $TEST_DIR
     
     if [[ $do_test != 0 ]]; then
+
+        echo "       ________  ______    __ __ ______"
+        echo "      / ____/  |/  /   |  / //_// ____/"
+        echo "     / /   / /|_/ / /| | / ,<  / __/   "
+        echo "    / /___/ /  / / ___ |/ /| |/ /___   "
+        echo "    \____/_/  /_/_/  |_/_/ |_/_____/   "
+        echo ""
+
 	git clone $CGNS_SRC CGNS_SRC
 	if [[ $? != 0 ]]; then
 	    echo " *** TESTING SCRIPT ERROR ***"
