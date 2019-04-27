@@ -13,7 +13,7 @@ ERROR_COLOR="\033[31;01m"
 # OSX1010DEV Mac OS X 10.10.x
 # WREN Mac OS X 10.9.x
 # KITE Mac OS X 10.8.x
-
+TIMEOUT="timeout 1h"
 UNAME="unknown"
 if [ -x /usr/bin/uname ]
 then
@@ -147,7 +147,7 @@ if [[ $TEST_COMPILER == "" ]]; then # System default compiler, exclude dash in t
 	    	  
 	    export DYLD_LIBRARY_PATH="$PWD/$TEST_DIR/CGNS/src/lib" 
 	    export LDFLAGS="$HDF_DIR/lib/libhdf5.dylib"
-
+            TIMEOUT=""
 	    # CURRENTLY DOES NOT SUPPORT SHARED BUILDS ON MAC, CGNS-66
 	    SHARED_STATUS="--disable-shared"
 	    CGNS_SHARED_STATUS="-D CGNS_BUILD_SHARED:BOOL=OFF -D CGNS_USE_SHARED:BOOL=OFF"
@@ -467,7 +467,7 @@ if [[ $do_test != 0 ]]; then
 	echo "CGNS INSTALL #FAILED"
 	autotools_status=$status
     fi
-    timeout 1h $make_bin test &> ../../../results.$TEST_NO.txt
+    $TIMEOUT $make_bin test &> ../../../results.$TEST_NO.txt
     status=$?
     cat ../../../results.$TEST_NO.txt
     if [[ $status != 0 ]]; then
@@ -576,7 +576,7 @@ if [ -d "$TEST_DIR" ]; then
 	    echo "CGNS CMAKE BUILD #FAILED"
 	    cmake_status=$status
 	fi
-	timeout 1h $make_bin test
+	$TIMEOUT $make_bin test
 	status=$?
 	if [[ $status != 0 ]]; then
 	    echo "CGNS CMAKE TESTING #FAILED"
