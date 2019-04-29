@@ -179,6 +179,7 @@ elif [[ $TEST_COMPILER == gcc* ]]; then
 	export FLIBS=""
 	export LIBS=""
 	CMAKE_EXE_LINKER_FLAGS=""
+        TIMEOUT=""
     fi
 
 elif [[ $TEST_COMPILER == "intel" ]]; then
@@ -190,6 +191,7 @@ elif [[ $TEST_COMPILER == "intel" ]]; then
        fi
        # CURRENTLY DOES NOT SUPPORT SHARED BUILDS ON MAC, CGNS-66
        SHARED_STATUS="--disable-shared"
+       TIMEOUT=""
     fi
 
     export CC="icc"
@@ -203,6 +205,7 @@ elif [[ $TEST_COMPILER == "intel" ]]; then
         if [[ $OSTYPE == "darwin"* ]];then # needed for mac
 	  export DYLD_LIBRARY_PATH="$PWD/$TEST_DIR/CGNS/src/lib" 
 	  export LDFLAGS="$HDF_DIR/lib/libhdf5.dylib"
+          TIMEOUT=""
         fi
     fi
 elif [[ $TEST_COMPILER == "pgi" ]]; then
