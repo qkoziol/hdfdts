@@ -225,19 +225,30 @@ elif [[ $UNAME == lassen* ]]; then
     CC_VER=(1 xl xl/2019.02.07)
     #MASTER_MOD="spectrum-mpi spectrum-mpi spectrum-mpi"
     #CC_VER=(1 xl xl/2019.02.07 1 gcc gcc/7.3.1 1 clang clang/coral-2018.08.08)
-    CTEST_OPTS="HPC=bsub,$CTEST_OPTS"
+    CTEST_OPTS="HPC=bsub,SITE_OS_NAME=${HOSTNAME},$CTEST_OPTS"
 
     _CC=mpicc
     _FC=mpif90
     _CXX=mpicxx
 
 fi
+
+# ------------------------
+# www.olcf.ornl.gov
+# STATUS: ACTIVE
+# ------------------------
 if [[ $HOSTNAME == summit* ]]; then
 
-    echo 'set (ADD_BUILD_OPTIONS "${ADD_BUILD_OPTIONS} -DMPIEXEC_EXECUTABLE:STRING=jsrun -DSITE_OS_NAME:STRING=${HOSTNAME}")' >> hdf5-$HDF5_VER/config/cmake/scripts/HPC/bsub-HDF5options.cmake
+    echo 'set (ADD_BUILD_OPTIONS "${ADD_BUILD_OPTIONS} -DMPIEXEC_EXECUTABLE:STRING=jsrun")' >> hdf5-$HDF5_VER/config/cmake/scripts/HPC/bsub-HDF5options.cmake
 
     perl -i -pe "s/^ctest.*/ctest . -E MPI_TEST_ -C Release -j 32 -T test >& ctestS.out/" hdf5-$HDF5_VER/bin/batch/ctestS.lsf.in.cmake
     perl -i -pe "s/^ctest.*/ctest . -R MPI_TEST_ -C Release -T test >& ctestP.out/" hdf5-$HDF5_VER/bin/batch/ctestP.lsf.in.cmake
+
+# Custom BSUB commands
+    perl -i -pe "s/^#BSUB -G*/#BSUB -P ${LOCAL_BATCH_SCRIPT_ARGS}/" hdf5-$HDF5_VER/bin/batch/ctestS.lsf.in.cmake
+    perl -i -pe "s/^#BSUB -q*//" hdf5-$HDF5_VER/bin/batch/ctestS.lsf.in.cmake
+    perl -i -pe "s/^#BSUB -G*/#BSUB -P ${LOCAL_BATCH_SCRIPT_ARGS}/" hdf5-$HDF5_VER/bin/batch/ctestP.lsf.in.cmake
+    perl -i -pe "s/^#BSUB -q*//" hdf5-$HDF5_VER/bin/batch/ctestP.lsf.in.cmake
 
     module load cmake
     module load zlib
