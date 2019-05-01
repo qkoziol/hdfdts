@@ -51,6 +51,9 @@ esac
 done
 set -- "${POSITIONAL[@]}" # restore positional parameters
 
+# Check if we are on summit
+HOSTNAME=`hostname -d`
+
 # Get the host name
 UNAME="unknown"
 if [ -x /usr/bin/uname ]
@@ -229,6 +232,26 @@ elif [[ $UNAME == lassen* ]]; then
     _CXX=mpicxx
 
 fi
+if [[ $HOSTNAME == summit* ]]; then
+
+    echo 'set (ADD_BUILD_OPTIONS "${ADD_BUILD_OPTIONS} -DMPIEXEC_EXECUTABLE:STRING=jsrun -DSITE_OS_NAME:STRING=${HOSTNAME}")' >> hdf5-$HDF5_VER/config/cmake/scripts/HPC/bsub-HDF5options.cmake
+
+    perl -i -pe "s/^ctest.*/ctest . -E MPI_TEST_ -C Release -j 32 -T test >& ctestS.out/" hdf5-$HDF5_VER/bin/batch/ctestS.lsf.in.cmake
+    perl -i -pe "s/^ctest.*/ctest . -R MPI_TEST_ -C Release -T test >& ctestP.out/" hdf5-$HDF5_VER/bin/batch/ctestP.lsf.in.cmake
+
+    module load cmake
+    module load zlib
+
+    MASTER_MOD="spectrum-mpi"
+    CC_VER=(1 xl xl/16.1.1-1)
+
+    CTEST_OPTS="HPC=bsub,$CTEST_OPTS"
+
+    _CC=mpicc
+    _FC=mpif90
+    _CXX=mpicxx
+fi
+
 module list
 
 icnt=-1
