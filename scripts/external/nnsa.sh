@@ -24,6 +24,10 @@ case $key in
     ;;
     -a|--account)
     CTEST_OPTS="LOCAL_BATCH_SCRIPT_ARGS=$2,$CTEST_OPTS"
+    shift # past argument
+    shift # past value
+    ;;
+    -p)
     ACCOUNT=$2
     shift # past argument
     shift # past value
@@ -40,7 +44,8 @@ case $key in
        -v,--version x.x.x    hdf5 version to test 
                              [default is develop; do not specify version]
        -knl                  compile for KNL [default: no]
-       -a,--acount id        batch job account
+       -a,--acount id        specify job account on the batch command line
+       -p, id                specify job account in the batch script
        -h,--help             show this help text"
     exit 0
     ;;
