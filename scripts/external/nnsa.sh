@@ -225,7 +225,7 @@ elif [[ $UNAME == lassen* ]]; then
     CC_VER=(1 xl xl/2019.02.07)
     #MASTER_MOD="spectrum-mpi spectrum-mpi spectrum-mpi"
     #CC_VER=(1 xl xl/2019.02.07 1 gcc gcc/7.3.1 1 clang clang/coral-2018.08.08)
-    CTEST_OPTS="HPC=bsub,SITE_OS_NAME=${HOSTNAME},$CTEST_OPTS"
+    CTEST_OPTS="HPC=bsub,$CTEST_OPTS"
 
     _CC=mpicc
     _FC=mpif90
@@ -256,7 +256,7 @@ if [[ $HOSTNAME == summit* ]]; then
     MASTER_MOD="spectrum-mpi"
     CC_VER=(1 xl xl/16.1.1-1)
 
-    CTEST_OPTS="HPC=bsub,$CTEST_OPTS"
+    CTEST_OPTS="HPC=bsub,SITE_OS_NAME=${HOSTNAME},$CTEST_OPTS"
 
     _CC=mpicc
     _FC=mpif90
