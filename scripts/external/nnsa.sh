@@ -245,10 +245,10 @@ if [[ $HOSTNAME == summit* ]]; then
     perl -i -pe "s/^ctest.*/ctest . -R MPI_TEST_ -C Release -T test >& ctestP.out/" hdf5-$HDF5_VER/bin/batch/ctestP.lsf.in.cmake
 
 # Custom BSUB commands
-    perl -i -pe "s/^#BSUB -G*/#BSUB -P ${LOCAL_BATCH_SCRIPT_ARGS}/" hdf5-$HDF5_VER/bin/batch/ctestS.lsf.in.cmake
-    perl -i -pe "s/^#BSUB -q*//" hdf5-$HDF5_VER/bin/batch/ctestS.lsf.in.cmake
-    perl -i -pe "s/^#BSUB -G*/#BSUB -P ${LOCAL_BATCH_SCRIPT_ARGS}/" hdf5-$HDF5_VER/bin/batch/ctestP.lsf.in.cmake
-    perl -i -pe "s/^#BSUB -q*//" hdf5-$HDF5_VER/bin/batch/ctestP.lsf.in.cmake
+    perl -i -pe "s/^#BSUB -G.*/#BSUB -P ${LOCAL_BATCH_SCRIPT_ARGS}/" hdf5-$HDF5_VER/bin/batch/ctestS.lsf.in.cmake
+    perl -i -pe "s/^#BSUB -q.*//" hdf5-$HDF5_VER/bin/batch/ctestS.lsf.in.cmake
+    perl -i -pe "s/^#BSUB -G.*/#BSUB -P ${LOCAL_BATCH_SCRIPT_ARGS}/" hdf5-$HDF5_VER/bin/batch/ctestP.lsf.in.cmake
+    perl -i -pe "s/^#BSUB -q.*//" hdf5-$HDF5_VER/bin/batch/ctestP.lsf.in.cmake
 
     module load cmake
     module load zlib
