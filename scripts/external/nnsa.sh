@@ -24,6 +24,7 @@ case $key in
     ;;
     -a|--account)
     CTEST_OPTS="LOCAL_BATCH_SCRIPT_ARGS=$2,$CTEST_OPTS"
+    ACCOUNT=$2
     shift # past argument
     shift # past value
     ;;
@@ -245,9 +246,9 @@ if [[ $HOSTNAME == summit* ]]; then
     perl -i -pe "s/^ctest.*/ctest . -R MPI_TEST_ -C Release -T test >& ctestP.out/" hdf5-$HDF5_VER/bin/batch/ctestP.lsf.in.cmake
 
 # Custom BSUB commands
-    perl -i -pe "s/^#BSUB -G.*/#BSUB -P ${LOCAL_BATCH_SCRIPT_ARGS}/" hdf5-$HDF5_VER/bin/batch/ctestS.lsf.in.cmake
+    perl -i -pe "s/^#BSUB -G.*/#BSUB -P ${ACCOUNT}/" hdf5-$HDF5_VER/bin/batch/ctestS.lsf.in.cmake
     perl -i -pe "s/^#BSUB -q.*//" hdf5-$HDF5_VER/bin/batch/ctestS.lsf.in.cmake
-    perl -i -pe "s/^#BSUB -G.*/#BSUB -P ${LOCAL_BATCH_SCRIPT_ARGS}/" hdf5-$HDF5_VER/bin/batch/ctestP.lsf.in.cmake
+    perl -i -pe "s/^#BSUB -G.*/#BSUB -P ${ACCOUNT}/" hdf5-$HDF5_VER/bin/batch/ctestP.lsf.in.cmake
     perl -i -pe "s/^#BSUB -q.*//" hdf5-$HDF5_VER/bin/batch/ctestP.lsf.in.cmake
 
     module load cmake
