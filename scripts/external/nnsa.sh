@@ -247,7 +247,8 @@ if [[ $HOSTNAME == summit* ]]; then
 
     echo 'set (ADD_BUILD_OPTIONS "${ADD_BUILD_OPTIONS} -DMPIEXEC_EXECUTABLE:STRING=jsrun")' >> hdf5-$HDF5_VER/config/cmake/scripts/HPC/bsub-HDF5options.cmake
 
-    SKIP_TESTS="'MPI_TEST_testphdf5_cngrpw"
+    SKIP_TESTS="'"
+    SKIP_TESTS=$SKIP_TESTS"MPI_TEST_testphdf5_cngrpw"
     SKIP_TESTS=$SKIP_TESTS"|MPI_TEST_testphdf5_selnone"
     SKIP_TESTS=$SKIP_TESTS"|MPI_TEST_testphdf5_tldsc"
     SKIP_TESTS=$SKIP_TESTS"|MPI_TEST_testphdf5_ecdsetw"
@@ -261,7 +262,9 @@ if [[ $HOSTNAME == summit* ]]; then
     SKIP_TESTS=$SKIP_TESTS"|MPI_TEST_testphdf5_ccchunkw"
     SKIP_TESTS=$SKIP_TESTS"|MPI_TEST_testphdf5_actualio"
     SKIP_TESTS=$SKIP_TESTS"|MPI_TEST_testphdf5_MC_coll_MD_read"
-    SKIP_TESTS=$SKIP_TESTS"|MPI_TEST_t_shapesame|MPI_TEST_t_filters_parallel'"
+    SKIP_TESTS=$SKIP_TESTS"|MPI_TEST_t_shapesame"
+    SKIP_TESTS=$SKIP_TESTS"|MPI_TEST_t_filters_parallel"
+    SKIP_TESTS=$SKIP_TESTS"'"
 
     perl -i -pe "s/^ctest.*/ctest . -E MPI_TEST_ -C Release -j 32 -T test >& ctestS.out/" hdf5-$HDF5_VER/bin/batch/ctestS.lsf.in.cmake
     perl -i -pe "s/^ctest.*/ctest . -R MPI_TEST_ -E ${SKIP_TESTS} -C Release -T test >& ctestP.out/" hdf5-$HDF5_VER/bin/batch/ctestP.lsf.in.cmake
