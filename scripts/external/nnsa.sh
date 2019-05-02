@@ -250,7 +250,7 @@ if [[ $HOSTNAME == summit* ]]; then
     SKIP_TESTS="MPI_TEST_testphdf5_cchunk3|MPI_TEST_testphdf5_tldsc|MPI_TEST_testphdf5_ecdsetw"
 
 #    perl -i -pe "s/^ctest.*/ctest . -E MPI_TEST_ -C Release -j 32 -T test >& ctestS.out/" hdf5-$HDF5_VER/bin/batch/ctestS.lsf.in.cmake
-    perl -i -pe "s/^ctest.*/ctest . -R MPI_TEST_ -E ${SKIP_TESTS} -C Release -T test >& ctestP.out/" hdf5-$HDF5_VER/bin/batch/ctestP.lsf.in.cmake
+    perl -i -pe "s/^ctest.*/ctest . -R MPI_TEST_ -E 'MPI_TEST_testphdf5_cchunk3|MPI_TEST_testphdf5_tldsc|MPI_TEST_testphdf5_ecdsetw' -C Release -T test >& ctestP.out/" hdf5-$HDF5_VER/bin/batch/ctestP.lsf.in.cmake
 
 # Custom BSUB commands
     perl -i -pe "s/^#BSUB -G.*/#BSUB -P ${ACCOUNT}/" hdf5-$HDF5_VER/bin/batch/ctestS.lsf.in.cmake
