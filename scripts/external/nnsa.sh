@@ -308,47 +308,5 @@ for master_mod in $MASTER_MOD; do
   module unload $master_mod #unload master module
 done
 
-#Serial only tests
-# Turn off parallel options for serial-only tests.  (Just be sure not to include
-#  MPI=true in the ctest line.)
-
-if [[ $UNAME == chama* ]]; then
-
-# These are temporary workarounds that should be fixed in *-HDF5options.cmake by moving the 'set (LOCAL_BATCH_SCRIPT_PARALLEL_NAME "ctestP.sl")' (or equivalent ) into the if (DEFINED MPI) block, and otherwise either setting it to "" or maybe moving both of these to that block. 
-    echo 'set (LOCAL_BATCH_SCRIPT_PARALLEL_NAME "")' >> hdf5-$HDF5_VER/config/cmake/scripts/HPC/sbatch-HDF5options.cmake
-    echo 'set (ADD_BUILD_OPTIONS "${ADD_BUILD_OPTIONS} -DLOCAL_BATCH_SCRIPT_PARALLEL_NAME:STRING=${LOCAL_BATCH_SCRIPT_PARALLEL_NAME}")' >> hdf5-$HDF5_VER/config/cmake/scripts/HPC/sbatch-HDF5options.cmake
-
-    module purge
-    module load cmake
-
-    CC_VER=(2 clang clang/5.0 clang/4.0)
-    CTEST_OPTS="HPC=sbatch,$CTEST_OPTS"
-
-    _CC=clang
-    _FC=gfortran
-    _CXX=clang++
-
-fi
-
-for i in `seq 1 $num_CC`; do # loop over compiler versions
-  icnt=$(($icnt+1))
-  cc_ver=${CC_VER[$icnt]} # compiler version
-  rm -fr build
-
-  module load $cc_ver # load the compiler with version
-
-  export CC=$_CC
-  export FC=$_FC
-  export CXX=$_CXX
-
-  module list
-
-  echo "timeout 3h ctest . -S HDF5config.cmake,SITE_BUILDNAME_SUFFIX=\"$HDF5_VER-$cc_ver\",${CTEST_OPTS}BUILD_GENERATOR=Unix,LOCAL_SUBMIT=true,MODEL=HPC -C Release -VV -O hdf5.log"
-  timeout 3h ctest . -S HDF5config.cmake,SITE_BUILDNAME_SUFFIX="$HDF5_VER-$cc_ver",${CTEST_OPTS}BUILD_GENERATOR=Unix,LOCAL_SUBMIT=true,MODEL=HPC -C Release -VV -O hdf5.log
-
-  module unload $cc_ver  # unload the compiler with version
-
-  #rm -fr build
-done
 pwd
 cd $IN_DIR
