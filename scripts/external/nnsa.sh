@@ -247,8 +247,10 @@ if [[ $HOSTNAME == summit* ]]; then
 
     echo 'set (ADD_BUILD_OPTIONS "${ADD_BUILD_OPTIONS} -DMPIEXEC_EXECUTABLE:STRING=jsrun")' >> hdf5-$HDF5_VER/config/cmake/scripts/HPC/bsub-HDF5options.cmake
 
+    SKIP_TESTS="'MPI_TEST_testphdf5_cchunk3|MPI_TEST_testphdf5_tldsc|MPI_TEST_testphdf5_ecdsetw'"
+
     perl -i -pe "s/^ctest.*/ctest . -E MPI_TEST_ -C Release -j 32 -T test >& ctestS.out/" hdf5-$HDF5_VER/bin/batch/ctestS.lsf.in.cmake
-    perl -i -pe "s/^ctest.*/ctest . -R MPI_TEST_ -E 'MPI_TEST_testphdf5_cchunk3|MPI_TEST_testphdf5_tldsc' -C Release -T test >& ctestP.out/" hdf5-$HDF5_VER/bin/batch/ctestP.lsf.in.cmake
+    perl -i -pe "s/^ctest.*/ctest . -R MPI_TEST_ -E ${SKIP_TESTS} -C Release -T test >& ctestP.out/" hdf5-$HDF5_VER/bin/batch/ctestP.lsf.in.cmake
 
 # Custom BSUB commands
     perl -i -pe "s/^#BSUB -G.*/#BSUB -P ${ACCOUNT}/" hdf5-$HDF5_VER/bin/batch/ctestS.lsf.in.cmake
