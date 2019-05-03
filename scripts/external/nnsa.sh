@@ -84,9 +84,40 @@ fi
 # Remove the domain name if present
 UNAME=`echo $UNAME | sed 's;\..*;;'`
 
+#save this directory for copying binary to $BASEDIR/hdf5_install
+BASEDIR=`pwd`
+
 mkdir -p CI; cd CI
-rm -rf hdf5-* HDF5-* build hdf5.log* Failed* slurm-*.out
+rm -rf HDF5-* build hdf5.log* Failed* slurm-*.out
 sleep 1
+
+HDF5_SRC_UPDATED=""
+HDF5_SRCDIR=""
+GIT_DATE="yesterday"
+nHDF5srcdirs=`ls -d hdf5* | wc -l`
+if [[ "${nHDF5srcdirs}" == "1" ]]; then
+  HDF5_SRCDIR=`ls -d hdf5*`
+  cd ${HDF5_SRCDIR}
+  if [[ $HDF5_BRANCH == "" ]]; then
+    git checkout develop
+  else
+    git checkout $HDF5_BRANCH
+  fi
+  git pull
+  sleep 5
+  if [[ $(git log --since="$GIT_DATE") ]]; then
+    HDF5_SRC_UPDATED="true"
+  fi
+  cd ..
+  echo ${HDF5_SRC_UPDATED}
+  if [[ "${HDF5_SRC_UPDATED}" == "true" ]]; then
+    echo "Delete directory $HDF5_SRCDIR and do a fresh clone of HDF5 $HDF5_BRANCH source."
+    rm -rf ${HDF5_SRCDIR}
+  else
+    echo "HDF5 $HDF5_BRANCH source in $HDF5_SRCDIR has not changed since yesterday. No testing today."
+    exit 0
+  fi
+fi
 
 if [[ $HDF5_BRANCH == "" ]]; then
   git clone https://git@bitbucket.hdfgroup.org/scm/hdffv/hdf5.git hdf5
@@ -202,7 +233,26 @@ elif [[ $UNAME == quartz* ]]; then
 
 elif [[ $UNAME == ray* ]]; then
 
-    perl -i -pe "s/^ctest.*/ctest . -R 'MPI_TEST_' -E 'MPI_TEST_t_filters_parallel|MPI_TEST_testphdf5|MPI_TEST_t_shapesame|MPI_TEST_H5DIFF-h5diff_80' -C Release -T test > & ctestP.out;/" hdf5-$HDF5_VER/bin/batch/ray_ctestP.lsf.in.cmake
+    SKIP_TESTS="'"
+    SKIP_TESTS=$SKIP_TESTS"|MPI_TEST_testphdf5_selnone"
+    SKIP_TESTS=$SKIP_TESTS"|MPI_TEST_testphdf5_tldsc"
+    SKIP_TESTS=$SKIP_TESTS"|MPI_TEST_testphdf5_ecdsetw"
+    SKIP_TESTS=$SKIP_TESTS"|MPI_TEST_testphdf5_eidsetw2"
+    SKIP_TESTS=$SKIP_TESTS"|MPI_TEST_testphdf5_cngrpw-ingrpr"
+    SKIP_TESTS=$SKIP_TESTS"|MPI_TEST_testphdf5_cchunk1"
+    SKIP_TESTS=$SKIP_TESTS"|MPI_TEST_testphdf5_cchunk2"
+    SKIP_TESTS=$SKIP_TESTS"|MPI_TEST_testphdf5_cchunk3"
+    SKIP_TESTS=$SKIP_TESTS"|MPI_TEST_testphdf5_cchunk4"
+    SKIP_TESTS=$SKIP_TESTS"|MPI_TEST_testphdf5_cschunkw"
+    SKIP_TESTS=$SKIP_TESTS"|MPI_TEST_testphdf5_ccchunkw"
+    SKIP_TESTS=$SKIP_TESTS"|MPI_TEST_testphdf5_actualio"
+    SKIP_TESTS=$SKIP_TESTS"|MPI_TEST_testphdf5_MC_coll_MD_read"
+    SKIP_TESTS=$SKIP_TESTS"|MPI_TEST_t_shapesame"
+    SKIP_TESTS=$SKIP_TESTS"|MPI_TEST_t_filters_parallel"
+    SKIP_TESTS=$SKIP_TESTS"|MPI_TEST_H5DIFF-h5diff_80"
+    SKIP_TESTS=$SKIP_TESTS"'"
+
+    perl -i -pe "s/^ctest.*/ctest . -R MPI_TEST_ -E ${SKIP_TESTS} -C Release -T test >& ctestP.out/" hdf5-$HDF5_VER/bin/batch/ray_ctestP.lsf.in.cmake
     
     module purge
     module load cmake/3.12.1
@@ -248,12 +298,11 @@ if [[ $HOSTNAME == summit* ]]; then
     echo 'set (ADD_BUILD_OPTIONS "${ADD_BUILD_OPTIONS} -DMPIEXEC_EXECUTABLE:STRING=jsrun")' >> hdf5-$HDF5_VER/config/cmake/scripts/HPC/bsub-HDF5options.cmake
 
     SKIP_TESTS="'"
-    SKIP_TESTS=$SKIP_TESTS"MPI_TEST_testphdf5_cngrpw"
     SKIP_TESTS=$SKIP_TESTS"|MPI_TEST_testphdf5_selnone"
     SKIP_TESTS=$SKIP_TESTS"|MPI_TEST_testphdf5_tldsc"
     SKIP_TESTS=$SKIP_TESTS"|MPI_TEST_testphdf5_ecdsetw"
     SKIP_TESTS=$SKIP_TESTS"|MPI_TEST_testphdf5_eidsetw2"
-    SKIP_TESTS=$SKIP_TESTS"|MPI_TEST_testphdf5_ingrpr"
+    SKIP_TESTS=$SKIP_TESTS"|MPI_TEST_testphdf5_cngrpw-ingrpr"
     SKIP_TESTS=$SKIP_TESTS"|MPI_TEST_testphdf5_cchunk1"
     SKIP_TESTS=$SKIP_TESTS"|MPI_TEST_testphdf5_cchunk2"
     SKIP_TESTS=$SKIP_TESTS"|MPI_TEST_testphdf5_cchunk3"
@@ -318,6 +367,15 @@ for master_mod in $MASTER_MOD; do
     echo "timeout 3h ctest . -S HDF5config.cmake,SITE_BUILDNAME_SUFFIX=\"$HDF5_VER-$master_mod-$cc_ver\",${CTEST_OPTS}MPI=true,BUILD_GENERATOR=Unix,LOCAL_SUBMIT=true,MODEL=HPC -C Release -VV -O hdf5.log"
     timeout 3h ctest . -S HDF5config.cmake,SITE_BUILDNAME_SUFFIX="$HDF5_VER-$master_mod--$cc_ver",${CTEST_OPTS}MPI=true,BUILD_GENERATOR=Unix,LOCAL_SUBMIT=true,MODEL=HPC -C Release -VV -O hdf5.log
 
+    if [ ! -d $BASEDIR/hdf5_install ]; then
+        mkdir $BASEDIR/hdf5_install
+    fi
+    tar zxf HDF5-*.tar.gz -C $BASEDIR/hdf5_install
+    BRANCH_STRING=-$HDF5_BRANCH
+    MODULE_STRING=`echo $master_mod | sed 's?/?-?g'`
+    mkdir -p $BASEDIR/hdf5_install/$HDF5_VER$BRANCH_STRING/hdf5-$MODULE_STRING$cc_ver
+    mv $BASEDIR/hdf5_install/HDF5-*/HDF_Group/HDF5/$HDF5_VER/* $BASEDIR/hdf5_install/$HDF5_VER$BRANCH_STRING/hdf5-$MODULE_STRING$cc_ver
+    rm -rf $BASEDIR/hdf5_install/HDF5-*
     module unload $cc_ver  # unload the compiler with version
 
     #rm -fr build
