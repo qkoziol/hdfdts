@@ -301,14 +301,14 @@ if [[ $HOSTNAME == theta* ]]; then
     SKIP_TESTS=$SKIP_TESTS"'"
 
     # Select the newest cmake available
-    MOD_CMAKE=`module avail cmake 2>&1 >/dev/null | grep 'cmake' | sed -n '${s/.* //; p}'`
+    MOD_CMAKE=`module avail cmake 2>&1 >/dev/null | grep 'cmake' | sed -n '${s/.* //; p}' | sed 's/(default)//g'`
     module load $MOD_CMAKE
 
     # Select the newest PrgEnv available
     MASTER_MOD=`module avail PrgEnv-intel 2>&1 >/dev/null | grep 'intel' | sed -n '${s/.* //; p}' | sed 's/(default)//g'`
 
     # Select the newest intel compiler available
-    MOD_INTEL=`module avail intel/ 2>&1 >/dev/null | grep 'intel' | sed -n '${s/.* //; p}'`
+    MOD_INTEL=`module avail intel/ 2>&1 >/dev/null | grep 'intel' | sed -n '${s/.* //; p}' | sed 's/(default)//g'`
     CC_VER=(1 intel $MOD_INTEL)
 
     sed -i -e "s/^#SKIPTESTS.*/\nSKIP_TESTS=${SKIP_TESTS}/g" hdf5-$HDF5_VER/bin/batch/ctest.qsub.in.cmake
