@@ -288,6 +288,33 @@ if [[ $HOSTNAME == summit* ]]; then
     _CXX=mpicxx
 fi
 
+# ------------------------
+# www.alcf.anl.gov
+# STATUS: ACTIVE
+# ------------------------
+
+if [[ $HOSTNAME == theta* ]]; then
+
+    SKIP_TESTS="-E '"
+    SKIP_TESTS=$SKIP_TESTS"|MPI_TEST_testphdf5_tldsc"
+    SKIP_TESTS=$SKIP_TESTS"MPI_TEST_H5DIFF-h5diff_606"
+    SKIP_TESTS=$SKIP_TESTS"'"
+
+    # Select the newest cmake available
+    MOD_CMAKE=`module avail cmake 2>&1 >/dev/null | grep 'cmake' | sed -n '${s/.* //; p}'`
+    module load $MOD_CMAKE
+
+    sed -i -e "s/^#SKIPTESTS.*/\nSKIP_TESTS=${SKIP_TESTS}/g" hdf5-$HDF5_VER/bin/batch/ctest.qsub.in.cmake
+
+    CTEST_OPTS="HPC=qsub,SITE_OS_NAME=${HOSTNAME},LOCAL_BATCH_SCRIPT_ARGS=${ACCOUNT},$CTEST_OPTS"
+
+    _CC=mpicc
+    _FC=mpif90
+    _CXX=mpicxx
+
+fi
+
+
 module list
 
 icnt=-1
