@@ -312,10 +312,10 @@ if [[ $HOSTNAME == theta* ]]; then
     module unload craype-mic-knl
     module load craype-haswell
 
-    SKIP_TESTS="-E '"
+    SKIP_TESTS="\"-E '"
     SKIP_TESTS=$SKIP_TESTS"|MPI_TEST_testphdf5_tldsc"
     SKIP_TESTS=$SKIP_TESTS"MPI_TEST_H5DIFF-h5diff_606"
-    SKIP_TESTS=$SKIP_TESTS"'"
+    SKIP_TESTS=$SKIP_TESTS"'\""
 
     # Select the newest cmake available
     MOD_CMAKE=`module avail cmake 2>&1 >/dev/null | grep 'cmake' | sed -n '${s/.* //; p}' | sed 's/(default)//g'`
