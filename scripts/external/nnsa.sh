@@ -315,8 +315,7 @@ if [[ $HOSTNAME == theta* ]]; then
     module load craype-haswell
 
     SKIP_TESTS="\"-E '"
-    SKIP_TESTS=$SKIP_TESTS"|MPI_TEST_testphdf5_tldsc"
-    SKIP_TESTS=$SKIP_TESTS"MPI_TEST_H5DIFF-h5diff_606"
+    SKIP_TESTS=$SKIP_TESTS"MPI_TEST_testphdf5_tldsc"
     SKIP_TESTS=$SKIP_TESTS"'\""
 
     # Select the newest cmake available
@@ -373,7 +372,7 @@ for master_mod in $MASTER_MOD; do
     printf "$OK_COLOR"
     printf "ctest . -S HDF5config.cmake,SITE_BUILDNAME_SUFFIX=\"$HDF5_VER-$master_mod-$cc_ver\",${CTEST_OPTS}MPI=true,BUILD_GENERATOR=Unix,LOCAL_SUBMIT=true,MODEL=HPC -C Release -VV -O hdf5.log \n"
     printf "$NO_COLOR"
-    timeout 2h ctest . -S HDF5config.cmake,SITE_BUILDNAME_SUFFIX="$HDF5_VER-$master_mod--$cc_ver",${CTEST_OPTS}MPI=true,BUILD_GENERATOR=Unix,LOCAL_SUBMIT=true,MODEL=HPC -C Release -VV -O hdf5.log
+    timeout 3h ctest . -S HDF5config.cmake,SITE_BUILDNAME_SUFFIX="$HDF5_VER-$master_mod--$cc_ver",${CTEST_OPTS}MPI=true,BUILD_GENERATOR=Unix,LOCAL_SUBMIT=true,MODEL=HPC -C Release -VV -O hdf5.log
 
     module unload $cc_ver  # unload the compiler with version
 
