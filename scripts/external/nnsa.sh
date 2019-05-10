@@ -63,8 +63,10 @@ esac
 done
 set -- "${POSITIONAL[@]}" # restore positional parameters
 
-# Check if we are on summit
 HOSTNAME=`hostname -d`
+if [[ $HOSTNAME == *alcf* ]]; then
+  HOSTNAME=`hostname`
+fi
 
 # Get the host name
 UNAME="unknown"
@@ -107,9 +109,11 @@ cd ..
 mv hdf5 hdf5-$HDF5_VER
 
 # Summary of command line inputs
-echo "HDF5_VER: $HDF5_VER"
-echo "MISC OPTIONS: $CTEST_OPTS"
-echo "HDF5_BRANCH: $HDF5_BRANCH_NAME"
+printf "$NOTICE_COLOR\n"
+echo "HDF5_VER.......$HDF5_VER"
+echo "MISC OPTIONS...$CTEST_OPTS"
+echo "HDF5_BRANCH....$HDF5_BRANCH_NAME"
+printf "$NO_COLOR\n"
 
 sleep 1
 rm -f CTestScript.cmake HDF5config.cmake HDF5options.cmake
