@@ -18,6 +18,7 @@ HDF5_BRANCH=""
 
 # READ COMMAND LINE FOR THE TEST TO RUN
 CTEST_OPTS=""
+ACCOUNT=""
 POSITIONAL=()
 while [[ $# -gt 0 ]]
 do
@@ -41,7 +42,8 @@ case $key in
     shift # past value
     ;;
     -knl)
-    CTEST_OPTS="KNL=true,$CTEST_OPTS"
+    KNL="true"
+    CTEST_OPTS="KNL=$KNL,$CTEST_OPTS"
     shift # past argument
     ;;
     -h|--help)
@@ -258,6 +260,14 @@ fi
 # STATUS: ACTIVE
 # ------------------------
 if [[ $HOSTNAME == summit* ]]; then
+
+#CHECKS
+    if [[ $ACCOUNT == '' ]];then
+        printf "${ERROR_COLOR}FATAL ERROR: SUMMIT REQUIRES AN ALLOCATION ID TO BE SET \n"
+        printf "    Usage: -p <ALLOCATION ID> ${NO_COLOR}\n"
+        exit 1
+    fi
+
     UNAME=$HOSTNAME
     echo 'set (ADD_BUILD_OPTIONS "${ADD_BUILD_OPTIONS} -DMPIEXEC_EXECUTABLE:STRING=jsrun")' >> hdf5-$HDF5_VER/config/cmake/scripts/HPC/bsub-HDF5options.cmake
 
@@ -308,6 +318,20 @@ fi
 # ------------------------
 
 if [[ $HOSTNAME == theta* ]]; then
+
+    #CHECKS
+    if [[ $ACCOUNT == '' ]];then
+        printf "${ERROR_COLOR}FATAL ERROR: THETA REQUIRES AN ALLOCATION ID TO BE SET \n"
+        printf "    Usage: -p <ALLOCATION ID> ${NO_COLOR}\n"
+        exit 1
+    fi
+    if [[ $KNL == 'false' ]];then
+        printf "${WARN_COLOR}WARNING: THETA REQUIRES KNL OPTION...SETTING OPTION \n"
+        printf "    Usage: -knl ${NO_COLOR}\n"
+        KNL="true"
+        CTEST_OPTS="KNL=$KNL,$CTEST_OPTS"
+    fi
+
     UNAME=$HOSTNAME
 
     module unload darshan
