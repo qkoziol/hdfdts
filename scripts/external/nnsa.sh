@@ -264,7 +264,7 @@ if [[ $HOSTNAME == summit* ]]; then
 #CHECKS
     if [[ $ACCOUNT == '' ]];then
         printf "${ERROR_COLOR}FATAL ERROR: SUMMIT REQUIRES AN ALLOCATION ID TO BE SET \n"
-        printf "    Usage: -p <ALLOCATION ID> ${NO_COLOR}\n"
+        printf "    Usage: -p <ALLOCATION ID> ${NO_COLOR}\n\n"
         exit 1
     fi
 
@@ -322,12 +322,12 @@ if [[ $HOSTNAME == theta* ]]; then
     #CHECKS
     if [[ $ACCOUNT == '' ]];then
         printf "${ERROR_COLOR}FATAL ERROR: THETA REQUIRES AN ALLOCATION ID TO BE SET \n"
-        printf "    Usage: -p <ALLOCATION ID> ${NO_COLOR}\n"
+        printf "    Usage: -p <ALLOCATION ID> ${NO_COLOR}\n\n"
         exit 1
     fi
     if [[ $KNL == 'false' ]];then
         printf "${WARN_COLOR}WARNING: THETA REQUIRES KNL OPTION...SETTING OPTION \n"
-        printf "    Usage: -knl ${NO_COLOR}\n"
+        printf "    Usage: -knl ${NO_COLOR}\n\n"
         KNL="true"
         CTEST_OPTS="KNL=$KNL,$CTEST_OPTS"
     fi
