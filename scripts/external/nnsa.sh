@@ -5,6 +5,8 @@ OK_COLOR="\033[32;01m"
 WARN_COLOR="\033[33;01m"
 ERROR_COLOR="\033[31;01m"
 NOTICE_COLOR="\033[36;01m"
+CLEAR="\e[0m"
+UNDERLINE="\e[4m"
 
 IN_DIR=`pwd`
 
@@ -339,8 +341,7 @@ if [[ $HOSTNAME == theta* ]]; then
 fi
 
 printf "${NOTICE_COLOR}HOST MACHINE NAME = ${UNAME}\n"
-printf "DEFAULT MODULES LOADED\n"
-printf "------------------------\n"
+printf "${UNDERLINE}DEFAULT MODULES LOADED${CLEAR}\n"
 module list
 printf "\n$NO_COLOR"
 
@@ -369,7 +370,7 @@ for master_mod in $MASTER_MOD; do
 
     module list
 
-    printf "$WARN_COLOR"
+    printf "$OK_COLOR"
     printf "ctest . -S HDF5config.cmake,SITE_BUILDNAME_SUFFIX=\"$HDF5_VER-$master_mod-$cc_ver\",${CTEST_OPTS}MPI=true,BUILD_GENERATOR=Unix,LOCAL_SUBMIT=true,MODEL=HPC -C Release -VV -O hdf5.log \n"
     printf "$NO_COLOR"
     timeout 2h ctest . -S HDF5config.cmake,SITE_BUILDNAME_SUFFIX="$HDF5_VER-$master_mod--$cc_ver",${CTEST_OPTS}MPI=true,BUILD_GENERATOR=Unix,LOCAL_SUBMIT=true,MODEL=HPC -C Release -VV -O hdf5.log
