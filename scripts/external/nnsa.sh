@@ -1,5 +1,11 @@
 #!/bin/bash -l
 
+NO_COLOR="\033[0m"
+OK_COLOR="\033[32;01m"
+WARN_COLOR="\033[33;01m"
+ERROR_COLOR="\033[31;01m"
+NOTICE_COLOR="\033[36;01m"
+
 IN_DIR=`pwd`
 
 #Defaults
@@ -88,10 +94,12 @@ mkdir -p CI; cd CI
 rm -rf hdf5-* HDF5-* build hdf5.log* Failed* slurm-*.out
 sleep 1
 
+HDF5_BRANCH_NAME='N/A'
 if [[ $HDF5_BRANCH == "" ]]; then
   git clone https://git@bitbucket.hdfgroup.org/scm/hdffv/hdf5.git hdf5
 else
   git clone https://git@bitbucket.hdfgroup.org/scm/hdffv/hdf5.git -b $HDF5_BRANCH hdf5
+  HDF5_BRANCH_NAME=$HDF5_BRANCH
 fi
 cd hdf5
 HDF5_VER=`bin/h5vers`
@@ -101,7 +109,7 @@ mv hdf5 hdf5-$HDF5_VER
 # Summary of command line inputs
 echo "HDF5_VER: $HDF5_VER"
 echo "MISC OPTIONS: $CTEST_OPTS"
-echo "HDF5_BRANCH: $HDF5_BRANCH"
+echo "HDF5_BRANCH: $HDF5_BRANCH_NAME"
 
 sleep 1
 rm -f CTestScript.cmake HDF5config.cmake HDF5options.cmake
@@ -244,7 +252,7 @@ fi
 # STATUS: ACTIVE
 # ------------------------
 if [[ $HOSTNAME == summit* ]]; then
-
+    UNAME=$HOSTNAME
     echo 'set (ADD_BUILD_OPTIONS "${ADD_BUILD_OPTIONS} -DMPIEXEC_EXECUTABLE:STRING=jsrun")' >> hdf5-$HDF5_VER/config/cmake/scripts/HPC/bsub-HDF5options.cmake
 
     SKIP_TESTS="'"
@@ -294,6 +302,7 @@ fi
 # ------------------------
 
 if [[ $HOSTNAME == theta* ]]; then
+    UNAME=$HOSTNAME
 
     SKIP_TESTS="-E '"
     SKIP_TESTS=$SKIP_TESTS"|MPI_TEST_testphdf5_tldsc"
@@ -321,8 +330,9 @@ if [[ $HOSTNAME == theta* ]]; then
 
 fi
 
-
+printf "$NOTICE_COLOR HOST MACHINE NAME = $UNAME\n DEFAULT MODULES LOADED:"
 module list
+printf "$NO_COLOR"
 
 icnt=-1
 for master_mod in $MASTER_MOD; do
