@@ -308,6 +308,10 @@ fi
 if [[ $HOSTNAME == theta* ]]; then
     UNAME=$HOSTNAME
 
+    module unload darshan
+    module unload craype-mic-knl
+    module load craype-haswell
+
     SKIP_TESTS="-E '"
     SKIP_TESTS=$SKIP_TESTS"|MPI_TEST_testphdf5_tldsc"
     SKIP_TESTS=$SKIP_TESTS"MPI_TEST_H5DIFF-h5diff_606"
