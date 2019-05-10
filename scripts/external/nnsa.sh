@@ -334,9 +334,9 @@ if [[ $HOSTNAME == theta* ]]; then
 
 fi
 
-printf "$NOTICE_COLOR HOST MACHINE NAME = $UNAME\n DEFAULT MODULES LOADED:"
+printf "${NOTICE_COLOR}HOST MACHINE NAME = $UNAME\n DEFAULT MODULES LOADED:"
 module list
-printf "$NO_COLOR"
+printf "\n$NO_COLOR"
 
 icnt=-1
 for master_mod in $MASTER_MOD; do
@@ -363,8 +363,10 @@ for master_mod in $MASTER_MOD; do
 
     module list
 
-    echo "timeout 3h ctest . -S HDF5config.cmake,SITE_BUILDNAME_SUFFIX=\"$HDF5_VER-$master_mod-$cc_ver\",${CTEST_OPTS}MPI=true,BUILD_GENERATOR=Unix,LOCAL_SUBMIT=true,MODEL=HPC -C Release -VV -O hdf5.log"
-    timeout 3h ctest . -S HDF5config.cmake,SITE_BUILDNAME_SUFFIX="$HDF5_VER-$master_mod--$cc_ver",${CTEST_OPTS}MPI=true,BUILD_GENERATOR=Unix,LOCAL_SUBMIT=true,MODEL=HPC -C Release -VV -O hdf5.log
+    printf "$WARN_COLOR"
+    printf "ctest . -S HDF5config.cmake,SITE_BUILDNAME_SUFFIX=\"$HDF5_VER-$master_mod-$cc_ver\",${CTEST_OPTS}MPI=true,BUILD_GENERATOR=Unix,LOCAL_SUBMIT=true,MODEL=HPC -C Release -VV -O hdf5.log"
+    printf "$NO_COLOR"
+    timeout 2h ctest . -S HDF5config.cmake,SITE_BUILDNAME_SUFFIX="$HDF5_VER-$master_mod--$cc_ver",${CTEST_OPTS}MPI=true,BUILD_GENERATOR=Unix,LOCAL_SUBMIT=true,MODEL=HPC -C Release -VV -O hdf5.log
 
     module unload $cc_ver  # unload the compiler with version
 
