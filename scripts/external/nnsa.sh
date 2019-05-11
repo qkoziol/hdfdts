@@ -1,5 +1,13 @@
 #!/bin/bash -l
 
+NO_COLOR="\033[0m"
+OK_COLOR="\033[32;01m"
+WARN_COLOR="\033[33;01m"
+ERROR_COLOR="\033[31;01m"
+NOTICE_COLOR="\033[36;01m"
+CLEAR="\e[0m"
+UNDERLINE="\e[4m"
+
 IN_DIR=`pwd`
 
 #Defaults
@@ -10,6 +18,7 @@ HDF5_BRANCH=""
 
 # READ COMMAND LINE FOR THE TEST TO RUN
 CTEST_OPTS=""
+ACCOUNT=""
 POSITIONAL=()
 while [[ $# -gt 0 ]]
 do
@@ -33,7 +42,8 @@ case $key in
     shift # past value
     ;;
     -knl)
-    CTEST_OPTS="KNL=true,$CTEST_OPTS"
+    KNL="true"
+    CTEST_OPTS="KNL=$KNL,$CTEST_OPTS"
     shift # past argument
     ;;
     -h|--help)
@@ -57,8 +67,10 @@ esac
 done
 set -- "${POSITIONAL[@]}" # restore positional parameters
 
-# Check if we are on summit
 HOSTNAME=`hostname -d`
+if [[ $HOSTNAME == *alcf* ]]; then
+  HOSTNAME=`hostname`
+fi
 
 # Get the host name
 UNAME="unknown"
@@ -119,10 +131,12 @@ if [[ "${nHDF5srcdirs}" == "1" ]]; then
   fi
 fi
 
+HDF5_BRANCH_NAME='N/A'
 if [[ $HDF5_BRANCH == "" ]]; then
   git clone https://git@bitbucket.hdfgroup.org/scm/hdffv/hdf5.git hdf5
 else
   git clone https://git@bitbucket.hdfgroup.org/scm/hdffv/hdf5.git -b $HDF5_BRANCH hdf5
+  HDF5_BRANCH_NAME=$HDF5_BRANCH
 fi
 cd hdf5
 HDF5_VER=`bin/h5vers`
@@ -130,9 +144,11 @@ cd ..
 mv hdf5 hdf5-$HDF5_VER
 
 # Summary of command line inputs
-echo "HDF5_VER: $HDF5_VER"
-echo "MISC OPTIONS: $CTEST_OPTS"
-echo "HDF5_BRANCH: $HDF5_BRANCH"
+printf "$NOTICE_COLOR\n"
+echo "HDF5_VER.......$HDF5_VER"
+echo "MISC OPTIONS...$CTEST_OPTS"
+echo "HDF5_BRANCH....$HDF5_BRANCH_NAME"
+printf "$NO_COLOR\n"
 
 sleep 1
 rm -f CTestScript.cmake HDF5config.cmake HDF5options.cmake
@@ -357,6 +373,14 @@ fi
 # ------------------------
 if [[ $HOSTNAME == summit* ]]; then
 
+#CHECKS
+    if [[ $ACCOUNT == '' ]];then
+        printf "${ERROR_COLOR}FATAL ERROR: SUMMIT REQUIRES AN ALLOCATION ID TO BE SET \n"
+        printf "    Usage: -p <ALLOCATION ID> ${NO_COLOR}\n\n"
+        exit 1
+    fi
+
+    UNAME=$HOSTNAME
     echo 'set (ADD_BUILD_OPTIONS "${ADD_BUILD_OPTIONS} -DMPIEXEC_EXECUTABLE:STRING=jsrun")' >> hdf5-$HDF5_VER/config/cmake/scripts/HPC/bsub-HDF5options.cmake
 
     SKIP_TESTS="'"
@@ -399,7 +423,61 @@ if [[ $HOSTNAME == summit* ]]; then
     _CXX=mpicxx
 fi
 
+# ------------------------
+# www.alcf.anl.gov
+# STATUS: ACTIVE
+# ------------------------
+
+if [[ $HOSTNAME == theta* ]]; then
+
+    #CHECKS
+    if [[ $ACCOUNT == '' ]];then
+        printf "${ERROR_COLOR}FATAL ERROR: THETA REQUIRES AN ALLOCATION ID TO BE SET \n"
+        printf "    Usage: -p <ALLOCATION ID> ${NO_COLOR}\n\n"
+        exit 1
+    fi
+    if [[ $KNL == 'false' ]];then
+        printf "${WARN_COLOR}WARNING: THETA REQUIRES KNL OPTION...SETTING OPTION \n"
+        printf "    Usage: -knl ${NO_COLOR}\n\n"
+        KNL="true"
+        CTEST_OPTS="KNL=$KNL,$CTEST_OPTS"
+    fi
+
+    UNAME=$HOSTNAME
+
+    module unload darshan
+    module unload craype-mic-knl
+    module load craype-haswell
+
+    SKIP_TESTS="\"-E '"
+    SKIP_TESTS=$SKIP_TESTS"MPI_TEST_testphdf5_tldsc"
+    SKIP_TESTS=$SKIP_TESTS"'\""
+
+    # Select the newest cmake available
+    MOD_CMAKE=`module avail cmake 2>&1 >/dev/null | grep 'cmake' | sed -n '${s/.* //; p}' | sed 's/(default)//g'`
+    module load $MOD_CMAKE
+
+    # Select the newest PrgEnv available
+    MASTER_MOD=`module avail PrgEnv-intel 2>&1 >/dev/null | grep 'intel' | sed -n '${s/.* //; p}' | sed 's/(default)//g'`
+
+    # Select the newest intel compiler available
+    MOD_INTEL=`module avail intel/ 2>&1 >/dev/null | grep 'intel' | sed -n '${s/.* //; p}' | sed 's/(default)//g'`
+    CC_VER=(1 intel $MOD_INTEL)
+
+    sed -i -e "s/^#SKIPTESTS.*/\nSKIP_TESTS=${SKIP_TESTS}/g" hdf5-$HDF5_VER/bin/batch/ctest.qsub.in.cmake
+
+    CTEST_OPTS="HPC=qsub,SITE_OS_NAME=${HOSTNAME},LOCAL_BATCH_SCRIPT_ARGS=${ACCOUNT},$CTEST_OPTS"
+
+    _CC=mpicc
+    _FC=mpif90
+    _CXX=mpicxx
+
+fi
+
+printf "${NOTICE_COLOR}HOST MACHINE NAME = ${UNAME}\n"
+printf "${UNDERLINE}DEFAULT MODULES LOADED${CLEAR}\n"
 module list
+printf "\n$NO_COLOR"
 
 icnt=-1
 for master_mod in $MASTER_MOD; do
@@ -426,7 +504,9 @@ for master_mod in $MASTER_MOD; do
 
     module list
 
-    echo "timeout 3h ctest . -S HDF5config.cmake,SITE_BUILDNAME_SUFFIX=\"$HDF5_VER-$master_mod-$cc_ver\",${CTEST_OPTS}MPI=true,BUILD_GENERATOR=Unix,LOCAL_SUBMIT=true,MODEL=HPC -C Release -VV -O hdf5.log"
+    printf "$OK_COLOR"
+    printf "ctest . -S HDF5config.cmake,SITE_BUILDNAME_SUFFIX=\"$HDF5_VER-$master_mod-$cc_ver\",${CTEST_OPTS}MPI=true,BUILD_GENERATOR=Unix,LOCAL_SUBMIT=true,MODEL=HPC -C Release -VV -O hdf5.log \n"
+    printf "$NO_COLOR"
     timeout 3h ctest . -S HDF5config.cmake,SITE_BUILDNAME_SUFFIX="$HDF5_VER-$master_mod--$cc_ver",${CTEST_OPTS}MPI=true,BUILD_GENERATOR=Unix,LOCAL_SUBMIT=true,MODEL=HPC -C Release -VV -O hdf5.log
 
     if [ ! -d $BASEDIR/hdf5_install ]; then
