@@ -4,7 +4,6 @@ NO_COLOR="\033[0m"
 OK_COLOR="\033[32;01m"
 WARN_COLOR="\033[33;01m"
 ERROR_COLOR="\033[31;01m"
-
 #
 #
 # Platypus (64 bit CentOS6)
@@ -46,8 +45,8 @@ CGNS_SRC=$BASEDIR/current/CGNS
 #CGNS_SRC=https://github.com/CGNS/CGNS.git
 
 # set to change to testing a different branch (default is develop)
-BRANCH="CompactStorageRev"
 #BRANCH="master"
+BRANCH=""
 
 # lower case OSTYPE
 OSTYPE=`echo $OSTYPE | tr '[:upper:]' '[:lower:]'`
