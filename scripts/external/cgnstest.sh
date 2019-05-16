@@ -4,6 +4,8 @@ NO_COLOR="\033[0m"
 OK_COLOR="\033[32;01m"
 WARN_COLOR="\033[33;01m"
 ERROR_COLOR="\033[31;01m"
+NOTE_COLOR="\033[36;01m"
+
 #
 #
 # Platypus (64 bit CentOS6)
@@ -442,12 +444,14 @@ if [[ $do_test != 0 ]]; then
     CONFIG_CMD="$CONFIG_CMD --prefix=$PWD/cgns_build $SHARED_STATUS --disable-cgnstools"
     cd CGNS/src
     
+    printf "$NOTE_COLOR"
     echo "       ___   __  ____________  __________  ____  __   _____"
     echo "      /   | / / / /_  __/ __ \/_  __/ __ \/ __ \/ /  / ___/"
     echo "     / /| |/ / / / / / / / / / / / / / / / / / / /   \__ \ "
     echo "    / ___ / /_/ / / / / /_/ / / / / /_/ / /_/ / /______/ / "
     echo "   /_/  |_\____/ /_/  \____/ /_/  \____/\____/_____/____/  "
     echo ""
+    printf "$NO_COLOR"
 
     echo "$CONFIG_CMD"
     $CONFIG_CMD
@@ -511,12 +515,14 @@ if [ -d "$TEST_DIR" ]; then
     
     if [[ $do_test != 0 ]]; then
 
+        printf "$NOTE_COLOR"
         echo "       ________  ______    __ __ ______"
         echo "      / ____/  |/  /   |  / //_// ____/"
         echo "     / /   / /|_/ / /| | / ,<  / __/   "
         echo "    / /___/ /  / / ___ |/ /| |/ /___   "
         echo "    \____/_/  /_/_/  |_/_/ |_/_____/   "
         echo ""
+        printf "$NO_COLOR"
 
 	git clone $CGNS_SRC CGNS_SRC
 	if [[ $? != 0 ]]; then
