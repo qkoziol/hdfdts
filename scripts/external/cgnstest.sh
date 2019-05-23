@@ -503,10 +503,10 @@ do_test=1
 # gmake[2]: *** [src/CMakeFiles/cgns_shared.dir/cgns_f.F90.o] Error 1
 
 if [[ $SHARED_STATUS == "--enable-shared" && $WITH_FORTRAN == "--with-fortran=yes" ]]; then
-    if [[ $UNAME == "ostrich" || $UNAME == "kituo" || $UNAME == "mayll" || $UNAME == "moohan" || $UNAME == "platypus" ]];then
+    if [[ $UNAME == "ostrich" || $UNAME == "kituo" || $UNAME == "moohan" || $UNAME == "platypus" ]];then
 	do_test=0
         printf "$WARN_COLOR"
-        echo "Disabling CMake testing for ostrich, kituo, mayll, moohan and platypus"
+        echo "WARNING: Disabling CMake testing for ostrich, kituo, moohan and platypus"
         echo "for shared tests and Fortran because cmake tries to remove a .mod "
         echo "file that is not there."
         printf "$NO_COLOR"
@@ -515,6 +515,10 @@ fi
 
 cmake_status=0
 CGNS_ENABLE_LFS="-D CGNS_ENABLE_LFS:BOOL=OFF"
+printf "$WARN_COLOR"
+echo "WARNING: Disabling LFS, CGNS_ENABLE_LFS='-D CGNS_ENABLE_LFS:BOOL=OFF'"
+printf "$NO_COLOR"
+
 if [ -d "$TEST_DIR" ]; then
     cd $TEST_DIR
     
