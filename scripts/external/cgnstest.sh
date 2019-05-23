@@ -505,6 +505,11 @@ do_test=1
 if [[ $SHARED_STATUS == "--enable-shared" && $WITH_FORTRAN == "--with-fortran=yes" ]]; then
     if [[ $UNAME == "ostrich" || $UNAME == "kituo" || $UNAME == "mayll" || $UNAME == "moohan" || $UNAME == "platypus" ]];then
 	do_test=0
+        printf "$WARN_COLOR"
+        echo "Disabling CMake testing for ostrich, kituo, mayll, moohan and platypus"
+        echo "for shared tests and Fortran because cmake tries to remove a .mod "
+        echo "file that is not there."
+        printf "$NO_COLOR"
     fi
 fi
 
