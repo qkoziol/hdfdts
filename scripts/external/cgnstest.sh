@@ -503,7 +503,7 @@ do_test=1
 # gmake[2]: *** [src/CMakeFiles/cgns_shared.dir/cgns_f.F90.o] Error 1
 
 if [[ $SHARED_STATUS == "--enable-shared" && $WITH_FORTRAN == "--with-fortran=yes" ]]; then
-    if [[ $UNAME == "ostrich" || $UNAME == "kituo" || $UNAME == "moohan" || $UNAME == "platypus" ]];then
+    if [[ $UNAME == "ostrich" || $UNAME == "kituo" || $UNAME == "mayll" || $UNAME == "moohan" || $UNAME == "platypus" ]];then
 	do_test=0
         printf "$WARN_COLOR"
         echo "WARNING: Disabling CMake testing for ostrich, kituo, moohan and platypus"
