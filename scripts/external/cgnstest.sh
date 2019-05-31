@@ -4,6 +4,7 @@ NO_COLOR="\033[0m"
 OK_COLOR="\033[32;01m"
 WARN_COLOR="\033[33;01m"
 ERROR_COLOR="\033[31;01m"
+NOTE_COLOR="\033[36;01m"
 
 #
 #
@@ -13,7 +14,7 @@ ERROR_COLOR="\033[31;01m"
 # OSX1010DEV Mac OS X 10.10.x
 # WREN Mac OS X 10.9.x
 # KITE Mac OS X 10.8.x
-TIMEOUT="timeout 1h"
+TIMEOUT="timeout 2h"
 UNAME="unknown"
 if [ -x /usr/bin/uname ]
 then
@@ -46,8 +47,8 @@ CGNS_SRC=$BASEDIR/current/CGNS
 #CGNS_SRC=https://github.com/CGNS/CGNS.git
 
 # set to change to testing a different branch (default is develop)
-BRANCH="CompactStorageRev"
 #BRANCH="master"
+BRANCH=""
 
 # lower case OSTYPE
 OSTYPE=`echo $OSTYPE | tr '[:upper:]' '[:lower:]'`
@@ -443,12 +444,14 @@ if [[ $do_test != 0 ]]; then
     CONFIG_CMD="$CONFIG_CMD --prefix=$PWD/cgns_build $SHARED_STATUS --disable-cgnstools"
     cd CGNS/src
     
+    printf "$NOTE_COLOR"
     echo "       ___   __  ____________  __________  ____  __   _____"
     echo "      /   | / / / /_  __/ __ \/_  __/ __ \/ __ \/ /  / ___/"
     echo "     / /| |/ / / / / / / / / / / / / / / / / / / /   \__ \ "
     echo "    / ___ / /_/ / / / / /_/ / / / / /_/ / /_/ / /______/ / "
     echo "   /_/  |_\____/ /_/  \____/ /_/  \____/\____/_____/____/  "
     echo ""
+    printf "$NO_COLOR"
 
     echo "$CONFIG_CMD"
     $CONFIG_CMD
@@ -502,22 +505,33 @@ do_test=1
 if [[ $SHARED_STATUS == "--enable-shared" && $WITH_FORTRAN == "--with-fortran=yes" ]]; then
     if [[ $UNAME == "ostrich" || $UNAME == "kituo" || $UNAME == "mayll" || $UNAME == "moohan" || $UNAME == "platypus" ]];then
 	do_test=0
+        printf "$WARN_COLOR"
+        echo "WARNING: Disabling CMake testing for ostrich, kituo, moohan and platypus"
+        echo "for shared tests and Fortran because cmake tries to remove a .mod "
+        echo "file that is not there."
+        printf "$NO_COLOR"
     fi
 fi
 
 cmake_status=0
 CGNS_ENABLE_LFS="-D CGNS_ENABLE_LFS:BOOL=OFF"
+printf "$WARN_COLOR"
+echo "WARNING: Disabling LFS, CGNS_ENABLE_LFS='-D CGNS_ENABLE_LFS:BOOL=OFF'"
+printf "$NO_COLOR"
+
 if [ -d "$TEST_DIR" ]; then
     cd $TEST_DIR
     
     if [[ $do_test != 0 ]]; then
 
+        printf "$NOTE_COLOR"
         echo "       ________  ______    __ __ ______"
         echo "      / ____/  |/  /   |  / //_// ____/"
         echo "     / /   / /|_/ / /| | / ,<  / __/   "
         echo "    / /___/ /  / / ___ |/ /| |/ /___   "
         echo "    \____/_/  /_/_/  |_/_/ |_/_____/   "
         echo ""
+        printf "$NO_COLOR"
 
 	git clone $CGNS_SRC CGNS_SRC
 	if [[ $? != 0 ]]; then
