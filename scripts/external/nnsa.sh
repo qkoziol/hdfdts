@@ -96,16 +96,65 @@ fi
 # Remove the domain name if present
 UNAME=`echo $UNAME | sed 's;\..*;;'`
 
+#save this directory for copying binary to $BASEDIR/hdf5_install
+BASEDIR=`pwd`
+
 mkdir -p CI; cd CI
-rm -rf hdf5-* HDF5-* build hdf5.log* Failed* slurm-*.out
+rm -rf HDF5-* build hdf5.log* Failed* slurm-*.out
 sleep 1
 
+HDF5_SRC_UPDATED=""
+HDF5_CLONED=""
+HDF5_SRCDIR=""
 HDF5_BRANCH_NAME='N/A'
-if [[ $HDF5_BRANCH == "" ]]; then
-  git clone https://git@bitbucket.hdfgroup.org/scm/hdffv/hdf5.git hdf5
-else
-  git clone https://git@bitbucket.hdfgroup.org/scm/hdffv/hdf5.git -b $HDF5_BRANCH hdf5
-  HDF5_BRANCH_NAME=$HDF5_BRANCH
+#GIT_DATE="yesterday"
+GIT_DATE="3 days ago"
+nHDF5srcdirs=`ls -d hdf5* | wc -l`
+if [[ "${nHDF5srcdirs}" == "1" ]]; then
+  HDF5_SRCDIR=`ls -d hdf5*`
+  cd ${HDF5_SRCDIR}
+  if [[ $HDF5_BRANCH == "" ]]; then
+    git checkout develop
+  else
+    git checkout $HDF5_BRANCH
+  fi
+  if [[ $(git pull) ]]; then
+    cd ..
+    rm -rf ${HDF5_SRCDIR}
+    if [[ $HDF5_BRANCH == "" ]]; then
+      git clone https://git@bitbucket.hdfgroup.org/scm/hdffv/hdf5.git hdf5
+    else
+      git clone https://git@bitbucket.hdfgroup.org/scm/hdffv/hdf5.git -b $HDF5_BRANCH hdf5
+      HDF5_BRANCH_NAME=$HDF5_BRANCH
+    fi
+    HDF5_CLONED="true"
+    cd hdf5
+  fi
+  sleep 5
+  if [[ $(git log --since="$GIT_DATE") ]]; then
+    HDF5_SRC_UPDATED="true"
+  fi
+  cd ..
+  echo ${HDF5_SRC_UPDATED}
+  if [[ "${HDF5_SRC_UPDATED}" == "true" ]]; then
+    if [[ $HDF5_CLONED == "" ]]; then
+      echo "Delete directory $HDF5_SRCDIR and do a fresh clone of HDF5 $HDF5_BRANCH source."
+      rm -rf ${HDF5_SRCDIR}
+    fi
+    echo "Test new HDF5 clone."
+  else
+    echo "HDF5 $HDF5_BRANCH source in $HDF5_SRCDIR has not changed since yesterday. No testing today."
+    exit 0
+  fi
+fi
+
+if [[ $HDF5_CLONED == "" ]]; then
+  if [[ $HDF5_BRANCH == "" ]]; then
+    git clone https://git@bitbucket.hdfgroup.org/scm/hdffv/hdf5.git hdf5
+  else
+    git clone https://git@bitbucket.hdfgroup.org/scm/hdffv/hdf5.git -b $HDF5_BRANCH hdf5
+    HDF5_BRANCH_NAME=$HDF5_BRANCH
+  fi
 fi
 cd hdf5
 HDF5_VER=`bin/h5vers`
@@ -126,11 +175,54 @@ ln -s hdf5-$HDF5_VER/config/cmake/scripts/CTestScript.cmake .
 ln -s hdf5-$HDF5_VER/config/cmake/scripts/HDF5config.cmake .
 ln -s hdf5-$HDF5_VER/config/cmake/scripts/HDF5options.cmake .
 
-if [[ $UNAME == mutrino* ]];then
+if [[ $UNAME == cori* ]];then
+
+    SKIP_TESTS="'"
+    SKIP_TESTS=$SKIP_TESTS"MPI_TEST_testphdf5_tldsc"
+    SKIP_TESTS=$SKIP_TESTS"'"
+    perl -i -pe "s/^ctest.*/ctest . -R MPI_TEST_ -E ${SKIP_TESTS} -C Release -T test >& ctestP.out/" hdf5-$HDF5_VER/bin/batch/ctestP.sl.in.cmake
+    perl -i -pe "s/^ctest.*/ctest . -R MPI_TEST_ -E ${SKIP_TESTS} -C Release -T test >& ctestP.out/" hdf5-$HDF5_VER/bin/batch/knl_ctestP.sl.in.cmake
+    perl -i -pe "s/^#SBATCH --nodes=1/#SBATCH -C haswell\n#SBATCH --nodes=1/" hdf5-$HDF5_VER/bin/batch/ctestS.sl.in.cmake
+    perl -i -pe "s/^#SBATCH --nodes=1/#SBATCH -C haswell\n#SBATCH --nodes=1/" hdf5-$HDF5_VER/bin/batch/ctestP.sl.in.cmake
+    perl -i -pe "s/^#SBATCH -p knl.*/#SBATCH -C knl,quad,cache/" hdf5-$HDF5_VER/bin/batch/knl_ctestS.sl.in.cmake
+    perl -i -pe "s/^#SBATCH -p knl.*/#SBATCH --qos=regular\n#SBATCH -C knl,quad,cache/" hdf5-$HDF5_VER/bin/batch/knl_ctestP.sl.in.cmake
+    perl -i -pe "s/^#SBATCH -t 00:30:00/#SBATCH -t 1:00:00/" hdf5-$HDF5_VER/bin/batch/knl_ctestP.sl.in.cmake
+
 # Get the curent PrgEnv module setting
     module list &> out
     PRGENV_TYPE=`grep -i PrgEnv out | sed -e 's/.*PrgEnv-\(.*\)\/.*/\1/'`
-    module unload cke
+    module unload cmake
+
+    module load cmake/3.11.4
+# unload the current PrgEnv and compiler associated with PrgEnv
+    module unload PrgEnv-$PRGENV_TYPE
+    module unload $PRGENV_TYPE
+# the modules to test
+#   the PrgEnv to test
+    MASTER_MOD="PrgEnv-intel/6.0.4 PrgEnv-gnu/6.0.4"
+    #MASTER_MOD="PrgEnv-intel/6.0.4"
+#   the Compiler to switch to:
+#    Format: <number of compiler versions to check> <compiler type> <list of compiler versions (modules) ... repeat)
+    CC_VER=(2 intel intel/17.0.3.191 intel/18.0.2.199 2 gcc gcc/7.3.0 gcc/8.2.0)
+    #CC_VER=(1 gcc gcc/8.2.0)
+    CTEST_OPTS="HPC=sbatch,$CTEST_OPTS"
+
+    _CC=cc
+    _FC=ftn
+    _CXX=CC
+
+elif [[ $UNAME == mutrino* ]];then
+
+    SKIP_TESTS="'"
+    SKIP_TESTS=$SKIP_TESTS"MPI_TEST_testphdf5_tldsc"
+    SKIP_TESTS=$SKIP_TESTS"'"
+
+    perl -i -pe "s/^ctest.*/ctest . -R MPI_TEST_ -E ${SKIP_TESTS} -C Release -T test >& ctestP.out/" hdf5-$HDF5_VER/bin/batch/ctestP.sl.in.cmake
+
+# Get the curent PrgEnv module setting
+    module list &> out
+    PRGENV_TYPE=`grep -i PrgEnv out | sed -e 's/.*PrgEnv-\(.*\)\/.*/\1/'`
+    module unload craype-hugepages2M
 
     module load cmake
 # unload the current PrgEnv and compiler associated with PrgEnv
@@ -150,10 +242,20 @@ if [[ $UNAME == mutrino* ]];then
 
 elif [[ $UNAME == serrano* ]]; then
 
+    SKIP_TESTS="'"
+    SKIP_TESTS=$SKIP_TESTS"MPI_TEST_testphdf5_selnone"
+    SKIP_TESTS=$SKIP_TESTS"|MPI_TEST_testphdf5_tldsc"
+    SKIP_TESTS=$SKIP_TESTS"|MPI_TEST_testphdf5_ecdsetw"
+    SKIP_TESTS=$SKIP_TESTS"|MPI_TEST_testphdf5_cchunk3"
+    SKIP_TESTS=$SKIP_TESTS"|MPI_TEST_testphdf5_ccchunkw"
+    SKIP_TESTS=$SKIP_TESTS"|MPI_TEST_testphdf5_actualio"
+    SKIP_TESTS=$SKIP_TESTS"|MPI_TEST_t_shapesame"
+    SKIP_TESTS=$SKIP_TESTS"'"
+
     echo 'set (ADD_BUILD_OPTIONS "${ADD_BUILD_OPTIONS} -DMPIEXEC_EXECUTABLE:STRING=mpirun")' >> hdf5-$HDF5_VER/config/cmake/scripts/HPC/sbatch-HDF5options.cmake
     echo 'set (ADD_BUILD_OPTIONS "${ADD_BUILD_OPTIONS} -DMPIEXEC_PREFLAGS:STRING=--mca;io;ompio")' >> hdf5-$HDF5_VER/config/cmake/scripts/HPC/sbatch-HDF5options.cmake
 
-    perl -i -pe "s/^CMD=\"ctest.*/CMD=\"ctest . -R MPI_TEST_ -E MPI_TEST_testphdf5|MPI_TEST_t_shapesame -C Release -T test\"/" hdf5-$HDF5_VER/bin/batch/ctestP.sl.in.cmake
+    perl -i -pe "s/^ctest.*/ctest . -R MPI_TEST_ -E ${SKIP_TESTS} -C Release -T test >& ctestP.out/" hdf5-$HDF5_VER/bin/batch/ctestP.sl.in.cmake
 
     module purge
     module load cmake
@@ -168,10 +270,28 @@ elif [[ $UNAME == serrano* ]]; then
 
 elif [[ $UNAME == chama* ]]; then
 
+    SKIP_TESTS="'"
+    SKIP_TESTS=$SKIP_TESTS"MPI_TEST_testphdf5_selnone"
+    #SKIP_TESTS=$SKIP_TESTS"|MPI_TEST_testphdf5_tldsc"
+    SKIP_TESTS=$SKIP_TESTS"|MPI_TEST_testphdf5_ecdsetw"
+    #SKIP_TESTS=$SKIP_TESTS"|MPI_TEST_testphdf5_eidsetw2"
+    SKIP_TESTS=$SKIP_TESTS"|MPI_TEST_testphdf5_cngrpw-ingrpr"
+    SKIP_TESTS=$SKIP_TESTS"|MPI_TEST_testphdf5_cchunk1"
+    SKIP_TESTS=$SKIP_TESTS"|MPI_TEST_testphdf5_cchunk2"
+    SKIP_TESTS=$SKIP_TESTS"|MPI_TEST_testphdf5_cchunk3"
+    SKIP_TESTS=$SKIP_TESTS"|MPI_TEST_testphdf5_cchunk4"
+    SKIP_TESTS=$SKIP_TESTS"|MPI_TEST_testphdf5_cschunkw"
+    SKIP_TESTS=$SKIP_TESTS"|MPI_TEST_testphdf5_ccchunkw"
+    SKIP_TESTS=$SKIP_TESTS"|MPI_TEST_testphdf5_actualio"
+    #SKIP_TESTS=$SKIP_TESTS"|MPI_TEST_testphdf5_MC_coll_MD_read"
+    SKIP_TESTS=$SKIP_TESTS"|MPI_TEST_t_shapesame"
+    SKIP_TESTS=$SKIP_TESTS"|MPI_TEST_t_filters_parallel"
+    SKIP_TESTS=$SKIP_TESTS"'"
+
     echo 'set (ADD_BUILD_OPTIONS "${ADD_BUILD_OPTIONS} -DMPIEXEC_EXECUTABLE:STRING=mpirun")' >> hdf5-$HDF5_VER/config/cmake/scripts/HPC/sbatch-HDF5options.cmake
     echo 'set (ADD_BUILD_OPTIONS "${ADD_BUILD_OPTIONS} -DMPIEXEC_PREFLAGS:STRING=--mca;io;ompio")' >> hdf5-$HDF5_VER/config/cmake/scripts/HPC/sbatch-HDF5options.cmake
 
-    perl -i -pe "s/^CMD=\"ctest.*/CMD=\"ctest . -R MPI_TEST_ -E MPI_TEST_testphdf5|MPI_TEST_t_filters_parallel|MPI_TEST_t_shapesame -C Release -T test\"/" hdf5-$HDF5_VER/bin/batch/ctestP.sl.in.cmake
+    perl -i -pe "s/^ctest.*/ctest . -R MPI_TEST_ -E ${SKIP_TESTS} -C Release -T test >& ctestP.out/" hdf5-$HDF5_VER/bin/batch/ctestP.sl.in.cmake
 
     module purge
     module load cmake
@@ -199,10 +319,14 @@ elif [[ $UNAME == eclipse* ]]; then
 
 elif [[ $UNAME == quartz* ]]; then
 
+    SKIP_TESTS="'"
+    SKIP_TESTS=$SKIP_TESTS"MPI_TEST_t_bigio"
+    SKIP_TESTS=$SKIP_TESTS"'"
+
     echo 'set (ADD_BUILD_OPTIONS "${ADD_BUILD_OPTIONS} -DMPIEXEC_EXECUTABLE:STRING=mpirun")' >> hdf5-$HDF5_VER/config/cmake/scripts/HPC/sbatch-HDF5options.cmake
     echo 'set (ADD_BUILD_OPTIONS "${ADD_BUILD_OPTIONS} -DMPIEXEC_PREFLAGS:STRING=--mca;io;ompio")' >> hdf5-$HDF5_VER/config/cmake/scripts/HPC/sbatch-HDF5options.cmake
 
-    perl -i -pe "s/^CMD=\"ctest.*/CMD=\"ctest . -R MPI_TEST_ -E MPI_TEST_t_bigio -C Release -T test\"/" hdf5-$HDF5_VER/bin/batch/ctestP.sl.in.cmake
+    perl -i -pe "s/^ctest.*/ctest . -R MPI_TEST_ -E ${SKIP_TESTS} -C Release -T test >& ctestP.out/" hdf5-$HDF5_VER/bin/batch/knl_ctestP.sl.in.cmake
 
     module purge
     module load cmake/3.12.1
@@ -218,7 +342,26 @@ elif [[ $UNAME == quartz* ]]; then
 
 elif [[ $UNAME == ray* ]]; then
 
-    perl -i -pe "s/^ctest.*/ctest . -R 'MPI_TEST_' -E 'MPI_TEST_t_filters_parallel|MPI_TEST_testphdf5|MPI_TEST_t_shapesame|MPI_TEST_H5DIFF-h5diff_80' -C Release -T test > & ctestP.out;/" hdf5-$HDF5_VER/bin/batch/ray_ctestP.lsf.in.cmake
+    SKIP_TESTS="'"
+    SKIP_TESTS=$SKIP_TESTS"MPI_TEST_testphdf5_selnone"
+    SKIP_TESTS=$SKIP_TESTS"|MPI_TEST_testphdf5_tldsc"
+    SKIP_TESTS=$SKIP_TESTS"|MPI_TEST_testphdf5_ecdsetw"
+    SKIP_TESTS=$SKIP_TESTS"|MPI_TEST_testphdf5_eidsetw2"
+    SKIP_TESTS=$SKIP_TESTS"|MPI_TEST_testphdf5_cngrpw-ingrpr"
+    SKIP_TESTS=$SKIP_TESTS"|MPI_TEST_testphdf5_cchunk1"
+    SKIP_TESTS=$SKIP_TESTS"|MPI_TEST_testphdf5_cchunk2"
+    SKIP_TESTS=$SKIP_TESTS"|MPI_TEST_testphdf5_cchunk3"
+    SKIP_TESTS=$SKIP_TESTS"|MPI_TEST_testphdf5_cchunk4"
+    SKIP_TESTS=$SKIP_TESTS"|MPI_TEST_testphdf5_cschunkw"
+    SKIP_TESTS=$SKIP_TESTS"|MPI_TEST_testphdf5_ccchunkw"
+    SKIP_TESTS=$SKIP_TESTS"|MPI_TEST_testphdf5_actualio"
+    SKIP_TESTS=$SKIP_TESTS"|MPI_TEST_testphdf5_MC_coll_MD_read"
+    SKIP_TESTS=$SKIP_TESTS"|MPI_TEST_t_shapesame"
+    SKIP_TESTS=$SKIP_TESTS"|MPI_TEST_t_filters_parallel"
+    SKIP_TESTS=$SKIP_TESTS"|MPI_TEST_H5DIFF-h5diff_80"
+    SKIP_TESTS=$SKIP_TESTS"'"
+
+    perl -i -pe "s/^ctest.*/ctest . -R MPI_TEST_ -E ${SKIP_TESTS} -C Release -T test >& ctestP.out/" hdf5-$HDF5_VER/bin/batch/ray_ctestP.lsf.in.cmake
     
     module purge
     module load cmake/3.12.1
@@ -234,19 +377,27 @@ elif [[ $UNAME == ray* ]]; then
 
 elif [[ $UNAME == lassen* ]]; then
 
+    SKIP_TESTS="'"
+    SKIP_TESTS=$SKIP_TESTS"MPI_TEST_testphdf5_selnone"
+    SKIP_TESTS=$SKIP_TESTS"|MPI_TEST_testphdf5_tldsc"
+    SKIP_TESTS=$SKIP_TESTS"|MPI_TEST_testphdf5_ecdsetw"
+    SKIP_TESTS=$SKIP_TESTS"|MPI_TEST_testphdf5_cchunk3"
+    SKIP_TESTS=$SKIP_TESTS"|MPI_TEST_testphdf5_ccchunkw"
+    SKIP_TESTS=$SKIP_TESTS"|MPI_TEST_testphdf5_actualio"
+    SKIP_TESTS=$SKIP_TESTS"|MPI_TEST_t_shapesame"
+    SKIP_TESTS=$SKIP_TESTS"'"
+
     echo 'set (ADD_BUILD_OPTIONS "${ADD_BUILD_OPTIONS} -DMPIEXEC_EXECUTABLE:STRING=mpirun")' >> hdf5-$HDF5_VER/config/cmake/scripts/HPC/bsub-HDF5options.cmake
 
     perl -i -pe "s/^ctest.*/ctest . -E MPI_TEST_ -C Release -j 32 -T test >& ctestS.out/" hdf5-$HDF5_VER/bin/batch/ctestS.lsf.in.cmake
-    perl -i -pe "s/^ctest.*/ctest . -R MPI_TEST_ -E 'MPI_TEST_testphdf5|MPI_TEST_t_shapesame' -C Release -T test >& ctestP.out/" hdf5-$HDF5_VER/bin/batch/ctestP.lsf.in.cmake
+    perl -i -pe "s/^ctest.*/ctest . -R MPI_TEST_ -E ${SKIP_TESTS} -C Release -T test >& ctestP.out/" hdf5-$HDF5_VER/bin/batch/ctestP.lsf.in.cmake
     
     module purge
     module load cmake/3.12.1
-    module load xl/2016.12.02
+    module load xl/2019.02.07
 
-    MASTER_MOD="spectrum-mpi"
-    CC_VER=(1 xl xl/2019.02.07)
-    #MASTER_MOD="spectrum-mpi spectrum-mpi spectrum-mpi"
-    #CC_VER=(1 xl xl/2019.02.07 1 gcc gcc/7.3.1 1 clang clang/coral-2018.08.08)
+    MASTER_MOD="spectrum-mpi spectrum-mpi spectrum-mpi"
+    CC_VER=(1 xl xl/2019.02.07 1 gcc gcc/7.3.1 1 clang clang/coral-2018.08.08)
     CTEST_OPTS="HPC=bsub,$CTEST_OPTS"
 
     _CC=mpicc
@@ -272,12 +423,11 @@ if [[ $HOSTNAME == summit* ]]; then
     echo 'set (ADD_BUILD_OPTIONS "${ADD_BUILD_OPTIONS} -DMPIEXEC_EXECUTABLE:STRING=jsrun")' >> hdf5-$HDF5_VER/config/cmake/scripts/HPC/bsub-HDF5options.cmake
 
     SKIP_TESTS="'"
-    SKIP_TESTS=$SKIP_TESTS"MPI_TEST_testphdf5_cngrpw"
-    SKIP_TESTS=$SKIP_TESTS"|MPI_TEST_testphdf5_selnone"
+    SKIP_TESTS=$SKIP_TESTS"MPI_TEST_testphdf5_selnone"
     SKIP_TESTS=$SKIP_TESTS"|MPI_TEST_testphdf5_tldsc"
     SKIP_TESTS=$SKIP_TESTS"|MPI_TEST_testphdf5_ecdsetw"
     SKIP_TESTS=$SKIP_TESTS"|MPI_TEST_testphdf5_eidsetw2"
-    SKIP_TESTS=$SKIP_TESTS"|MPI_TEST_testphdf5_ingrpr"
+    SKIP_TESTS=$SKIP_TESTS"|MPI_TEST_testphdf5_cngrpw-ingrpr"
     SKIP_TESTS=$SKIP_TESTS"|MPI_TEST_testphdf5_cchunk1"
     SKIP_TESTS=$SKIP_TESTS"|MPI_TEST_testphdf5_cchunk2"
     SKIP_TESTS=$SKIP_TESTS"|MPI_TEST_testphdf5_cchunk3"
@@ -398,6 +548,20 @@ for master_mod in $MASTER_MOD; do
     printf "$NO_COLOR"
     timeout 3h ctest . -S HDF5config.cmake,SITE_BUILDNAME_SUFFIX="$HDF5_VER-$master_mod--$cc_ver",${CTEST_OPTS}MPI=true,BUILD_GENERATOR=Unix,LOCAL_SUBMIT=true,MODEL=HPC -C Release -VV -O hdf5.log
 
+    if [ ! -d $BASEDIR/hdf5_install ]; then
+        mkdir $BASEDIR/hdf5_install
+    fi
+    tar zxf HDF5-*.tar.gz -C $BASEDIR/hdf5_install
+    if [[ "$HDF5_BRANCH" != "" ]]; then
+        BRANCH_STRING=-$HDF5_BRANCH
+    fi
+    MODULE_STRING=`echo $master_mod | sed 's?/?-?g'`
+    if [ -d $BASEDIR/hdf5_install/$HDF5_VER$BRANCH_STRING/hdf5-$MODULE_STRING$cc_ver ]; then
+        rm -rf $BASEDIR/hdf5_install/$HDF5_VER$BRANCH_STRING/hdf5-$MODULE_STRING$cc_ver
+    fi
+    mkdir -p $BASEDIR/hdf5_install/$HDF5_VER$BRANCH_STRING/hdf5-$MODULE_STRING$cc_ver
+    mv $BASEDIR/hdf5_install/HDF5-*/HDF_Group/HDF5/$HDF5_VER/* $BASEDIR/hdf5_install/$HDF5_VER$BRANCH_STRING/hdf5-$MODULE_STRING$cc_ver
+    rm -rf $BASEDIR/hdf5_install/HDF5-*
     module unload $cc_ver  # unload the compiler with version
 
     #rm -fr build
