@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/bash -l
 
 NO_COLOR="\033[0m"
 OK_COLOR="\033[32;01m"
@@ -75,7 +75,6 @@ fi
 
 HDF_DIR="0"
 
-
 # Set odd/even days of the week
 day_date="$(date +%-d)"
 day=$(( $(date +%-d) % 2 ))
@@ -111,13 +110,8 @@ export FLIBS="-Wl,--no-as-needed -ldl"
 export LIBS="-Wl,--no-as-needed -ldl"
 CMAKE_EXE_LINKER_FLAGS='-Wl,--no-as-needed -ldl'
 
-export FCFLAGS=""
-export CFLAGS=""
-
-
 DASH="-"
 HDF_DIR="/mnt/scr1/pre-release/hdf5/$HDF_VERSION/$UNAME$DASH$TEST_COMPILER" # default, but changed in "" case below.
-
 
 if [[ $TEST_COMPILER == "" ]]; then # System default compiler, exclude dash in the path name
 
@@ -238,6 +232,14 @@ elif [[ $TEST_COMPILER == "xl" ]]; then
     export FLIBS=""
     export LIBS=""
     CMAKE_EXE_LINKER_FLAGS=""
+elif [[ $TEST_COMPILER == "xl64" ]]; then
+    export CC="/opt/xl/xlf15.1_xlc13.1/xlc"
+    export FC="/opt/xl/xlf15.1_xlc13.1/xlf"
+    FCFLAGS="-q64 $FCFLAGS"
+    CFLAGS="-q64 $CFLAGS"
+    export FLIBS=""
+    export LIBS=""
+    CMAKE_EXE_LINKER_FLAGS=""
 elif [[ $TEST_COMPILER == "emu64" ]]; then
     make_bin="gmake"
     make_opt=""
@@ -245,8 +247,6 @@ elif [[ $TEST_COMPILER == "emu64" ]]; then
     export FC="f90"
     FCFLAGS="$FCFLAGS -O2 -m64"
     CFLAGS="$CFLAGS -O2 -m64"
-    export FCFLAGS="$FCFLAGS"
-    export CFLAGS="$CFLAGS"
     export FLIBS="-lm"
     export LIBS="-lm"
     export SYSCFLAGS="-m64"
@@ -257,6 +257,9 @@ else
     echo "   - Unknown compiler specified: $TEST_COMPILER"
     exit 1
 fi
+
+export FCFLAGS="$FCFLAGS"
+export CFLAGS="$CFLAGS"
 
 #Check to make sure directory exists
 if [ ! -d "$HDF_DIR" ]; then
