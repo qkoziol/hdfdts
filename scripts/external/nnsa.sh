@@ -453,7 +453,7 @@ if [[ $HOSTNAME == summit* ]]; then
     module load zlib
 
     MASTER_MOD="spectrum-mpi"
-    CC_VER=(1 xl xl/16.1.1-1)
+    CC_VER=(1 xl xl/16.1.1-3)
 
     CTEST_OPTS="HPC=bsub,SITE_OS_NAME=${HOSTNAME},$CTEST_OPTS"
 
