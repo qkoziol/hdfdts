@@ -452,8 +452,12 @@ if [[ $HOSTNAME == summit* ]]; then
     module load cmake
     module load zlib
 
+    module list xl &>out
+    XL_DEFAULT=`grep xl/ out | sed -n 's/^.*\(xl[^ ]*\).*/\1/p'`
+    rm -f out
+
     MASTER_MOD="spectrum-mpi"
-    CC_VER=(1 xl xl/16.1.1-3)
+    CC_VER=(1 xl $XL_DEFAULT)
 
     CTEST_OPTS="HPC=bsub,SITE_OS_NAME=${HOSTNAME},$CTEST_OPTS"
 
