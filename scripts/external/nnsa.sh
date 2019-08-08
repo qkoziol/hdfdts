@@ -107,10 +107,11 @@ HDF5_SRC_UPDATED=""
 HDF5_CLONED=""
 HDF5_SRCDIR=""
 HDF5_BRANCH_NAME='N/A'
+LAST_COMMIT_PREV=0
+LAST_COMMIT=1
 #GIT_DATE="yesterday"
 GIT_DATE="3 days ago"
-nHDF5srcdirs=`ls -d hdf5* | wc -l`
-if [[ "${nHDF5srcdirs}" == "1" ]]; then
+if [ -d hdf5* ]; then
   HDF5_SRCDIR=`ls -d hdf5*`
   cd ${HDF5_SRCDIR}
   if [[ $HDF5_BRANCH == "" ]]; then
@@ -118,7 +119,8 @@ if [[ "${nHDF5srcdirs}" == "1" ]]; then
   else
     git checkout $HDF5_BRANCH
   fi
-  if [[ $(git pull) ]]; then
+  LAST_COMMIT_PREV=`git log -p -1 --pretty=format:"%H"`
+  if ! git pull; then
     cd ..
     rm -rf ${HDF5_SRCDIR}
     if [[ $HDF5_BRANCH == "" ]]; then
@@ -131,35 +133,38 @@ if [[ "${nHDF5srcdirs}" == "1" ]]; then
     cd hdf5
   fi
   sleep 5
+
+  HDF5_VER=`bin/h5vers`
+  LAST_COMMIT=`git log -p -1 --pretty=format:"%H"`
   if [[ $(git log --since="$GIT_DATE") ]]; then
     HDF5_SRC_UPDATED="true"
   fi
   cd ..
-  echo ${HDF5_SRC_UPDATED}
   if [[ "${HDF5_SRC_UPDATED}" == "true" ]]; then
-    if [[ $HDF5_CLONED == "" ]]; then
+    if [[ $HDF5_CLONED == "" ]] && [[ $LAST_COMMIT_PREV != $LAST_COMMIT ]]; then
       echo "Delete directory $HDF5_SRCDIR and do a fresh clone of HDF5 $HDF5_BRANCH source."
       rm -rf ${HDF5_SRCDIR}
+      echo "Test new HDF5 clone."
     fi
-    echo "Test new HDF5 clone."
   else
-    echo "HDF5 $HDF5_BRANCH source in $HDF5_SRCDIR has not changed since yesterday. No testing today."
+    echo "HDF5 $HDF5_BRANCH source in $HDF5_SRCDIR has not changed since $GIT_DATE. No testing today."
     exit 0
   fi
+
 fi
 
-if [[ $HDF5_CLONED == "" ]]; then
+if [[ $HDF5_CLONED == "" ]] && [[ $LAST_COMMIT_PREV != $LAST_COMMIT ]]; then
   if [[ $HDF5_BRANCH == "" ]]; then
     git clone https://git@bitbucket.hdfgroup.org/scm/hdffv/hdf5.git hdf5
   else
     git clone https://git@bitbucket.hdfgroup.org/scm/hdffv/hdf5.git -b $HDF5_BRANCH hdf5
     HDF5_BRANCH_NAME=$HDF5_BRANCH
   fi
+  cd hdf5
+  HDF5_VER=`bin/h5vers`
+  cd ..
+  mv hdf5 hdf5-$HDF5_VER
 fi
-cd hdf5
-HDF5_VER=`bin/h5vers`
-cd ..
-mv hdf5 hdf5-$HDF5_VER
 
 # Summary of command line inputs
 printf "$NOTICE_COLOR\n"
