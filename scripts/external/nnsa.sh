@@ -33,7 +33,7 @@ case $key in
     BRANCH_VERSTR=`echo $HDF5_VER | sed -e s/\\\./_/g`
     HDF5_BRANCH=hdf5_$BRANCH_VERSTR
     ;;
-    -a|--account)
+    -a)
     CTEST_OPTS="LOCAL_BATCH_SCRIPT_ARGS=$2,$CTEST_OPTS"
     shift # past argument
     shift # past value
@@ -60,8 +60,8 @@ case $key in
        -v,--version x.x.x    hdf5 version to test 
                              [default is develop; do not specify version]
        -knl                  compile for KNL [default: no]
-       -a,--acount id        specify job account on the batch command line
-       -p, id                specify job account in the batch script
+       -a --account [${UNDERLINE}id${CLEAR}]     specify job account on the batch command line
+       -p [${UNDERLINE}id${CLEAR}]               specify job account in the batch script
        -alltests             don't skip any problematic tests [default: skip those tests]
        -h,--help             show this help text \n"
     exit 0
