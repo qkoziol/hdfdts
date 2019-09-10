@@ -14,7 +14,9 @@ IN_DIR=`pwd`
 
 HDF5_VER=""
 KNL="false"
+ALL_TESTS="false"
 HDF5_BRANCH=""
+SKIP_TESTS=""
 
 # READ COMMAND LINE FOR THE TEST TO RUN
 CTEST_OPTS=""
@@ -46,8 +48,12 @@ case $key in
     CTEST_OPTS="KNL=$KNL,$CTEST_OPTS"
     shift # past argument
     ;;
+    -alltests)
+    ALL_TESTS="true"
+    shift # past argument
+    ;;
     -h|--help)
-    echo "USAGE: nnsa.sh [-v,--version x.x.x] [-knl] [-h,--help]
+    printf "USAGE: nnsa.sh [${UNDERLINE}OPTION${CLEAR}]...
 
     where:
 
@@ -56,6 +62,7 @@ case $key in
        -knl                  compile for KNL [default: no]
        -a,--acount id        specify job account on the batch command line
        -p, id                specify job account in the batch script
+       -alltests             don't skip any problematic tests [default: skip those tests]
        -h,--help             show this help text"
     exit 0
     ;;
@@ -182,11 +189,13 @@ ln -s hdf5-$HDF5_VER/config/cmake/scripts/HDF5options.cmake .
 
 if [[ $UNAME == cori* ]];then
 
-    SKIP_TESTS="'"
-    SKIP_TESTS=$SKIP_TESTS"MPI_TEST_testphdf5_tldsc"
-    SKIP_TESTS=$SKIP_TESTS"'"
-    perl -i -pe "s/^ctest.*/ctest . -R MPI_TEST_ -E ${SKIP_TESTS} -C Release -T test >& ctestP.out/" hdf5-$HDF5_VER/bin/batch/ctestP.sl.in.cmake
-    perl -i -pe "s/^ctest.*/ctest . -R MPI_TEST_ -E ${SKIP_TESTS} -C Release -T test >& ctestP.out/" hdf5-$HDF5_VER/bin/batch/knl_ctestP.sl.in.cmake
+    if [[ $ALL_TESTS == 'false' ]];then
+      SKIP_TESTS="-E '"
+      SKIP_TESTS=$SKIP_TESTS"MPI_TEST_testphdf5_tldsc"
+      SKIP_TESTS=$SKIP_TESTS"'"
+    fi
+    perl -i -pe "s/^ctest.*/ctest . -R MPI_TEST_ ${SKIP_TESTS} -C Release -T test >& ctestP.out/" hdf5-$HDF5_VER/bin/batch/ctestP.sl.in.cmake
+    perl -i -pe "s/^ctest.*/ctest . -R MPI_TEST_ ${SKIP_TESTS} -C Release -T test >& ctestP.out/" hdf5-$HDF5_VER/bin/batch/knl_ctestP.sl.in.cmake
     perl -i -pe "s/^#SBATCH --nodes=1/#SBATCH -C haswell\n#SBATCH --nodes=1/" hdf5-$HDF5_VER/bin/batch/ctestS.sl.in.cmake
     perl -i -pe "s/^#SBATCH --nodes=1/#SBATCH -C haswell\n#SBATCH --nodes=1/" hdf5-$HDF5_VER/bin/batch/ctestP.sl.in.cmake
     perl -i -pe "s/^#SBATCH -p knl.*/#SBATCH -C knl,quad,cache/" hdf5-$HDF5_VER/bin/batch/knl_ctestS.sl.in.cmake
@@ -218,11 +227,12 @@ if [[ $UNAME == cori* ]];then
 
 elif [[ $UNAME == mutrino* ]];then
 
-    SKIP_TESTS="'"
-    SKIP_TESTS=$SKIP_TESTS"MPI_TEST_testphdf5_tldsc"
-    SKIP_TESTS=$SKIP_TESTS"'"
-
-    perl -i -pe "s/^ctest.*/ctest . -R MPI_TEST_ -E ${SKIP_TESTS} -C Release -T test >& ctestP.out/" hdf5-$HDF5_VER/bin/batch/ctestP.sl.in.cmake
+    if [[ $ALL_TESTS == 'false' ]];then
+      SKIP_TESTS="-E '"
+      SKIP_TESTS=$SKIP_TESTS"MPI_TEST_testphdf5_tldsc"
+      SKIP_TESTS=$SKIP_TESTS"'"
+    fi
+    perl -i -pe "s/^ctest.*/ctest . -R MPI_TEST_ ${SKIP_TESTS} -C Release -T test >& ctestP.out/" hdf5-$HDF5_VER/bin/batch/ctestP.sl.in.cmake
 
 # Get the curent PrgEnv module setting
     module list &> out
@@ -247,20 +257,22 @@ elif [[ $UNAME == mutrino* ]];then
 
 elif [[ $UNAME == serrano* ]]; then
 
-    SKIP_TESTS="'"
-    SKIP_TESTS=$SKIP_TESTS"MPI_TEST_testphdf5_selnone"
-    SKIP_TESTS=$SKIP_TESTS"|MPI_TEST_testphdf5_tldsc"
-    SKIP_TESTS=$SKIP_TESTS"|MPI_TEST_testphdf5_ecdsetw"
-    SKIP_TESTS=$SKIP_TESTS"|MPI_TEST_testphdf5_cchunk3"
-    SKIP_TESTS=$SKIP_TESTS"|MPI_TEST_testphdf5_ccchunkw"
-    SKIP_TESTS=$SKIP_TESTS"|MPI_TEST_testphdf5_actualio"
-    SKIP_TESTS=$SKIP_TESTS"|MPI_TEST_t_shapesame"
-    SKIP_TESTS=$SKIP_TESTS"'"
+    if [[ $ALL_TESTS == 'false' ]];then
+      SKIP_TESTS="-E '"
+      SKIP_TESTS=$SKIP_TESTS"MPI_TEST_testphdf5_selnone"
+      SKIP_TESTS=$SKIP_TESTS"|MPI_TEST_testphdf5_tldsc"
+      SKIP_TESTS=$SKIP_TESTS"|MPI_TEST_testphdf5_ecdsetw"
+      SKIP_TESTS=$SKIP_TESTS"|MPI_TEST_testphdf5_cchunk3"
+      SKIP_TESTS=$SKIP_TESTS"|MPI_TEST_testphdf5_ccchunkw"
+      SKIP_TESTS=$SKIP_TESTS"|MPI_TEST_testphdf5_actualio"
+      SKIP_TESTS=$SKIP_TESTS"|MPI_TEST_t_shapesame"
+      SKIP_TESTS=$SKIP_TESTS"'"
+    fi
+    
+    perl -i -pe "s/^ctest.*/ctest . -R MPI_TEST_ ${SKIP_TESTS} -C Release -T test >& ctestP.out/" hdf5-$HDF5_VER/bin/batch/ctestP.sl.in.cmake
 
     echo 'set (ADD_BUILD_OPTIONS "${ADD_BUILD_OPTIONS} -DMPIEXEC_EXECUTABLE:STRING=mpirun")' >> hdf5-$HDF5_VER/config/cmake/scripts/HPC/sbatch-HDF5options.cmake
     echo 'set (ADD_BUILD_OPTIONS "${ADD_BUILD_OPTIONS} -DMPIEXEC_PREFLAGS:STRING=--mca;io;ompio")' >> hdf5-$HDF5_VER/config/cmake/scripts/HPC/sbatch-HDF5options.cmake
-
-    perl -i -pe "s/^ctest.*/ctest . -R MPI_TEST_ -E ${SKIP_TESTS} -C Release -T test >& ctestP.out/" hdf5-$HDF5_VER/bin/batch/ctestP.sl.in.cmake
 
     module purge
     module load cmake
@@ -275,28 +287,31 @@ elif [[ $UNAME == serrano* ]]; then
 
 elif [[ $UNAME == chama* ]]; then
 
-    SKIP_TESTS="'"
-    SKIP_TESTS=$SKIP_TESTS"MPI_TEST_testphdf5_selnone"
-    #SKIP_TESTS=$SKIP_TESTS"|MPI_TEST_testphdf5_tldsc"
-    SKIP_TESTS=$SKIP_TESTS"|MPI_TEST_testphdf5_ecdsetw"
-    #SKIP_TESTS=$SKIP_TESTS"|MPI_TEST_testphdf5_eidsetw2"
-    SKIP_TESTS=$SKIP_TESTS"|MPI_TEST_testphdf5_cngrpw-ingrpr"
-    SKIP_TESTS=$SKIP_TESTS"|MPI_TEST_testphdf5_cchunk1"
-    SKIP_TESTS=$SKIP_TESTS"|MPI_TEST_testphdf5_cchunk2"
-    SKIP_TESTS=$SKIP_TESTS"|MPI_TEST_testphdf5_cchunk3"
-    SKIP_TESTS=$SKIP_TESTS"|MPI_TEST_testphdf5_cchunk4"
-    SKIP_TESTS=$SKIP_TESTS"|MPI_TEST_testphdf5_cschunkw"
-    SKIP_TESTS=$SKIP_TESTS"|MPI_TEST_testphdf5_ccchunkw"
-    SKIP_TESTS=$SKIP_TESTS"|MPI_TEST_testphdf5_actualio"
-    #SKIP_TESTS=$SKIP_TESTS"|MPI_TEST_testphdf5_MC_coll_MD_read"
-    SKIP_TESTS=$SKIP_TESTS"|MPI_TEST_t_shapesame"
-    SKIP_TESTS=$SKIP_TESTS"|MPI_TEST_t_filters_parallel"
-    SKIP_TESTS=$SKIP_TESTS"'"
+    if [[ $ALL_TESTS == 'false' ]];then
+
+      SKIP_TESTS="-E '"
+      SKIP_TESTS=$SKIP_TESTS"MPI_TEST_testphdf5_selnone"
+      #SKIP_TESTS=$SKIP_TESTS"|MPI_TEST_testphdf5_tldsc"
+      SKIP_TESTS=$SKIP_TESTS"|MPI_TEST_testphdf5_ecdsetw"
+      #SKIP_TESTS=$SKIP_TESTS"|MPI_TEST_testphdf5_eidsetw2"
+      SKIP_TESTS=$SKIP_TESTS"|MPI_TEST_testphdf5_cngrpw-ingrpr"
+      SKIP_TESTS=$SKIP_TESTS"|MPI_TEST_testphdf5_cchunk1"
+      SKIP_TESTS=$SKIP_TESTS"|MPI_TEST_testphdf5_cchunk2"
+      SKIP_TESTS=$SKIP_TESTS"|MPI_TEST_testphdf5_cchunk3"
+      SKIP_TESTS=$SKIP_TESTS"|MPI_TEST_testphdf5_cchunk4"
+      SKIP_TESTS=$SKIP_TESTS"|MPI_TEST_testphdf5_cschunkw"
+      SKIP_TESTS=$SKIP_TESTS"|MPI_TEST_testphdf5_ccchunkw"
+      SKIP_TESTS=$SKIP_TESTS"|MPI_TEST_testphdf5_actualio"
+      #SKIP_TESTS=$SKIP_TESTS"|MPI_TEST_testphdf5_MC_coll_MD_read"
+      SKIP_TESTS=$SKIP_TESTS"|MPI_TEST_t_shapesame"
+      SKIP_TESTS=$SKIP_TESTS"|MPI_TEST_t_filters_parallel"
+      SKIP_TESTS=$SKIP_TESTS"'"
+    fi
+
+    perl -i -pe "s/^ctest.*/ctest . -R MPI_TEST_ ${SKIP_TESTS} -C Release -T test >& ctestP.out/" hdf5-$HDF5_VER/bin/batch/ctestP.sl.in.cmake
 
     echo 'set (ADD_BUILD_OPTIONS "${ADD_BUILD_OPTIONS} -DMPIEXEC_EXECUTABLE:STRING=mpirun")' >> hdf5-$HDF5_VER/config/cmake/scripts/HPC/sbatch-HDF5options.cmake
     echo 'set (ADD_BUILD_OPTIONS "${ADD_BUILD_OPTIONS} -DMPIEXEC_PREFLAGS:STRING=--mca;io;ompio")' >> hdf5-$HDF5_VER/config/cmake/scripts/HPC/sbatch-HDF5options.cmake
-
-    perl -i -pe "s/^ctest.*/ctest . -R MPI_TEST_ -E ${SKIP_TESTS} -C Release -T test >& ctestP.out/" hdf5-$HDF5_VER/bin/batch/ctestP.sl.in.cmake
 
     module purge
     module load cmake
@@ -324,14 +339,16 @@ elif [[ $UNAME == eclipse* ]]; then
 
 elif [[ $UNAME == quartz* ]]; then
 
-    SKIP_TESTS="'"
-    SKIP_TESTS=$SKIP_TESTS"MPI_TEST_t_bigio"
-    SKIP_TESTS=$SKIP_TESTS"'"
+    if [[ $ALL_TESTS == 'false' ]];then
+      SKIP_TESTS="-E '"
+      SKIP_TESTS=$SKIP_TESTS"MPI_TEST_t_bigio"
+      SKIP_TESTS=$SKIP_TESTS"'"
+    fi
+
+    perl -i -pe "s/^ctest.*/ctest . -R MPI_TEST_ ${SKIP_TESTS} -C Release -T test >& ctestP.out/" hdf5-$HDF5_VER/bin/batch/knl_ctestP.sl.in.cmake
 
     echo 'set (ADD_BUILD_OPTIONS "${ADD_BUILD_OPTIONS} -DMPIEXEC_EXECUTABLE:STRING=mpirun")' >> hdf5-$HDF5_VER/config/cmake/scripts/HPC/sbatch-HDF5options.cmake
     echo 'set (ADD_BUILD_OPTIONS "${ADD_BUILD_OPTIONS} -DMPIEXEC_PREFLAGS:STRING=--mca;io;ompio")' >> hdf5-$HDF5_VER/config/cmake/scripts/HPC/sbatch-HDF5options.cmake
-
-    perl -i -pe "s/^ctest.*/ctest . -R MPI_TEST_ -E ${SKIP_TESTS} -C Release -T test >& ctestP.out/" hdf5-$HDF5_VER/bin/batch/knl_ctestP.sl.in.cmake
 
     module purge
     module load cmake/3.12.1
@@ -347,26 +364,28 @@ elif [[ $UNAME == quartz* ]]; then
 
 elif [[ $UNAME == ray* ]]; then
 
-    SKIP_TESTS="'"
-    SKIP_TESTS=$SKIP_TESTS"MPI_TEST_testphdf5_selnone"
-    SKIP_TESTS=$SKIP_TESTS"|MPI_TEST_testphdf5_tldsc"
-    SKIP_TESTS=$SKIP_TESTS"|MPI_TEST_testphdf5_ecdsetw"
-    SKIP_TESTS=$SKIP_TESTS"|MPI_TEST_testphdf5_eidsetw2"
-    SKIP_TESTS=$SKIP_TESTS"|MPI_TEST_testphdf5_cngrpw-ingrpr"
-    SKIP_TESTS=$SKIP_TESTS"|MPI_TEST_testphdf5_cchunk1"
-    SKIP_TESTS=$SKIP_TESTS"|MPI_TEST_testphdf5_cchunk2"
-    SKIP_TESTS=$SKIP_TESTS"|MPI_TEST_testphdf5_cchunk3"
-    SKIP_TESTS=$SKIP_TESTS"|MPI_TEST_testphdf5_cchunk4"
-    SKIP_TESTS=$SKIP_TESTS"|MPI_TEST_testphdf5_cschunkw"
-    SKIP_TESTS=$SKIP_TESTS"|MPI_TEST_testphdf5_ccchunkw"
-    SKIP_TESTS=$SKIP_TESTS"|MPI_TEST_testphdf5_actualio"
-    SKIP_TESTS=$SKIP_TESTS"|MPI_TEST_testphdf5_MC_coll_MD_read"
-    SKIP_TESTS=$SKIP_TESTS"|MPI_TEST_t_shapesame"
-    SKIP_TESTS=$SKIP_TESTS"|MPI_TEST_t_filters_parallel"
-    SKIP_TESTS=$SKIP_TESTS"|MPI_TEST_H5DIFF-h5diff_80"
-    SKIP_TESTS=$SKIP_TESTS"'"
+    if [[ $ALL_TESTS == 'false' ]];then
+      SKIP_TESTS="-E '"
+      SKIP_TESTS=$SKIP_TESTS"MPI_TEST_testphdf5_selnone"
+      SKIP_TESTS=$SKIP_TESTS"|MPI_TEST_testphdf5_tldsc"
+      SKIP_TESTS=$SKIP_TESTS"|MPI_TEST_testphdf5_ecdsetw"
+      SKIP_TESTS=$SKIP_TESTS"|MPI_TEST_testphdf5_eidsetw2"
+      SKIP_TESTS=$SKIP_TESTS"|MPI_TEST_testphdf5_cngrpw-ingrpr"
+      SKIP_TESTS=$SKIP_TESTS"|MPI_TEST_testphdf5_cchunk1"
+      SKIP_TESTS=$SKIP_TESTS"|MPI_TEST_testphdf5_cchunk2"
+      SKIP_TESTS=$SKIP_TESTS"|MPI_TEST_testphdf5_cchunk3"
+      SKIP_TESTS=$SKIP_TESTS"|MPI_TEST_testphdf5_cchunk4"
+      SKIP_TESTS=$SKIP_TESTS"|MPI_TEST_testphdf5_cschunkw"
+      SKIP_TESTS=$SKIP_TESTS"|MPI_TEST_testphdf5_ccchunkw"
+      SKIP_TESTS=$SKIP_TESTS"|MPI_TEST_testphdf5_actualio"
+      SKIP_TESTS=$SKIP_TESTS"|MPI_TEST_testphdf5_MC_coll_MD_read"
+      SKIP_TESTS=$SKIP_TESTS"|MPI_TEST_t_shapesame"
+      SKIP_TESTS=$SKIP_TESTS"|MPI_TEST_t_filters_parallel"
+      SKIP_TESTS=$SKIP_TESTS"|MPI_TEST_H5DIFF-h5diff_80"
+      SKIP_TESTS=$SKIP_TESTS"'"
+    fi
 
-    perl -i -pe "s/^ctest.*/ctest . -R MPI_TEST_ -E ${SKIP_TESTS} -C Release -T test >& ctestP.out/" hdf5-$HDF5_VER/bin/batch/ray_ctestP.lsf.in.cmake
+    perl -i -pe "s/^ctest.*/ctest . -R MPI_TEST_ ${SKIP_TESTS} -C Release -T test >& ctestP.out/" hdf5-$HDF5_VER/bin/batch/ray_ctestP.lsf.in.cmake
     
     module purge
     module load cmake/3.12.1
@@ -382,20 +401,23 @@ elif [[ $UNAME == ray* ]]; then
 
 elif [[ $UNAME == lassen* ]]; then
 
-    SKIP_TESTS="'"
-    SKIP_TESTS=$SKIP_TESTS"MPI_TEST_testphdf5_selnone"
-    SKIP_TESTS=$SKIP_TESTS"|MPI_TEST_testphdf5_tldsc"
-    SKIP_TESTS=$SKIP_TESTS"|MPI_TEST_testphdf5_ecdsetw"
-    SKIP_TESTS=$SKIP_TESTS"|MPI_TEST_testphdf5_cchunk3"
-    SKIP_TESTS=$SKIP_TESTS"|MPI_TEST_testphdf5_ccchunkw"
-    SKIP_TESTS=$SKIP_TESTS"|MPI_TEST_testphdf5_actualio"
-    SKIP_TESTS=$SKIP_TESTS"|MPI_TEST_t_shapesame"
-    SKIP_TESTS=$SKIP_TESTS"'"
+    if [[ $ALL_TESTS == 'false' ]];then
+      SKIP_TESTS="-E '"
+      SKIP_TESTS=$SKIP_TESTS"MPI_TEST_testphdf5_selnone"
+      SKIP_TESTS=$SKIP_TESTS"|MPI_TEST_testphdf5_tldsc"
+      SKIP_TESTS=$SKIP_TESTS"|MPI_TEST_testphdf5_ecdsetw"
+      SKIP_TESTS=$SKIP_TESTS"|MPI_TEST_testphdf5_cchunk3"
+      SKIP_TESTS=$SKIP_TESTS"|MPI_TEST_testphdf5_ccchunkw"
+      SKIP_TESTS=$SKIP_TESTS"|MPI_TEST_testphdf5_actualio"
+      SKIP_TESTS=$SKIP_TESTS"|MPI_TEST_t_shapesame"
+      SKIP_TESTS=$SKIP_TESTS"'"
+    fi
+ 
+    perl -i -pe "s/^ctest.*/ctest . -R MPI_TEST_ ${SKIP_TESTS} -C Release -T test >& ctestP.out/" hdf5-$HDF5_VER/bin/batch/ctestP.lsf.in.cmake
 
     echo 'set (ADD_BUILD_OPTIONS "${ADD_BUILD_OPTIONS} -DMPIEXEC_EXECUTABLE:STRING=mpirun")' >> hdf5-$HDF5_VER/config/cmake/scripts/HPC/bsub-HDF5options.cmake
 
     perl -i -pe "s/^ctest.*/ctest . -E MPI_TEST_ -C Release -j 32 -T test >& ctestS.out/" hdf5-$HDF5_VER/bin/batch/ctestS.lsf.in.cmake
-    perl -i -pe "s/^ctest.*/ctest . -R MPI_TEST_ -E ${SKIP_TESTS} -C Release -T test >& ctestP.out/" hdf5-$HDF5_VER/bin/batch/ctestP.lsf.in.cmake
     
     module purge
     module load cmake/3.12.1
@@ -427,26 +449,28 @@ if [[ $HOSTNAME == summit* ]]; then
     UNAME=$HOSTNAME
     echo 'set (ADD_BUILD_OPTIONS "${ADD_BUILD_OPTIONS} -DMPIEXEC_EXECUTABLE:STRING=jsrun")' >> hdf5-$HDF5_VER/config/cmake/scripts/HPC/bsub-HDF5options.cmake
 
-    SKIP_TESTS="'"
-    SKIP_TESTS=$SKIP_TESTS"MPI_TEST_testphdf5_selnone"
-    SKIP_TESTS=$SKIP_TESTS"|MPI_TEST_testphdf5_tldsc"
-    SKIP_TESTS=$SKIP_TESTS"|MPI_TEST_testphdf5_ecdsetw"
-    SKIP_TESTS=$SKIP_TESTS"|MPI_TEST_testphdf5_eidsetw2"
-    SKIP_TESTS=$SKIP_TESTS"|MPI_TEST_testphdf5_cngrpw-ingrpr"
-    SKIP_TESTS=$SKIP_TESTS"|MPI_TEST_testphdf5_cchunk1"
-    SKIP_TESTS=$SKIP_TESTS"|MPI_TEST_testphdf5_cchunk2"
-    SKIP_TESTS=$SKIP_TESTS"|MPI_TEST_testphdf5_cchunk3"
-    SKIP_TESTS=$SKIP_TESTS"|MPI_TEST_testphdf5_cchunk4"
-    SKIP_TESTS=$SKIP_TESTS"|MPI_TEST_testphdf5_cschunkw"
-    SKIP_TESTS=$SKIP_TESTS"|MPI_TEST_testphdf5_ccchunkw"
-    SKIP_TESTS=$SKIP_TESTS"|MPI_TEST_testphdf5_actualio"
-    SKIP_TESTS=$SKIP_TESTS"|MPI_TEST_testphdf5_MC_coll_MD_read"
-    SKIP_TESTS=$SKIP_TESTS"|MPI_TEST_t_shapesame"
-    SKIP_TESTS=$SKIP_TESTS"|MPI_TEST_t_filters_parallel"
-    SKIP_TESTS=$SKIP_TESTS"'"
+    if [[ $ALL_TESTS == 'false' ]];then
+      SKIP_TESTS="-E '"
+      SKIP_TESTS=$SKIP_TESTS"MPI_TEST_testphdf5_selnone"
+      SKIP_TESTS=$SKIP_TESTS"|MPI_TEST_testphdf5_tldsc"
+      SKIP_TESTS=$SKIP_TESTS"|MPI_TEST_testphdf5_ecdsetw"
+      SKIP_TESTS=$SKIP_TESTS"|MPI_TEST_testphdf5_eidsetw2"
+      SKIP_TESTS=$SKIP_TESTS"|MPI_TEST_testphdf5_cngrpw-ingrpr"
+      SKIP_TESTS=$SKIP_TESTS"|MPI_TEST_testphdf5_cchunk1"
+      SKIP_TESTS=$SKIP_TESTS"|MPI_TEST_testphdf5_cchunk2"
+      SKIP_TESTS=$SKIP_TESTS"|MPI_TEST_testphdf5_cchunk3"
+      SKIP_TESTS=$SKIP_TESTS"|MPI_TEST_testphdf5_cchunk4"
+      SKIP_TESTS=$SKIP_TESTS"|MPI_TEST_testphdf5_cschunkw"
+      SKIP_TESTS=$SKIP_TESTS"|MPI_TEST_testphdf5_ccchunkw"
+      SKIP_TESTS=$SKIP_TESTS"|MPI_TEST_testphdf5_actualio"
+      SKIP_TESTS=$SKIP_TESTS"|MPI_TEST_testphdf5_MC_coll_MD_read"
+      SKIP_TESTS=$SKIP_TESTS"|MPI_TEST_t_shapesame"
+      SKIP_TESTS=$SKIP_TESTS"|MPI_TEST_t_filters_parallel"
+      SKIP_TESTS=$SKIP_TESTS"'"
+    fi
 
+    perl -i -pe "s/^ctest.*/ctest . -R MPI_TEST_ ${SKIP_TESTS} -C Release -T test >& ctestP.out/" hdf5-$HDF5_VER/bin/batch/ctestP.lsf.in.cmake
     perl -i -pe "s/^ctest.*/ctest . -E MPI_TEST_ -C Release -j 32 -T test >& ctestS.out/" hdf5-$HDF5_VER/bin/batch/ctestS.lsf.in.cmake
-    perl -i -pe "s/^ctest.*/ctest . -R MPI_TEST_ -E ${SKIP_TESTS} -C Release -T test >& ctestP.out/" hdf5-$HDF5_VER/bin/batch/ctestP.lsf.in.cmake
 
 # Custom BSUB commands
     perl -i -pe "s/^#BSUB -G.*/#BSUB -P ${ACCOUNT}/" hdf5-$HDF5_VER/bin/batch/ctestS.lsf.in.cmake
@@ -497,9 +521,12 @@ if [[ $HOSTNAME == theta* ]]; then
     module unload craype-mic-knl
     module load craype-haswell
 
-    SKIP_TESTS="\"-E "
-    SKIP_TESTS=$SKIP_TESTS"MPI_TEST_testphdf5_tldsc"
-    SKIP_TESTS=$SKIP_TESTS"\""
+    if [[ $ALL_TESTS == 'false' ]];then
+      SKIP_TESTS="\"-E "
+      SKIP_TESTS=$SKIP_TESTS"MPI_TEST_testphdf5_tldsc"
+      SKIP_TESTS=$SKIP_TESTS"\""
+      sed -i -e "s/^#SKIPTESTS.*/\nSKIP_TESTS=${SKIP_TESTS}/g" hdf5-$HDF5_VER/bin/batch/ctest.qsub.in.cmake
+    fi
 
     # Select the newest cmake available
     MOD_CMAKE=`module avail cmake 2>&1 >/dev/null | grep 'cmake' | sed -n '${s/.* //; p}' | sed 's/(default)//g'`
@@ -512,7 +539,6 @@ if [[ $HOSTNAME == theta* ]]; then
     MOD_INTEL=`module avail intel/ 2>&1 >/dev/null | grep 'intel' | sed -n '${s/.* //; p}' | sed 's/(default)//g'`
     CC_VER=(1 intel $MOD_INTEL)
 
-    sed -i -e "s/^#SKIPTESTS.*/\nSKIP_TESTS=${SKIP_TESTS}/g" hdf5-$HDF5_VER/bin/batch/ctest.qsub.in.cmake
 
     CTEST_OPTS="HPC=qsub,SITE_OS_NAME=${HOSTNAME},LOCAL_BATCH_SCRIPT_ARGS=${ACCOUNT},$CTEST_OPTS"
 
