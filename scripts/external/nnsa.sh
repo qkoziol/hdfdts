@@ -63,7 +63,7 @@ case $key in
        -a,--acount id        specify job account on the batch command line
        -p, id                specify job account in the batch script
        -alltests             don't skip any problematic tests [default: skip those tests]
-       -h,--help             show this help text"
+       -h,--help             show this help text \n"
     exit 0
     ;;
     *)    # unknown option
