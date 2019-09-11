@@ -154,7 +154,9 @@ if [ -d hdf5* ]; then
       echo "Test new HDF5 clone."
     fi
   else
+    printf "$NOTICE_COLOR\n"
     echo "HDF5 $HDF5_BRANCH source in $HDF5_SRCDIR has not changed since $GIT_DATE. No testing today."
+    printf "$NO_COLOR\n"
     exit 0
   fi
 
