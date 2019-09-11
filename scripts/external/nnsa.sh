@@ -217,7 +217,7 @@ if [[ $UNAME == cori* ]];then
     #MASTER_MOD="PrgEnv-intel/6.0.4"
 #   the Compiler to switch to:
 #    Format: <number of compiler versions to check> <compiler type> <list of compiler versions (modules) ... repeat)
-    CC_VER=(2 intel intel/17.0.3.191 intel/18.0.2.199 2 gcc gcc/7.3.0 gcc/8.2.0)
+    CC_VER=(2 intel/17.0.3.191 intel/18.0.2.199 2 gcc/7.3.0 gcc/8.2.0)
     #CC_VER=(1 gcc gcc/8.2.0)
     CTEST_OPTS="HPC=sbatch,$CTEST_OPTS"
 
@@ -248,7 +248,7 @@ elif [[ $UNAME == mutrino* ]];then
     MASTER_MOD="PrgEnv-intel/6.0.4 PrgEnv-gnu/6.0.4"
 #   the Compiler to switch to:
 #    Format: <number of compiler versions to check> <compiler type> <list of compiler versions (modules) ... repeat)
-    CC_VER=(2 intel intel/17.0.4 intel/18.0.2 2 gcc gcc/7.2.0 gcc/8.2.0)
+    CC_VER=(2 intel/17.0.4 intel/18.0.2 2 gcc/7.2.0 gcc/8.2.0)
     CTEST_OPTS="HPC=sbatch,$CTEST_OPTS"
 
     _CC=cc
@@ -278,7 +278,7 @@ elif [[ $UNAME == serrano* ]]; then
     module load cmake
 
     MASTER_MOD="openmpi-intel/3.0"
-    CC_VER=(2 intel intel/17.0 intel/18.0)
+    CC_VER=(2 intel/17.0 intel/18.0)
     CTEST_OPTS="HPC=sbatch,$CTEST_OPTS"
 
     _CC=mpicc
@@ -316,8 +316,8 @@ elif [[ $UNAME == chama* ]]; then
     module purge
     module load cmake
 
-    MASTER_MOD="openmpi-intel/3.0"
-    CC_VER=(2 intel intel/17.0 intel/18.0)
+    MASTER_MOD="openmpi-intel/4.0"
+    CC_VER=(1 intel/18.0)
     CTEST_OPTS="HPC=sbatch,$CTEST_OPTS"
 
     _CC=mpicc
@@ -330,7 +330,7 @@ elif [[ $UNAME == eclipse* ]]; then
     module load cmake
 
     MASTER_MOD="intel-mpi/2018"
-    CC_VER=(2 intel intel/16.0 intel/18.0)
+    CC_VER=(2 intel/16.0 intel/18.0)
     CTEST_OPTS="HPC=sbatch,$CTEST_OPTS"
 
     _CC=mpicc
@@ -355,7 +355,7 @@ elif [[ $UNAME == quartz* ]]; then
     module load intel/16.0.4
 
     MASTER_MOD="openmpi/4.0.0 openmpi/4.0.0 openmpi/4.0.0"
-    CC_VER=(1 intel intel/16.0.4 2 gcc gcc/7.1.0 gcc/8.1.0 1 clang clang/3.9.0)
+    CC_VER=(1 intel/16.0.4 2 gcc/7.1.0 gcc/8.1.0 1 clang/3.9.0)
     CTEST_OPTS="HPC=sbatch,$CTEST_OPTS"
 
     _CC=mpicc
@@ -392,7 +392,7 @@ elif [[ $UNAME == ray* ]]; then
     module load xl/2016.12.02
 
     MASTER_MOD="spectrum-mpi spectrum-mpi spectrum-mpi"
-    CC_VER=(1 xl xl/2016.12.02 1 gcc gcc/7.3.1 1 clang clang/coral-2018.08.08)
+    CC_VER=(1 xl/2016.12.02 1 gcc/7.3.1 1 clang/coral-2018.08.08)
     CTEST_OPTS="HPC=raybsub,$CTEST_OPTS"
 
     _CC=mpicc
@@ -424,7 +424,7 @@ elif [[ $UNAME == lassen* ]]; then
     module load xl/2019.02.07
 
     MASTER_MOD="spectrum-mpi spectrum-mpi spectrum-mpi"
-    CC_VER=(1 xl xl/2019.02.07 1 gcc gcc/7.3.1 1 clang clang/coral-2018.08.08)
+    CC_VER=(1 xl/2019.02.07 1 gcc/7.3.1 1 clang/coral-2018.08.08)
     CTEST_OPTS="HPC=bsub,$CTEST_OPTS"
 
     _CC=mpicc
@@ -486,7 +486,7 @@ if [[ $HOSTNAME == summit* ]]; then
     rm -f out
 
     MASTER_MOD="spectrum-mpi"
-    CC_VER=(1 xl $XL_DEFAULT)
+    CC_VER=(1 $XL_DEFAULT)
 
     CTEST_OPTS="HPC=bsub,SITE_OS_NAME=${HOSTNAME},$CTEST_OPTS"
 
@@ -537,8 +537,7 @@ if [[ $HOSTNAME == theta* ]]; then
 
     # Select the newest intel compiler available
     MOD_INTEL=`module avail intel/ 2>&1 >/dev/null | grep 'intel' | sed -n '${s/.* //; p}' | sed 's/(default)//g'`
-    CC_VER=(1 intel $MOD_INTEL)
-
+    CC_VER=(1 $MOD_INTEL)
 
     CTEST_OPTS="HPC=qsub,SITE_OS_NAME=${HOSTNAME},LOCAL_BATCH_SCRIPT_ARGS=${ACCOUNT},$CTEST_OPTS"
 
@@ -559,13 +558,13 @@ for master_mod in $MASTER_MOD; do
   icnt=$(($icnt+1))
   num_CC=${CC_VER[$icnt]} # number of compilers for the  master_mod
 
-  icnt=$(($icnt+1))
   module load $master_mod # Load the master module
 
-  module unload ${CC_VER[$icnt]} # unload the general compiler type
+  icnt=$(($icnt+1))
+  COMPILER_TYPE=`echo ${CC_VER[icnt]} | sed 's/\/.*//'`
+  module unload ${COMPILER_TYPE} # unload the general compiler type
 
   for i in `seq 1 $num_CC`; do # loop over compiler versions
-    icnt=$(($icnt+1))
     cc_ver=${CC_VER[$icnt]} # compiler version
     rm -fr build
 
@@ -598,6 +597,8 @@ for master_mod in $MASTER_MOD; do
     mv $BASEDIR/hdf5_install/HDF5-*/HDF_Group/HDF5/$HDF5_VER/* $BASEDIR/hdf5_install/$HDF5_VER$BRANCH_STRING/hdf5-$MODULE_STRING$cc_ver
     rm -rf $BASEDIR/hdf5_install/HDF5-*
     module unload $cc_ver  # unload the compiler with version
+
+    icnt=$(($icnt+1))
 
     #rm -fr build
   done
