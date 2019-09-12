@@ -17,6 +17,7 @@ KNL="false"
 ALL_TESTS="false"
 HDF5_BRANCH=""
 SKIP_TESTS=""
+BUILD_TYPE="Release"
 
 # READ COMMAND LINE FOR THE TEST TO RUN
 CTEST_OPTS=""
@@ -52,6 +53,10 @@ case $key in
     ALL_TESTS="true"
     shift # past argument
     ;;
+    -debug)
+    BUILD_TYPE="Debug"
+    shift # past argument
+    ;;
     -h|--help)
     printf "USAGE: nnsa.sh [${UNDERLINE}OPTION${CLEAR}]...
 
@@ -63,6 +68,7 @@ case $key in
        -a --account [${UNDERLINE}id${CLEAR}]     specify job account on the batch command line
        -p [${UNDERLINE}id${CLEAR}]               specify job account in the batch script
        -alltests             don't skip any problematic tests [default: skip those tests]
+       -debug                build type is debug mode
        -h,--help             show this help text \n"
     exit 0
     ;;
@@ -196,8 +202,8 @@ if [[ $UNAME == cori* ]];then
       SKIP_TESTS=$SKIP_TESTS"MPI_TEST_testphdf5_tldsc"
       SKIP_TESTS=$SKIP_TESTS"'"
     fi
-    perl -i -pe "s/^ctest.*/ctest . -R MPI_TEST_ ${SKIP_TESTS} -C Release -T test >& ctestP.out/" hdf5-$HDF5_VER/bin/batch/ctestP.sl.in.cmake
-    perl -i -pe "s/^ctest.*/ctest . -R MPI_TEST_ ${SKIP_TESTS} -C Release -T test >& ctestP.out/" hdf5-$HDF5_VER/bin/batch/knl_ctestP.sl.in.cmake
+    perl -i -pe "s/^ctest.*/ctest . -R MPI_TEST_ ${SKIP_TESTS} -C ${BUILD_TYPE} -T test >& ctestP.out/" hdf5-$HDF5_VER/bin/batch/ctestP.sl.in.cmake
+    perl -i -pe "s/^ctest.*/ctest . -R MPI_TEST_ ${SKIP_TESTS} -C ${BUILD_TYPE} -T test >& ctestP.out/" hdf5-$HDF5_VER/bin/batch/knl_ctestP.sl.in.cmake
     perl -i -pe "s/^#SBATCH --nodes=1/#SBATCH -C haswell\n#SBATCH --nodes=1/" hdf5-$HDF5_VER/bin/batch/ctestS.sl.in.cmake
     perl -i -pe "s/^#SBATCH --nodes=1/#SBATCH -C haswell\n#SBATCH --nodes=1/" hdf5-$HDF5_VER/bin/batch/ctestP.sl.in.cmake
     perl -i -pe "s/^#SBATCH -p knl.*/#SBATCH -C knl,quad,cache/" hdf5-$HDF5_VER/bin/batch/knl_ctestS.sl.in.cmake
@@ -234,7 +240,7 @@ elif [[ $UNAME == mutrino* ]];then
       SKIP_TESTS=$SKIP_TESTS"MPI_TEST_testphdf5_tldsc"
       SKIP_TESTS=$SKIP_TESTS"'"
     fi
-    perl -i -pe "s/^ctest.*/ctest . -R MPI_TEST_ ${SKIP_TESTS} -C Release -T test >& ctestP.out/" hdf5-$HDF5_VER/bin/batch/ctestP.sl.in.cmake
+    perl -i -pe "s/^ctest.*/ctest . -R MPI_TEST_ ${SKIP_TESTS} -C ${BUILD_TYPE} -T test >& ctestP.out/" hdf5-$HDF5_VER/bin/batch/ctestP.sl.in.cmake
 
 # Get the curent PrgEnv module setting
     module list &> out
@@ -271,7 +277,7 @@ elif [[ $UNAME == serrano* ]]; then
       SKIP_TESTS=$SKIP_TESTS"'"
     fi
     
-    perl -i -pe "s/^ctest.*/ctest . -R MPI_TEST_ ${SKIP_TESTS} -C Release -T test >& ctestP.out/" hdf5-$HDF5_VER/bin/batch/ctestP.sl.in.cmake
+    perl -i -pe "s/^ctest.*/ctest . -R MPI_TEST_ ${SKIP_TESTS} -C ${BUILD_TYPE} -T test >& ctestP.out/" hdf5-$HDF5_VER/bin/batch/ctestP.sl.in.cmake
 
     echo 'set (ADD_BUILD_OPTIONS "${ADD_BUILD_OPTIONS} -DMPIEXEC_EXECUTABLE:STRING=mpirun")' >> hdf5-$HDF5_VER/config/cmake/scripts/HPC/sbatch-HDF5options.cmake
     echo 'set (ADD_BUILD_OPTIONS "${ADD_BUILD_OPTIONS} -DMPIEXEC_PREFLAGS:STRING=--mca;io;ompio")' >> hdf5-$HDF5_VER/config/cmake/scripts/HPC/sbatch-HDF5options.cmake
@@ -310,7 +316,7 @@ elif [[ $UNAME == chama* ]]; then
       SKIP_TESTS=$SKIP_TESTS"'"
     fi
 
-    perl -i -pe "s/^ctest.*/ctest . -R MPI_TEST_ ${SKIP_TESTS} -C Release -T test >& ctestP.out/" hdf5-$HDF5_VER/bin/batch/ctestP.sl.in.cmake
+    perl -i -pe "s/^ctest.*/ctest . -R MPI_TEST_ ${SKIP_TESTS} -C ${BUILD_TYPE} -T test >& ctestP.out/" hdf5-$HDF5_VER/bin/batch/ctestP.sl.in.cmake
 
     echo 'set (ADD_BUILD_OPTIONS "${ADD_BUILD_OPTIONS} -DMPIEXEC_EXECUTABLE:STRING=mpirun")' >> hdf5-$HDF5_VER/config/cmake/scripts/HPC/sbatch-HDF5options.cmake
     echo 'set (ADD_BUILD_OPTIONS "${ADD_BUILD_OPTIONS} -DMPIEXEC_PREFLAGS:STRING=--mca;io;ompio")' >> hdf5-$HDF5_VER/config/cmake/scripts/HPC/sbatch-HDF5options.cmake
@@ -347,7 +353,7 @@ elif [[ $UNAME == quartz* ]]; then
       SKIP_TESTS=$SKIP_TESTS"'"
     fi
 
-    perl -i -pe "s/^ctest.*/ctest . -R MPI_TEST_ ${SKIP_TESTS} -C Release -T test >& ctestP.out/" hdf5-$HDF5_VER/bin/batch/knl_ctestP.sl.in.cmake
+    perl -i -pe "s/^ctest.*/ctest . -R MPI_TEST_ ${SKIP_TESTS} -C ${BUILD_TYPE} -T test >& ctestP.out/" hdf5-$HDF5_VER/bin/batch/knl_ctestP.sl.in.cmake
 
     echo 'set (ADD_BUILD_OPTIONS "${ADD_BUILD_OPTIONS} -DMPIEXEC_EXECUTABLE:STRING=mpirun")' >> hdf5-$HDF5_VER/config/cmake/scripts/HPC/sbatch-HDF5options.cmake
     echo 'set (ADD_BUILD_OPTIONS "${ADD_BUILD_OPTIONS} -DMPIEXEC_PREFLAGS:STRING=--mca;io;ompio")' >> hdf5-$HDF5_VER/config/cmake/scripts/HPC/sbatch-HDF5options.cmake
@@ -387,7 +393,7 @@ elif [[ $UNAME == ray* ]]; then
       SKIP_TESTS=$SKIP_TESTS"'"
     fi
 
-    perl -i -pe "s/^ctest.*/ctest . -R MPI_TEST_ ${SKIP_TESTS} -C Release -T test >& ctestP.out/" hdf5-$HDF5_VER/bin/batch/ray_ctestP.lsf.in.cmake
+    perl -i -pe "s/^ctest.*/ctest . -R MPI_TEST_ ${SKIP_TESTS} -C ${BUILD_TYPE} -T test >& ctestP.out/" hdf5-$HDF5_VER/bin/batch/ray_ctestP.lsf.in.cmake
     
     module purge
     module load cmake/3.12.1
@@ -415,11 +421,11 @@ elif [[ $UNAME == lassen* ]]; then
       SKIP_TESTS=$SKIP_TESTS"'"
     fi
  
-    perl -i -pe "s/^ctest.*/ctest . -R MPI_TEST_ ${SKIP_TESTS} -C Release -T test >& ctestP.out/" hdf5-$HDF5_VER/bin/batch/ctestP.lsf.in.cmake
+    perl -i -pe "s/^ctest.*/ctest . -R MPI_TEST_ ${SKIP_TESTS} -C ${BUILD_TYPE} -T test >& ctestP.out/" hdf5-$HDF5_VER/bin/batch/ctestP.lsf.in.cmake
 
     echo 'set (ADD_BUILD_OPTIONS "${ADD_BUILD_OPTIONS} -DMPIEXEC_EXECUTABLE:STRING=mpirun")' >> hdf5-$HDF5_VER/config/cmake/scripts/HPC/bsub-HDF5options.cmake
 
-    perl -i -pe "s/^ctest.*/ctest . -E MPI_TEST_ -C Release -j 32 -T test >& ctestS.out/" hdf5-$HDF5_VER/bin/batch/ctestS.lsf.in.cmake
+    perl -i -pe "s/^ctest.*/ctest . -E MPI_TEST_ -C ${BUILD_TYPE} -j 32 -T test >& ctestS.out/" hdf5-$HDF5_VER/bin/batch/ctestS.lsf.in.cmake
     
     module purge
     module load cmake/3.12.1
@@ -471,8 +477,8 @@ if [[ $HOSTNAME == summit* ]]; then
       SKIP_TESTS=$SKIP_TESTS"'"
     fi
 
-    perl -i -pe "s/^ctest.*/ctest . -R MPI_TEST_ ${SKIP_TESTS} -C Release -T test >& ctestP.out/" hdf5-$HDF5_VER/bin/batch/ctestP.lsf.in.cmake
-    perl -i -pe "s/^ctest.*/ctest . -E MPI_TEST_ -C Release -j 32 -T test >& ctestS.out/" hdf5-$HDF5_VER/bin/batch/ctestS.lsf.in.cmake
+    perl -i -pe "s/^ctest.*/ctest . -R MPI_TEST_ ${SKIP_TESTS} -C ${BUILD_TYPE} -T test >& ctestP.out/" hdf5-$HDF5_VER/bin/batch/ctestP.lsf.in.cmake
+    perl -i -pe "s/^ctest.*/ctest . -E MPI_TEST_ -C ${BUILD_TYPE} -j 32 -T test >& ctestS.out/" hdf5-$HDF5_VER/bin/batch/ctestS.lsf.in.cmake
 
 # Custom BSUB commands
     perl -i -pe "s/^#BSUB -G.*/#BSUB -P ${ACCOUNT}/" hdf5-$HDF5_VER/bin/batch/ctestS.lsf.in.cmake
@@ -580,9 +586,9 @@ for master_mod in $MASTER_MOD; do
     module list
 
     printf "$OK_COLOR"
-    printf "ctest . -S HDF5config.cmake,SITE_BUILDNAME_SUFFIX=\"$HDF5_VER-$master_mod-$cc_ver\",${CTEST_OPTS}MPI=true,BUILD_GENERATOR=Unix,LOCAL_SUBMIT=true,MODEL=HPC -C Release -VV -O hdf5.log \n"
+    printf "ctest . -S HDF5config.cmake,SITE_BUILDNAME_SUFFIX=\"$HDF5_VER-$master_mod-$cc_ver\",${CTEST_OPTS}MPI=true,BUILD_GENERATOR=Unix,LOCAL_SUBMIT=true,MODEL=HPC -C ${BUILD_TYPE} -VV -O hdf5.log \n"
     printf "$NO_COLOR"
-    timeout 3h ctest . -S HDF5config.cmake,SITE_BUILDNAME_SUFFIX="$HDF5_VER-$master_mod--$cc_ver",${CTEST_OPTS}MPI=true,BUILD_GENERATOR=Unix,LOCAL_SUBMIT=true,MODEL=HPC -C Release -VV -O hdf5.log
+    timeout 3h ctest . -S HDF5config.cmake,SITE_BUILDNAME_SUFFIX="$HDF5_VER-$master_mod--$cc_ver",${CTEST_OPTS}MPI=true,BUILD_GENERATOR=Unix,LOCAL_SUBMIT=true,MODEL=HPC -C ${BUILD_TYPE} -VV -O hdf5.log
 
     if [ ! -d $BASEDIR/hdf5_install ]; then
         mkdir $BASEDIR/hdf5_install
