@@ -459,9 +459,7 @@ if [[ $HOSTNAME == summit* ]]; then
 
     if [[ $ALL_TESTS == 'false' ]];then
       SKIP_TESTS="-E '"
-    #  SKIP_TESTS=$SKIP_TESTS"MPI_TEST_testphdf5_selnone"
       SKIP_TESTS=$SKIP_TESTS"|MPI_TEST_testphdf5_tldsc"
-    #  SKIP_TESTS=$SKIP_TESTS"|MPI_TEST_testphdf5_ecdsetw"
       SKIP_TESTS=$SKIP_TESTS"|MPI_TEST_testphdf5_eidsetw2"
       SKIP_TESTS=$SKIP_TESTS"|MPI_TEST_testphdf5_cngrpw-ingrpr"
       SKIP_TESTS=$SKIP_TESTS"|MPI_TEST_testphdf5_cchunk1"
@@ -469,10 +467,7 @@ if [[ $HOSTNAME == summit* ]]; then
       SKIP_TESTS=$SKIP_TESTS"|MPI_TEST_testphdf5_cchunk3"
       SKIP_TESTS=$SKIP_TESTS"|MPI_TEST_testphdf5_cchunk4"
       SKIP_TESTS=$SKIP_TESTS"|MPI_TEST_testphdf5_cschunkw"
-    #  SKIP_TESTS=$SKIP_TESTS"|MPI_TEST_testphdf5_ccchunkw"
-    #  SKIP_TESTS=$SKIP_TESTS"|MPI_TEST_testphdf5_actualio"
       SKIP_TESTS=$SKIP_TESTS"|MPI_TEST_testphdf5_MC_coll_MD_read"
-    #  SKIP_TESTS=$SKIP_TESTS"|MPI_TEST_t_shapesame"
       SKIP_TESTS=$SKIP_TESTS"|MPI_TEST_t_filters_parallel"
       SKIP_TESTS=$SKIP_TESTS"'"
     fi
