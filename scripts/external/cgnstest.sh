@@ -14,7 +14,7 @@ NOTE_COLOR="\033[36;01m"
 # OSX1010DEV Mac OS X 10.10.x
 # WREN Mac OS X 10.9.x
 # KITE Mac OS X 10.8.x
-TIMEOUT="timeout 2h"
+TIMEOUT="timeout 1h"
 UNAME="unknown"
 if [ -x /usr/bin/uname ]
 then
@@ -454,7 +454,6 @@ if [[ $do_test != 0 ]]; then
 
     printf "$CONFIG_CMD%b\n\n" "$NO_COLOR"
 
-
     if ! $CONFIG_CMD ; then
 	echo "CGNS CONFIGURE #FAILED"
 	autotools_status=$status
@@ -467,7 +466,20 @@ if [[ $do_test != 0 ]]; then
 	echo "CGNS INSTALL #FAILED"
 	autotools_status=$status
     fi
+
+	if ! $TIMEOUT $make_bin test; then
+	    echo "CGNS CMAKE TESTING #FAILED"
+	    cmake_status=$?
+	fi
+
     $TIMEOUT $make_bin test &> ../../../results.$TEST_NO.txt
+
+    timeout_status=$?
+    if [[ $timeout_status -eq 124 ]]; then
+        echo "CGNS AUTOOLS TESTING #FAILED"
+        autotools_status=$timeout_status
+    fi
+        
     cat ../../../results.$TEST_NO.txt
     status=$?
     if [[ $status != 0 ]]; then
@@ -585,11 +597,12 @@ if [ -d "$TEST_DIR" ]; then
 	    echo "CGNS CMAKE BUILD #FAILED"
 	    cmake_status=$?
 	fi
-	
-	if ! $TIMEOUT $make_bin test; then
-	    echo "CGNS CMAKE TESTING #FAILED"
-	    cmake_status=$?
-	fi
+	$TIMEOUT $make_bin test
+        timeout_status=$?
+        if [[ $timeout_status -eq 124 ]]; then
+            echo "CGNS CMAKE TESTING #FAILED"
+	    cmake_status=$timeout_status
+        fi
     fi
 fi
 
