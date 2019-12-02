@@ -1,4 +1,4 @@
-#!/bin/bash -l
+#!/bin/bash
 
 NO_COLOR="\033[0m"
 OK_COLOR="\033[32;01m"
