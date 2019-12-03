@@ -14,7 +14,7 @@ NOTE_COLOR="\033[36;01m"
 # OSX1010DEV Mac OS X 10.10.x
 # WREN Mac OS X 10.9.x
 # KITE Mac OS X 10.8.x
-TIMEOUT="timeout 1h"
+TIMEOUT="timeout 15m"
 UNAME="unknown"
 if [ -x /usr/bin/uname ]
 then
