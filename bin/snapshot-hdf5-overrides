@@ -11,6 +11,9 @@ COMMITSNAPSHOT()
    git add README.txt c++/src/cpp_doc_config configure.ac src/H5public.h
    git add release_docs/RELEASE.txt hl/src/H5LTparse.c hl/src/H5LTparse.h
    git add config/cmake/scripts/HDF5config.cmake
+   git add java/src/hdf/hdf5lib/H5.java java/test/TestH5.java 
+   git add tools/test/h5repack/testfiles/h5repack_layout.h5-plugin_version_test.ddl
+
 
    # When the configure file is source controlled it should also be added
    # to the commit;  otherwise the "snap" version in the previous directory

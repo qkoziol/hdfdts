@@ -180,6 +180,7 @@ DISPLAYUSAGE()
 Usage: $PROGNAME [all] [checkout] [ftp <URL> [diff] [test] [srcdir] [release] [help]
 	[clean] [distclean] [echo] [deploy <dir>] [deploydir <dir>]
 	[zlib <zlib_path>] [releasedir <dir>] [srcdirname <dir>] [check-vfd]
+        [check-passthrough-vol] [checkval <check string>]
 	[exec <command>] [module-load <module-list>] [op-configure <option>] 
         [--<option>]
     all:      Run all commands (checkout, test & release)
@@ -193,7 +194,7 @@ Usage: $PROGNAME [all] [checkout] [ftp <URL> [diff] [test] [srcdir] [release] [h
     deploydir: use <dir> as the default directory for deployment
     test:     Run test
     release:  Run release
-    release-autogen:  Run release from current_src directory
+    autogen-release:  Run release from current_src directory
     clean:    Run make clean
     distclean:Run make distclean
     echo:     Turn on echo mode (set -x)
@@ -220,6 +221,12 @@ Usage: $PROGNAME [all] [checkout] [ftp <URL> [diff] [test] [srcdir] [release] [h
               [Default is $ReleaseDir_default]
     check-vfd:
 	      Run make check-vfd instead of just make check.
+    check-passthrough-vol:
+              Run make check-passthrough-vol instead of just make check.
+    checkval <check string>:
+              Run make <check string> instead of just make check.
+              <check string> can contain spaces if surrounded by ""
+              E.g., "-i check" or "-i check-passthrough-vol"
     exttest <testscript>;
               Run testscript;
     exec <command>:
@@ -290,7 +297,7 @@ ZLIB=$ZLIB_default
 if [ "${SWVERSION}" = "hdf5_1_6" ]; then
     METHODS="gzip bzip2 md5"
 else
-    METHODS="gzip bzip2 doc"
+    METHODS="gzip bzip2"
 fi
 
 # Use User's MAKE if set.  Else use generic make.
@@ -298,6 +305,7 @@ MAKE=${MAKE:-make}
 
 # Default check action.
 CHECKVAL=check
+#CHECKVAL=check-passthrough-vol
 
 #
 # Command options
@@ -478,6 +486,19 @@ while [ $# -gt 0 ] ; do
 	check-vfd)
 	    CHECKVAL=check-vfd
 	    ;;
+        check-passthrough-vol)
+            CHECKVAL=check-passthrough-vol
+            ;;
+        checkval)
+            shift
+            if [ $# -lt 1 ]; then
+                echo "missing value for checkval"
+                errcode=1
+                cmd="help"
+                break
+            fi
+            CHECKVAL="$1"
+            ;;
         module-load)
             shift
             if [ $# -lt 1 ]; then
@@ -502,7 +523,7 @@ while [ $# -gt 0 ] ; do
 	    OP_CONFIGURE="$OP_CONFIGURE $1"
 	    ;;
 	*)
-	    echo "Unkown option $1"
+	    echo "Unknown option $1"
 	    errcode=1
 	    cmd="help"
 	    break
@@ -752,18 +773,22 @@ if [ "$cmd" = "all" -o -n "$cmdtest" -o -n "$cmddiff" ]; then
             FAIL_SECTION=`cat ${TESTDIR}/failsection`
             echo "Failed running ${FAIL_SECTION}"
 	    snapshot=no
+# disabled saving of directories as it tends to fill drives when tests fail a lot,
+# and hasn't been useful enough to outweigh the trouble it causes.  Occasionally 
+# the saved directories are worthwhile, though, so the code will stay for now.
+# It might be worth having as an option.
             # Save failed test directory for examination of possible core file.  
             # Check for available space at least equal to the failed directory
             # could be done, but for now we care more about saving the failed 
             #directory than about whether tests can continue.
-            mv ${TESTDIR} ${TESTDIR}_${TODAY}_${THIS_MINUTE}
+#            mv ${TESTDIR} ${TESTDIR}_${TODAY}_${THIS_MINUTE}
             # print log message and send email to hdftest that failed directory was saved.
-            echo "Test failed.  Test directory and files from failed test were saved in "
-            echo "${TESTDIR}_${TODAY}_${THIS_MINUTE}."
-            ( echo "Notice:  Failed test directory ${TESTDIR} was moved to ${TESTDIR}_${TODAY}_${THIS_MINUTE}. The directory should be examined and  moved or deleted to avoid filling the /scr drive."
-            ) | $MAIL -s "Failed test directory saved" hdftest
+#            echo "Test failed.  Test directory and files from failed test were saved in "
+#            echo "${TESTDIR}_${TODAY}_${THIS_MINUTE}."
+#            ( echo "Notice:  Failed test directory ${TESTDIR} was moved to ${TESTDIR}_${TODAY}_${THIS_MINUTE}. The directory should be examined and  moved or deleted to avoid filling the /scr drive."
+#            ) | $MAIL -s "Failed test directory saved" hdftest
 
-            mkdir ${TESTDIR}
+            #mkdir ${TESTDIR}
 	    exit $errcode
 	fi
     elif [ $CPSRC ]; then
