@@ -57,7 +57,7 @@ case $key in
     BUILD_TYPE="Debug"
     shift # past argument
     ;;
-    -h|--help)
+    -h*|--h*)
     printf "USAGE: nnsa.sh [${UNDERLINE}OPTION${CLEAR}]...
 
     where:

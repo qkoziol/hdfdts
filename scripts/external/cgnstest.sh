@@ -1,4 +1,4 @@
-#!/bin/bash -l
+#!/bin/bash
 
 NO_COLOR="\033[0m"
 OK_COLOR="\033[32;01m"
@@ -14,25 +14,25 @@ NOTE_COLOR="\033[36;01m"
 # OSX1010DEV Mac OS X 10.10.x
 # WREN Mac OS X 10.9.x
 # KITE Mac OS X 10.8.x
-TIMEOUT="timeout 2h"
+TIMEOUT="timeout 15m"
 UNAME="unknown"
 if [ -x /usr/bin/uname ]
 then
-  UNAME=`/usr/bin/uname -n`
-  PROC=`/usr/bin/uname -p`
-  OSTYPE=`/usr/bin/uname -s`
+  UNAME=$(/usr/bin/uname -n)
+  PROC=$(/usr/bin/uname -p)
+  OSTYPE=$(/usr/bin/uname -s)
 fi
 if [ -x /usr/local/bin/uname ]
 then
-  UNAME=`/usr/local/bin/uname -n`
-  PROC=`/usr/local/bin/uname -p`
-  OSTYPE=`/usr/local/bin/uname -s`
+  UNAME=$(/usr/local/bin/uname -n)
+  PROC=$(/usr/local/bin/uname -p)
+  OSTYPE=$(/usr/local/bin/uname -s)
 fi
 if [ -x /bin/uname ]
 then
-  UNAME=`/bin/uname -n`
-  PROC=`/bin/uname -p`
-  OSTYPE=`/bin/uname -s`
+  UNAME=$(/bin/uname -n)
+  PROC=$(/bin/uname -p)
+  OSTYPE=$(/bin/uname -s)
 fi
 
 # set the default C FLAGS
@@ -51,10 +51,10 @@ CGNS_SRC=$BASEDIR/current/CGNS
 BRANCH=""
 
 # lower case OSTYPE
-OSTYPE=`echo $OSTYPE | tr '[:upper:]' '[:lower:]'`
+OSTYPE=$(echo "$OSTYPE" | tr '[:upper:]' '[:lower:]')
 
 # Remove the domain name if present
-UNAME=`echo $UNAME | sed 's;\..*;;'`
+UNAME=$(echo "$UNAME" | sed 's;\..*;;')
 
 
 # READ COMMAND LINE FOR THE TEST TO RUN
@@ -69,7 +69,7 @@ fi
 make_bin="make"
 make_opt="-j1"
 cmake_bin="cmake"
-if [[ $UNAME == "ostrich" ]];then
+if [[ "$UNAME" == "ostrich" ]];then
    cmake_bin="/mnt/hdf/packages/cmake/3.3.1/ppc64/bin/cmake"
 fi
 
@@ -180,7 +180,7 @@ elif [[ $TEST_COMPILER == gcc* ]]; then
 elif [[ $TEST_COMPILER == "intel" ]]; then
 
     if [[ $OSTYPE == "darwin"* ]];then
-       HOSTNAME=`hostname -s`
+       HOSTNAME=$(hostname -s)
        if [[ $HOSTNAME == "osx1011test" ]];then
           source /opt/intel/compilers_and_libraries_2016.2.146/mac/bin/compilervars.sh -arch intel64 -platform mac
        fi
@@ -294,14 +294,14 @@ CGNS_ENABLE_SZIP="OFF"
 #export CMAKE_PREFIX_PATH="$HDF_DIR"
 
 if [[ "$H5CC" = "" ]]; then 
-    H5CC=$HDF_DIR/bin/h5*cc
+    H5CC="$HDF_DIR"/bin/h5*cc
 fi
 
-#TEST_SZIP=`grep -iq "szip" $HDF_DIR/bin/h5*cc;echo $?`
-TEST_SZIP=`grep -iq "szip" $H5CC;echo $?`
+#TEST_SZIP=$(grep -iq "szip" $HDF_DIR/bin/h5*cc;echo $?)
+TEST_SZIP=$(grep -iq "szip" $H5CC;echo $?)
 if [[ $TEST_SZIP == 0 ]]; then
-    SZIP=`cat $H5CC | grep "H5BLD_LDFLAGS=" | sed -e 's/.*H5BLD_LDFLAGS=" -L\(.*\) ".*/\1/'`
-#    SZIP=`cat $HDF_DIR/bin/h5*cc | grep "H5BLD_LDFLAGS=" | sed -e 's/.*H5BLD_LDFLAGS=" -L\(.*\) ".*/\1/'`
+    SZIP=$(cat $H5CC | grep "H5BLD_LDFLAGS=" | sed -e 's/.*H5BLD_LDFLAGS=" -L\(.*\) ".*/\1/')
+#    SZIP=$(cat $HDF_DIR/bin/h5*cc | grep "H5BLD_LDFLAGS=" | sed -e 's/.*H5BLD_LDFLAGS=" -L\(.*\) ".*/\1/')
 #    ENABLE_SZIP="--with-szip=$SZIP/libsz.a"
     export LD_LIBRARY_PATH="$LD_LIBRARY_PATH:$SZIP"
     CGNS_ENABLE_SZIP="ON -D SZIP_LIBRARY:PATH=$SZIP/libsz.a"
@@ -406,11 +406,11 @@ autotools_status=0
 if [[ $do_test != 0 ]]; then  
 
     if [ -d "$TEST_DIR" ]; then
-        rm -fr $TEST_DIR
+        rm -fr "$TEST_DIR"
     fi
 
-    mkdir $TEST_DIR
-    cd $TEST_DIR
+    mkdir "$TEST_DIR"
+    cd "$TEST_DIR" || exit
 #    if [[ $HDF_DIR == 0 ]]; then
 #	mkdir trunk; cd trunk
 #	HDF_DIR="$PWD/hdf5"
@@ -418,26 +418,24 @@ if [[ $do_test != 0 ]]; then
 #	cd ..
 #    fi
 
-#    git clone https://github.com/CGNS/CGNS.git
-    git clone $CGNS_SRC
-    if [[ $? != 0 ]]; then
+    if ! git clone $CGNS_SRC; then
 	echo " *** TESTING SCRIPT ERROR ***"
 	echo "   - FAILED COMMAND: git clone $CGNS_SRC"
 	exit 1
     fi
 
-    if [[ $BRANCH != "" ]]; then
-        printf "$WARN_COLOR ********************************************************************************* \n"
+    if [[ "$BRANCH" != "" ]]; then
+        printf "%b ********************************************************************************* \n" "$WARN_COLOR"
         printf "  ____  ____      _    _   _  ____ _   _   _____ _____ ____ _____ ___ _   _  ____\n"
         printf " | __ )|  _ \    / \  | \ | |/ ___| | | | |_   _| ____/ ___|_   _|_ _| \ | |/ ___|\n"
         printf " |  _ \| |_) |  / _ \ |  \| | |   | |_| |   | | |  _| \___ \ | |  | ||  \| | |  _\n"
         printf " | |_) |  _ <  / ___ \| |\  | |___|  _  |   | | | |___ ___) || |  | || |\  | |_| |\n"
         printf " |____/|_| \_\/_/   \_\_| \_|\____|_| |_|   |_| |_____|____/ |_| |___|_| \_|\____|\n\n"
         printf " *********************************************************************************\n"
-        printf " TESTING BRANCH ... $BRANCH $NO_COLOR \n"
+        printf " TESTING BRANCH ... %b %b \n" "$BRANCH" "$NO_COLOR"
         echo ""
-        cd CGNS
-        git checkout -b $BRANCH origin/$BRANCH
+        cd CGNS || exit
+        git checkout -b "$BRANCH" origin/"$BRANCH"
         cd ..
     fi
 
@@ -445,42 +443,47 @@ if [[ $do_test != 0 ]]; then
     CONFIG_CMD="$CONFIG_CMD $WITH_HDF5 $WITH_FORTRAN $ENABLE_PARALLEL $ENABLE_64BIT"
     CONFIG_CMD="$CONFIG_CMD $ENABLE_LEGACY $ENABLE_SCOPE $ENABLE_LFS $ENABLE_DEBUG"
     CONFIG_CMD="$CONFIG_CMD --prefix=$PWD/cgns_build $SHARED_STATUS --disable-cgnstools"
-    cd CGNS/src
+    cd CGNS/src || exit
     
-    printf "$NOTE_COLOR"
-    echo "       ___   __  ____________  __________  ____  __   _____"
-    echo "      /   | / / / /_  __/ __ \/_  __/ __ \/ __ \/ /  / ___/"
-    echo "     / /| |/ / / / / / / / / / / / / / / / / / / /   \__ \ "
-    echo "    / ___ / /_/ / / / / /_/ / / / / /_/ / /_/ / /______/ / "
-    echo "   /_/  |_\____/ /_/  \____/ /_/  \____/\____/_____/____/  "
-    echo ""
-    printf "$NO_COLOR"
+    printf "%b" "$NOTE_COLOR"
+    printf "       ___   __  ____________  __________  ____  __   _____\n"
+    printf "      /   | / / / /_  __/ __ \/_  __/ __ \/ __ \/ /  / ___/\n"
+    printf "     / /| |/ / / / / / / / / / / / / / / / / / / /   \__ \ \n"
+    printf "    / ___ / /_/ / / / / /_/ / / / / /_/ / /_/ / /______/ / \n"
+    printf "   /_/  |_\____/ /_/  \____/ /_/  \____/\____/_____/____/  \n\n"
 
-    echo "$CONFIG_CMD"
-    $CONFIG_CMD
+    printf "$CONFIG_CMD%b\n\n" "$NO_COLOR"
 
-    status=$?
-    if [[ $status != 0 ]]; then
+    if ! $CONFIG_CMD ; then
 	echo "CGNS CONFIGURE #FAILED"
 	autotools_status=$status
     fi
-    $make_bin
-    status=$?
-    if [[ $status != 0 ]]; then
+    if ! $make_bin; then
 	echo "CGNS BUILD #FAILED"
 	autotools_status=$status
     fi
-    $make_bin install
-    status=$?
-    if [[ $status != 0 ]]; then
+    if ! $make_bin install; then
 	echo "CGNS INSTALL #FAILED"
 	autotools_status=$status
     fi
+
+	if ! $TIMEOUT $make_bin test; then
+	    echo "CGNS CMAKE TESTING #FAILED"
+	    cmake_status=$?
+	fi
+
     $TIMEOUT $make_bin test &> ../../../results.$TEST_NO.txt
-    status=$?
+
+    timeout_status=$?
+    if [[ $timeout_status -eq 124 ]]; then
+        echo "CGNS AUTOOLS TESTING #FAILED"
+        autotools_status=$timeout_status
+    fi
+        
     cat ../../../results.$TEST_NO.txt
+    status=$?
     if [[ $status != 0 ]]; then
-	echo "CGNS TESTING #FAILED"
+	printf "%bCGNS TESTING #FAILED%b" "$ERROR_COLOR" "$NO_COLOR"
 	autotools_status=$status
     fi
 
@@ -489,9 +492,9 @@ if [[ $do_test != 0 ]]; then
     FILE="/mnt/scr1/SnapTest/benchmarks/cgns/$NOW"
     ## Save timing data
     if [ -f tests/CGNS_timing.txt ]; then
-	echo "# $HDF_VERSION $TEST_NO" >> $FILE
-	cat tests/CGNS_timing.txt >> $FILE
-	echo "" >> $FILE
+	echo "# $HDF_VERSION $TEST_NO" >> "$FILE"
+	cat tests/CGNS_timing.txt >> "$FILE"
+	echo "" >> "$FILE"
     fi
 
     cd ../../../
@@ -508,50 +511,49 @@ do_test=1
 if [[ $SHARED_STATUS == "--enable-shared" && $WITH_FORTRAN == "--with-fortran=yes" ]]; then
     if [[ $UNAME == "ostrich" || $UNAME == "kituo" || $UNAME == "mayll" || $UNAME == "moohan" || $UNAME == "platypus" ]];then
 	do_test=0
-        printf "$WARN_COLOR"
+        printf "%b" "$WARN_COLOR"
         echo "WARNING: Disabling CMake testing for ostrich, kituo, moohan and platypus"
         echo "for shared tests and Fortran because cmake tries to remove a .mod "
         echo "file that is not there."
-        printf "$NO_COLOR"
+        printf "%b" "$NO_COLOR"
     fi
 fi
 
 cmake_status=0
 CGNS_ENABLE_LFS="-D CGNS_ENABLE_LFS:BOOL=OFF"
-printf "$WARN_COLOR"
+printf "%b" "$WARN_COLOR"
 echo "WARNING: Disabling LFS, CGNS_ENABLE_LFS='-D CGNS_ENABLE_LFS:BOOL=OFF'"
-printf "$NO_COLOR"
+printf "%b" "$NO_COLOR"
 
 if [ -d "$TEST_DIR" ]; then
-    cd $TEST_DIR
+    cd "$TEST_DIR" || exit
     
     if [[ $do_test != 0 ]]; then
 
-        printf "$NOTE_COLOR"
+        printf "%b" "$NOTE_COLOR"
         echo "       ________  ______    __ __ ______"
         echo "      / ____/  |/  /   |  / //_// ____/"
         echo "     / /   / /|_/ / /| | / ,<  / __/   "
         echo "    / /___/ /  / / ___ |/ /| |/ /___   "
         echo "    \____/_/  /_/_/  |_/_/ |_/_____/   "
         echo ""
-        printf "$NO_COLOR"
+        printf "%b" "$NO_COLOR"
 
-	git clone $CGNS_SRC CGNS_SRC
-	if [[ $? != 0 ]]; then
+	if ! git clone $CGNS_SRC CGNS_SRC; then
 	    echo " *** TESTING SCRIPT ERROR ***"
 	    echo "   - FAILED COMMAND: git clone $CGNS_SRC CGNS_SRC"
 	    exit 1
 	fi
-	if [[ $BRANCH != "" ]]; then
-          cd CGNS_SRC
-          git checkout $BRANCH
+	if [[ "$BRANCH" != "" ]]; then
+          cd CGNS_SRC || exit
+          git checkout "$BRANCH"
           cd ..
         fi
 
 	CGNS="$PWD/CGNS_SRC"
 
 	mkdir CGNS_build
-	cd CGNS_build
+	cd CGNS_build || exit
 	set -x $cmake_bin \
 	    -D CMAKE_C_COMPILER:PATH=$CC \
 	    -D CMAKE_C_FLAGS:STRING="$CFLAGS" \
@@ -567,7 +569,7 @@ if [ -d "$TEST_DIR" ]; then
 	    -D CMAKE_EXE_LINKER_FLAGS:STRING="$CMAKE_EXE_LINKER_FLAGS" $CGNS_ENABLE_PARALLEL \
              $CGNS_ENABLE_LFS $CGNS_ENABLE_HDF5 $CGNS_ENABLE_FORTRAN $CGNS_ENABLE_64BIT \
              $CGNS_ENABLE_SCOPING \
-             $CGNS
+             "$CGNS"
 
 	$cmake_bin \
 	    -D CMAKE_C_COMPILER:PATH=$CC \
@@ -583,30 +585,29 @@ if [ -d "$TEST_DIR" ]; then
 	    -D CMAKE_EXE_LINKER_FLAGS:STRING="$CMAKE_EXE_LINKER_FLAGS" $CGNS_ENABLE_PARALLEL \
              $CGNS_ENABLE_LFS $CGNS_ENABLE_HDF5 $CGNS_ENABLE_FORTRAN $CGNS_ENABLE_64BIT \
              $CGNS_ENABLE_SCOPING \
-             $CGNS
+             "$CGNS"
 	    
         status=$?
         if [[ $status != 0 ]]; then
 	   echo "CGNS CMAKE CONFIGURE #FAILED"
 	   cmake_status=$status
         fi
-	$make_bin $make_opt
-	status=$?
-	if [[ $status != 0 ]]; then
+	
+	if ! $make_bin $make_opt; then
 	    echo "CGNS CMAKE BUILD #FAILED"
-	    cmake_status=$status
+	    cmake_status=$?
 	fi
 	$TIMEOUT $make_bin test
-	status=$?
-	if [[ $status != 0 ]]; then
-	    echo "CGNS CMAKE TESTING #FAILED"
-	    cmake_status=$status
-	fi
+        timeout_status=$?
+        if [[ $timeout_status -eq 124 ]]; then
+            echo "CGNS CMAKE TESTING #FAILED"
+	    cmake_status=$timeout_status
+        fi
     fi
 fi
 
 if [[ $autotools_status != 0 || $cmake_status != 0 ]]; then
-    echo "CGNS #FAILED"
+    printf "%bCGNS #FAILED%b" "$ERROR_COLOR" "$NO_COLOR"
     exit 1
 fi
 exit 0
