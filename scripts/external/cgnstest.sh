@@ -48,7 +48,8 @@ CGNS_SRC=$BASEDIR/current/CGNS
 
 # set to change to testing a different branch (default is develop)
 #BRANCH="master"
-BRANCH="3.4.1"
+#BRANCH="3.4.1"
+BRANCH="4.0.0"
 
 # lower case OSTYPE
 OSTYPE=$(echo "$OSTYPE" | tr '[:upper:]' '[:lower:]')
