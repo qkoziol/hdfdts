@@ -68,9 +68,6 @@ fi
 make_bin="make"
 make_opt="-j1"
 cmake_bin="cmake"
-if [[ "$UNAME" == "ostrich" ]];then
-   cmake_bin="/mnt/hdf/packages/cmake/3.3.1/ppc64/bin/cmake"
-fi
 
 HDF_DIR="0"
 
