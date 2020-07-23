@@ -209,6 +209,9 @@ elif [[ $TEST_COMPILER == "nag" ]]; then
     export CC="gcc"
     export FC="nagfor"
     export FLIBS="-ldl"
+    if [[ $SHARED_STATUS == "--enable-shared" ]]; then
+        FCFLAGS="$FCFLAGS -PIC"
+    fi
     CMAKE_EXE_LINKER_FLAGS='-ldl'
 elif [[ $TEST_COMPILER == "intel-nag" ]]; then
     export CC="icc"
