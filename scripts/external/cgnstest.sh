@@ -104,8 +104,8 @@ TEST_DIR="test.$TEST_NO"
 
 # COMPILER TESTS: LINKED TO THE CORRESPONDING COMPILED HDF5 LIBRARY
 
-export FLIBS="-Wl,--no-as-needed -ldl"
-export LIBS="-Wl,--no-as-needed -ldl"
+export FLIBS="-Wl,--no-as-needed -ldl -lrt"
+export LIBS="-Wl,--no-as-needed -ldl -lrt"
 CMAKE_EXE_LINKER_FLAGS='-Wl,--no-as-needed -ldl'
 
 DASH="-"
