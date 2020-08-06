@@ -230,16 +230,16 @@ elif [[ $TEST_COMPILER == "pp"* || $TEST_COMPILER == "openmpi"* ]]; then
 elif [[ $TEST_COMPILER == "xl" ]]; then
     export CC="/opt/xl/xlf15.1_xlc13.1/xlc"
     export FC="/opt/xl/xlf15.1_xlc13.1/xlf"
-    export FLIBS=""
-    export LIBS=""
+    export FLIBS="-lrt"
+    export LIBS="-lrt"
     CMAKE_EXE_LINKER_FLAGS=""
 elif [[ $TEST_COMPILER == "xl64" ]]; then
     export CC="/opt/xl/xlf15.1_xlc13.1/xlc"
     export FC="/opt/xl/xlf15.1_xlc13.1/xlf"
     FCFLAGS="-q64 $FCFLAGS"
     CFLAGS="-q64 $CFLAGS"
-    export FLIBS=""
-    export LIBS=""
+    export FLIBS="-lrt"
+    export LIBS="-lrt"
     CMAKE_EXE_LINKER_FLAGS=""
 elif [[ $TEST_COMPILER == "emu64" ]]; then
     make_bin="gmake"
