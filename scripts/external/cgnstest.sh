@@ -116,13 +116,17 @@ if [[ $TEST_COMPILER == "" ]]; then # System default compiler, exclude dash in t
     HDF_DIR="/mnt/scr1/pre-release/hdf5/$HDF_VERSION/$UNAME$DASH$TEST_COMPILER"
 
     if [[ $OSTYPE == "sunos" ]];then
+        if [[ $SHARED_STATUS == "--enable-shared" ]]; then
+           FCFLAGS="$FCFLAGS -KPIC"
+           CFLAGS="$CFLAGS -KPIC"
+        fi
 	make_bin="gmake"
 	export CC="cc"
 	export FC="f90"
 	export FLIBS="-lm"
 	export LIBS="-lm"
 	CMAKE_EXE_LINKER_FLAGS=""
-        export LD_LIBRARY_PATH="/opt/solarisstudio/lib:$LD_LIBRARY_PATH"
+        export LD_LIBRARY_PATH="/opt/developerstudio12.6/lib:$LD_LIBRARY_PATH"
     else
 	export CC="gcc"
 	export FC="gfortran"
@@ -241,6 +245,10 @@ elif [[ $TEST_COMPILER == "xl64" ]]; then
     export LIBS="-lrt"
     CMAKE_EXE_LINKER_FLAGS=""
 elif [[ $TEST_COMPILER == "emu64" ]]; then
+    if [[ $SHARED_STATUS == "--enable-shared" ]]; then
+       FCFLAGS="$FCFLAGS -KPIC"
+       CFLAGS="$CFLAGS -KPIC" 
+    fi
     make_bin="gmake"
     make_opt=""
     export CC="cc"
@@ -251,7 +259,7 @@ elif [[ $TEST_COMPILER == "emu64" ]]; then
     export LIBS="-lm"
     export SYSCFLAGS="-m64"
     CMAKE_EXE_LINKER_FLAGS=""
-    export LD_LIBRARY_PATH_64="/opt/solarisstudio/lib/v9"
+    export LD_LIBRARY_PATH="/opt/developerstudio12.6/lib:$LD_LIBRARY_PATH"
 else
     echo " *** TESTING SCRIPT ERROR ***"
     echo "   - Unknown compiler specified: $TEST_COMPILER"
