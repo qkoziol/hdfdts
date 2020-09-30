@@ -314,7 +314,7 @@ if [[ $TEST_SZIP == 0 ]]; then
     CGNS_ENABLE_SZIP="ON -D SZIP_LIBRARY:PATH=$SZIP/libsz.a"
 fi
 
-
+ENABLE_64BIT="--enable-64bit=no"
 if [[ $TEST_NO == 1 ]]; then
     WITH_FORTRAN="--with-fortran=yes"
     CGNS_ENABLE_FORTRAN="-D CGNS_ENABLE_FORTRAN:BOOL=ON"
@@ -325,6 +325,7 @@ if [[ $TEST_NO == 1 ]]; then
     CGNS_ENABLE_LFS="-D CGNS_ENABLE_LFS:BOOL=ON"
     ENABLE_DEBUG="--enable-debug"
 elif [[ $TEST_NO == 2 ]]; then
+    ENABLE_64BIT="--enable-64bit"
     WITH_FORTRAN="--with-fortran=yes"
     CGNS_ENABLE_FORTRAN="-D CGNS_ENABLE_FORTRAN:BOOL=ON"
     ENABLE_DEBUG="--enable-debug"
